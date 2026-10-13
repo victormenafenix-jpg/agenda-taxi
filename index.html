@@ -27,7 +27,7 @@ const U='https://bqcaekftrthzbkhuzqvg.supabase.co',K='sb_publishable_waYNMThDF_l
 const sb=supabase.createClient(U,K);
 const $=i=>document.getElementById(i),esc=v=>String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const r2=n=>Math.round(n*100)/100,iso=d=>d.toLocaleDateString('en-CA');
-let S={ses:false,me:null,g:null,modo:'in',tab:'serv',fecha:iso(new Date()),L:[],C:{},T:[],E:[],form:null,edit:null};
+let S={ses:false,me:null,g:null,modo:'in',tab:'serv',fecha:iso(new Date()),L:[],C:{},T:[],E:[],A:[],form:null,edit:null};
 const EST={tomado:['en_camino','En camino'],en_camino:['llego','Llegué'],llego:['abordo','Abordó'],abordo:['terminado','Terminado']};
 const REG=['601 Personas Morales','605 Sueldos y Salarios','606 Arrendamiento','612 Actividad Empresarial','621 Incorporación Fiscal','625 Plataformas Tecnológicas','626 RESICO'];
 const staff=()=>S.me&&S.me.rol!='taxista',byId=id=>S.L.find(x=>x.id==id);
@@ -65,6 +65,7 @@ if(p&&p.activo){
 const g=await sb.from('grupos').select('*').maybeSingle();S.g=g.data;
 const t=await sb.from('tarifas').select('*').order('nombre');S.T=t.data||[];
 if(staff())await cargarE();
+if(S.me.rol=='admin')await cargarA();
 await cargar()}
 render()}
 async function entrar(){
@@ -76,7 +77,7 @@ if(S.modo=='up'){
 const n=$('nom').value.trim(),cod=$('cod').value.trim();
 if(!n||!cod)return er('Falta tu nombre o el código del grupo');
 r=await sb.auth.signUp({email:mail(cel),password:pin,options:{data:{nombre:n,codigo:cod,cel:cel}}});
-if(r.error)return er(/Database/i.test(r.error.message)?'Código de grupo incorrecto':'No se pudo registrar: '+r.error.message);
+if(r.error)return er(/Database/i.test(r.error.message)?'No pudimos registrarte. Revisa el código del grupo, o pide al administrador que autorice tu celular.':'No se pudo registrar: '+r.error.message);
 if(!r.data.session)r=await sb.auth.signInWithPassword({email:mail(cel),password:pin})
 }else r=await sb.auth.signInWithPassword({email:mail(cel),password:pin});
 if(r.error)return er('Celular o PIN incorrectos');
@@ -199,7 +200,7 @@ if(ce)return toast('Error en datos del cliente: '+ce.message);
 S.fecha=o.fecha;toast('Guardado');tab('serv')}
 
 function vEq(){
-$('v').innerHTML=S.E.map(p=>S.edit==p.id?eqForm(p):`<div class="c"><b>${esc(p.nombre)}</b><span class="t">${p.rol}</span>${p.activo?'':'<span class="t" style="background:var(--rd);color:#fff">PENDIENTE</span>'}<div class="mu">📱 ${esc(p.cel)} · Taxi ${esc(p.taxi)} · Renta hasta ${p.pagado_hasta||'—'}</div><button class="s" style="margin-top:6px" onclick="S.edit='${p.id}';render()">Editar</button></div>`).join('')}
+$('v').innerHTML=panelAut()+S.E.map(p=>S.edit==p.id?eqForm(p):`<div class="c"><b>${esc(p.nombre)}</b><span class="t">${p.rol}</span>${p.activo?'':'<span class="t" style="background:var(--rd);color:#fff">PENDIENTE</span>'}<div class="mu">📱 ${esc(p.cel)} · Taxi ${esc(p.taxi)} · Renta hasta ${p.pagado_hasta||'—'}</div><button class="s" style="margin-top:6px" onclick="S.edit='${p.id}';render()">Editar</button></div>`).join('')}
 function eqForm(p){
 const f=(id,l,v,t)=>`<label>${l}</label><input id="e_${id}" type="${t||'text'}" value="${esc(v)}">`,ck=(id,l,v)=>`<label><input type="checkbox" id="e_${id}"${v?' checked':''} style="width:auto"> ${l}</label>`;
 return `<div class="c"><b>${esc(p.nombre)}</b> · 📱 ${esc(p.cel)}
@@ -225,6 +226,16 @@ if(error)return toast('Error: '+error.message);S.asg=null;toast('Asignado a '+p.
 function recordar(id){const s=byId(id),pd=n=>String(n).padStart(2,'0'),f=s.fecha.replace(/-/g,''),[h,m]=llegada(s).split(':'),fin=(+h+1)%24;
 const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//AgendaTaxi//ES','BEGIN:VEVENT','UID:'+s.id+'@agendataxi','DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z','DTSTART:'+f+'T'+h+m+'00','DTEND:'+f+'T'+pd(fin)+m+'00','SUMMARY:🚕 Servicio '+h12(s.hora)+' · '+(s.destino||''),'LOCATION:'+(s.ubic||''),'DESCRIPTION:Llegar '+h12(llegada(s))+'. Destino: '+(s.destino||'')+'. Costo $'+s.costo,'BEGIN:VALARM','TRIGGER:-PT30M','ACTION:DISPLAY','DESCRIPTION:Servicio en 30 minutos','END:VALARM','BEGIN:VALARM','TRIGGER:-PT10M','ACTION:DISPLAY','DESCRIPTION:Servicio en 10 minutos','END:VALARM','BEGIN:VALARM','TRIGGER:PT0M','ACTION:DISPLAY','DESCRIPTION:Hora de salir','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
 const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download='servicio.ics';document.body.appendChild(a);a.click();a.remove();toast('Abre el archivo descargado para agregarlo a tu calendario')}
+async function cargarA(){const {data}=await sb.from('autorizados').select('*').order('nombre');S.A=data||[]}
+function panelAut(){return `<div class="c"><b>Celulares autorizados</b><div class="mu">Solo estos números pueden registrarse con el código del grupo.</div>${S.A.map(a=>`<div class="r" style="justify-content:space-between;margin-top:6px"><span>📱 ${esc(a.cel)} · ${esc(a.nombre)}</span><button class="s" onclick="delAut('${a.id}')">🗑️</button></div>`).join('')||'<p class="mu">Aún no hay números autorizados.</p>'}<label>Celular (10 dígitos)</label><input id="a_cel" type="tel" inputmode="numeric"><label>Nombre</label><input id="a_nom"><button style="margin-top:8px" onclick="addAut()">Autorizar</button></div><div class="c"><b>Código del grupo</b><div class="mu">Actual: <b>${esc(S.g&&S.g.codigo)}</b></div><button class="s" style="margin-top:6px" onclick="nuevoCodigo()">Cambiar código</button></div>`}
+async function addAut(){const c=$('a_cel').value.replace(/\D/g,''),n=$('a_nom').value.trim();if(c.length!=10)return toast('Escribe el celular de 10 dígitos');
+const {error}=await sb.from('autorizados').insert({grupo_id:S.me.grupo_id,cel:c,nombre:n});
+if(error)return toast(/duplicate|unique/i.test(error.message)?'Ese número ya está autorizado':'Error: '+error.message);
+await cargarA();render();toast('Autorizado')}
+let delA=null;async function delAut(id){if(delA!=id){delA=id;toast('Toca 🗑️ otra vez para quitar');setTimeout(()=>delA=null,4000);return}
+await sb.from('autorizados').delete().eq('id',id);delA=null;await cargarA();render()}
+let ncod=false;async function nuevoCodigo(){if(!ncod){ncod=true;toast('Toca otra vez para cambiar el código. El anterior dejará de servir.');setTimeout(()=>ncod=false,4000);return}
+ncod=false;const {data,error}=await sb.rpc('nuevo_codigo');if(error)return toast('Error: '+error.message);S.g.codigo=data;render();toast('Código nuevo: '+data)}
 iniciar();
 setInterval(()=>{if(S.me&&S.me.activo&&S.tab=='serv'&&!(document.activeElement&&/INPUT|SELECT/.test(document.activeElement.tagName)))cargar()},20000);
 </script></body></html>
