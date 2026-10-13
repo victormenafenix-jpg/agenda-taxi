@@ -32,6 +32,8 @@ const EST={tomado:['en_camino','En camino'],en_camino:['llego','Llegué'],llego:
 const REG=['601 Personas Morales','605 Sueldos y Salarios','606 Arrendamiento','612 Actividad Empresarial','621 Incorporación Fiscal','625 Plataformas Tecnológicas','626 RESICO'];
 const staff=()=>S.me&&S.me.rol!='taxista',byId=id=>S.L.find(x=>x.id==id);
 const mail=c=>c.replace(/\D/g,'')+'@agendataxi.mx';
+const nrm=c=>{const p=String(c||'').trim().startsWith('+'),d=String(c||'').replace(/\D/g,'');if(!d)return'';if(d.length==13&&d.startsWith('521'))return'52'+d.slice(3);if(!p&&d.length==10)return'52'+d;return d};
+const shw=k=>k.length==12&&k.startsWith('52')?k.slice(2):'+'+k;
 const tel=c=>{c=String(c||'').replace(/\D/g,'');return c.length==10?'52'+c:c};
 const opts=(a,v)=>a.map(o=>`<option${o==v?' selected':''}>${o}</option>`).join('');
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t.h);t.h=setTimeout(()=>t.style.display='none',4500)}
@@ -65,7 +67,7 @@ if(p&&p.activo){
 const g=await sb.from('grupos').select('*').maybeSingle();S.g=g.data;
 const t=await sb.from('tarifas').select('*').order('nombre');S.T=t.data||[];
 if(staff())await cargarE();
-if(S.me.rol=='admin')await cargarA();
+if(S.me.rol=='admin'){await cargarA();await cargarV()}
 await cargar()}
 render()}
 async function entrar(){
@@ -123,11 +125,11 @@ ${S.modo=='up'?'<label>Tu nombre</label><input id="nom"><label>Código del grupo
 <p id="err" style="color:var(--rd)"></p><button onclick="entrar()" style="width:100%">${S.modo=='in'?'Entrar':'Crear cuenta'}</button></div>`;return}
 if(!S.me){a.innerHTML=`<h1>🚕 Agenda Taxi</h1><div class="c">Tu cuenta no está ligada a ningún grupo. Avisa al administrador.</div><button class="s" onclick="salir()">Salir</button>`;return}
 if(!S.me.activo){a.innerHTML=`<h1>🚕 Hola, ${esc(S.me.nombre)}</h1><div class="c">Tu registro está pendiente. El administrador debe activarte para que puedas entrar.</div><div class="r"><button onclick="iniciar()">Ya me activaron</button><button class="s" onclick="salir()">Salir</button></div>`;return}
-const tabs=[['serv','Servicios']].concat(staff()?[['nuevo','+ Nuevo']]:[]).concat(S.me.rol=='admin'?[['eq','Equipo']]:[]);
+const tabs=[['serv','Servicios']].concat(staff()?[['nuevo','+ Nuevo']]:[]).concat(S.me.rol=='admin'?[['eq','Equipo'],['cli','Clientes']]:[]);
 a.innerHTML=`<div class="r" style="justify-content:space-between"><b>🚕 ${esc(S.me.nombre)}</b><span class="mu">${S.me.rol}${S.me.rol=='taxista'?' · renta hasta '+(S.me.pagado_hasta||'—'):''}</span><button class="s" onclick="salir()">Salir</button></div>
 <div class="r" style="margin:8px 0">${tabs.map(t=>`<button class="${S.tab==t[0]?'':'s'}" onclick="tab('${t[0]}')">${t[1]}</button>`).join('')}</div><div id="v"></div>`;
-({serv:vServ,nuevo:vForm,eq:vEq})[S.tab]()}
-function tab(t){S.tab=t;S.edit=null;S.form=t=='nuevo'?{}:null;if(t=='serv')cargar();render()}
+({serv:vServ,nuevo:vForm,eq:vEq,cli:vCli})[S.tab]()}
+function tab(t){S.tab=t;S.edit=null;S.form=t=='nuevo'?{}:null;if(t=='serv')cargar();if(t=='cli'){S.CL=null;cargarCli()}render()}
 function editarS(id){S.tab='nuevo';S.form={id};render()}
 
 function card(s){
@@ -139,7 +141,7 @@ let x=`<div class="c" style="border-left:8px solid ${s.pago=='Tarjeta crédito'?
 ${s.nota?`<div class="mu">📝 ${esc(s.nota)}</div>`:''}
 <div class="mu">💰 Cobra $${r2(c)} · Deposita $${r2(k.t)} · Le queda $${r2(c-k.t)}</div>
 ${s.tomado_nombre?`<div class="mu">🚕 ${esc(s.tomado_taxi)} · ${esc(s.tomado_nombre)}</div>`:''}
-${cl?`<div class="mu">👤 ${esc(cl.nombre)} · ${esc(cl.celular)}${cl.rfc?' · RFC '+esc(cl.rfc)+' · '+esc(cl.regimen)+' · '+esc(cl.razon_social)+' · '+esc(cl.correo)+' · CP '+esc(cl.cp):''}</div>`:''}
+${cl?`<div class="mu">👤 ${esc(cl.nombre)} · ${esc(cl.celular)}${S.me.rol=='admin'&&S.VS&&S.VS.has(nrm(cl.celular))?' · ⭐ VIGILADO':''}${cl.rfc?' · RFC '+esc(cl.rfc)+' · '+esc(cl.regimen)+' · '+esc(cl.razon_social)+' · '+esc(cl.correo)+' · CP '+esc(cl.cp):''}</div>`:''}
 <div class="r" style="margin-top:8px">`;
 if(s.estado=='disponible')x+=`<button onclick="tomar('${s.id}')">✋ Lo tomo</button>`;
 if((mine||staff())&&n)x+=`<button onclick="estado('${s.id}','${n[0]}')">➡️ ${n[1]}</button>`;
@@ -159,7 +161,7 @@ const s=S.form.id?byId(S.form.id):{fecha:S.fecha,min_antes:10,comision_tipo:'por
 const c=S.form.id?(S.C[s.id]||{}):{};
 const f=(id,l,v,t)=>`<label>${l}</label><input id="${id}" type="${t||'text'}" value="${esc(v)}">`;
 $('v').innerHTML=`<div class="c"><b>${S.form.id?'Editar servicio':'Nuevo servicio'}</b>
-${f('c_nombre','Nombre del cliente',c.nombre)}${f('c_cel','Celular del cliente',c.celular,'tel')}
+${f('c_nombre','Nombre del cliente',c.nombre)}${f('c_cel','Celular del cliente (10 dígitos; si es de otro país, con + y lada)',c.celular,'tel')}
 <div class="g"><div>${f('fecha','Fecha',s.fecha,'date')}</div><div>${f('hora','Hora programada',(s.hora||'').slice(0,5),'time')}</div></div>
 ${f('min_antes','Minutos antes de llegar',s.min_antes,'number')}
 ${f('ubic','Ubicación (texto)',s.ubic)}
@@ -238,4 +240,37 @@ let ncod=false;async function nuevoCodigo(){if(!ncod){ncod=true;toast('Toca otra
 ncod=false;const {data,error}=await sb.rpc('nuevo_codigo');if(error)return toast('Error: '+error.message);S.g.codigo=data;render();toast('Código nuevo: '+data)}
 iniciar();
 setInterval(()=>{if(S.me&&S.me.activo&&S.tab=='serv'&&!(document.activeElement&&/INPUT|SELECT/.test(document.activeElement.tagName)))cargar()},20000);
+
+async function cargarV(){const {data}=await sb.from('clientes_vigilados').select('*').order('nombre');S.V=data||[];S.VS=new Set(S.V.map(v=>nrm(v.cel)))}
+async function cargarCli(){
+const a=await sb.from('servicio_cliente').select('servicio_id,nombre,celular,servicios(fecha,hora,costo,destino,creado_por,tomado_taxi)');
+if(a.error)toast('Error: '+a.error.message);
+S.CL=a.data||[];await cargarV();render()}
+function vCli(){
+if(!S.CL){$('v').innerHTML='<p class="mu">Cargando…</p>';return}
+const m={};S.CL.forEach(r=>{const k=nrm(r.celular);if(!k||!r.servicios)return;(m[k]=m[k]||[]).push(r)});
+Object.values(m).forEach(a=>a.sort((x,y)=>(y.servicios.fecha+y.servicios.hora).localeCompare(x.servicios.fecha+x.servicios.hora)));
+const nom=id=>{const p=S.E.find(x=>x.id==id);return p?p.nombre+(p.taxi?' ('+p.taxi+')':''):'—'};
+const fila=r=>{const s=r.servicios;return `<div class="mu">${s.fecha} · ${esc(s.destino||'—')} · $${s.costo} · subió: ${esc(nom(s.creado_por))}${s.tomado_taxi?' · tomó: '+esc(s.tomado_taxi):''}</div>`};
+const resumen=a=>{const c=a.map(r=>+r.servicios.costo||0),mn=Math.min(...c),mx=Math.max(...c),q=new Set(a.map(r=>r.servicios.creado_por)).size;
+return `<div>${a.length} servicios · ${q} persona${q>1?'s':''} lo subieron${mn!=mx?` · <b style="color:var(--rd)">precios distintos $${mn}–$${mx}</b>`:` · precio $${mn}`}</div>`};
+S.repL=Object.entries(m).filter(([k,a])=>a.length>1&&!S.VS.has(k)).sort((x,y)=>y[1].length-x[1].length);
+const vig=S.V.map((v,i)=>{const a=m[nrm(v.cel)]||[],otros=a.filter(r=>r.servicios.creado_por!=S.me.id).length;
+return `<div class="c" style="margin:8px 0"><div class="r" style="justify-content:space-between"><b>⭐ ${esc(v.nombre||'Sin nombre')} · ${esc(shw(nrm(v.cel)))}</b><button class="s" onclick="delV('${v.id}')">🗑️</button></div>${a.length?resumen(a)+(otros?`<div style="color:var(--rd)">⚠️ ${otros} subido${otros>1?'s':''} por otras personas</div>`:'')+a.slice(0,5).map(fila).join(''):'<div class="mu">Aún no aparece en servicios.</div>'}</div>`}).join('');
+$('v').innerHTML=`<div class="c"><b>⭐ Clientes vigilados</b><div class="mu">Clientes que quieres cuidar. Aquí ves cada vez que aparecen en un servicio y quién lo subió. Solo tú ves esto.</div>${vig||'<p class="mu">Aún no hay clientes vigilados.</p>'}
+<label>Agregar varios (uno por línea: número y nombre)</label><textarea id="v_txt" rows="5" placeholder="9811234567 Pedro López&#10;+393331234567 Marco Italia"></textarea><button style="margin-top:8px" onclick="addV()">Agregar a vigilados</button></div>
+<div class="c"><b>🔁 Clientes repetidos</b><div class="mu">Mismo número en 2 o más servicios. Útil para ver si alguien se lleva a los clientes o les da otro precio.</div>${S.repL.map(([k,a],i)=>`<div class="c" style="margin:8px 0"><div class="r" style="justify-content:space-between"><b>${esc(a[0].nombre)} · ${esc(shw(k))}</b><button class="s" onclick="vigilar(${i})">⭐ Vigilar</button></div>${resumen(a)}${a.slice(0,6).map(fila).join('')}</div>`).join('')||'<p class="mu">Todavía no hay números repetidos.</p>'}</div>`}
+async function addV(){
+const L=$('v_txt').value.split('\n').map(x=>x.trim()).filter(Boolean),rows=[];
+for(const l of L){const t=l.match(/\+?\d[\d\s().-]{6,}\d/);if(!t)continue;const k=nrm(t[0].replace(/[\s().-]/g,''));if(k.length<10)continue;
+rows.push({grupo_id:S.me.grupo_id,cel:k,nombre:l.replace(t[0],'').replace(/^[\s,;:\-–]+|[\s,;:\-–]+$/g,'')})}
+if(!rows.length)return toast('No encontré números. Escribe uno por línea: número y nombre');
+const e=(await sb.from('clientes_vigilados').upsert(rows,{onConflict:'grupo_id,cel'})).error;
+if(e)return toast('Error: '+e.message);
+toast(rows.length+' cliente(s) vigilado(s)');cargarCli()}
+async function vigilar(i){const [k,a]=S.repL[i];
+const e=(await sb.from('clientes_vigilados').upsert({grupo_id:S.me.grupo_id,cel:k,nombre:a[0].nombre},{onConflict:'grupo_id,cel'})).error;
+if(e)return toast('Error: '+e.message);cargarCli()}
+let delVid=null;async function delV(id){if(delVid!=id){delVid=id;toast('Toca 🗑️ otra vez para quitarlo');setTimeout(()=>delVid=null,4000);return}
+const e=(await sb.from('clientes_vigilados').delete().eq('id',id)).error;delVid=null;if(e)return toast('Error: '+e.message);cargarCli()}
 </script></body></html>
