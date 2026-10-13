@@ -185,7 +185,7 @@ ${(()=>{const fin=x=>x.estado=='terminado'||x.estado=='cancelado',A=S.L.filter(x
 return `${staff()?avisos():''}<p class="mu">${dia(S.fecha)} · ${A.length} pendiente(s)</p>${A.map(card).join('')||'<p class="mu">Sin servicios pendientes este día.</p>'}${T.length?`<button class="s" style="width:100%;margin-top:8px" onclick="S.vt=!S.vt;vServ()">${S.vt?'▲ Ocultar':'✅ Ver'} terminados (${T.length})</button>${S.vt?T.map(card).join(''):''}`:''}`})()}`}
 
 function vForm(){
-const s=S.form.id?byId(S.form.id):{fecha:S.fecha,min_antes:10,comision_tipo:'porcentaje',comision_valor:S.g?S.g.comision_default:10,comision_iva:0,pago:'Efectivo'};
+const s=S.form.id?byId(S.form.id):{fecha:S.fecha,expres:true,min_antes:10,comision_tipo:'porcentaje',comision_valor:S.g?S.g.comision_default:10,comision_iva:0,pago:'Efectivo'};
 const c=S.form.id?(S.C[s.id]||{}):{};
 const f=(id,l,v,t)=>`<label>${l}</label><input id="${id}" type="${t||'text'}" value="${esc(v)}">`;
 $('v').innerHTML=`<div class="c"><b>${S.form.id?'Editar servicio':'Nuevo servicio'}</b>
@@ -206,7 +206,7 @@ ${f('costo','Costo ($)',s.costo,'number')}
 <label>IVA sobre la comisión</label><select id="comision_iva"><option value="0">Sin IVA</option><option value="16"${s.comision_iva==16?' selected':''}>IVA 16%</option></select>
 ${f('nota','Nota',s.nota)}
 <label>Pago</label><select id="pago">${opts(['Efectivo','Tarjeta débito','Tarjeta crédito','Transferencia'],s.pago)}</select>
-<label><input type="checkbox" id="expres"${s.expres?' checked':''} style="width:auto"> Exprés (sale ya)</label>
+<label><input type="checkbox" id="expres"${s.expres?' checked':''} style="width:auto" onchange="exCambio()"> Exprés (sale ya, sin hora)</label>
 <label><input type="checkbox" id="aeropuerto"${s.aeropuerto?' checked':''} style="width:auto"> ✈️ Sale del aeropuerto (solo taxis con placas federales)</label>
 <label><input type="checkbox" id="especial"${s.especial?' checked':''} style="width:auto"> Especial (aeropuerto, Tren Maya, carretera)</label>
 <label><input type="checkbox" id="factura"${s.factura?' checked':''} style="width:auto" onchange="$('fx').hidden=!this.checked"> Requiere factura</label>
@@ -239,8 +239,10 @@ $('sug').innerHTML=`📏 ${k} km${S.cotMin?' · ⏱️ '+S.cotMin+' min':''}<br>
 function gps(i){navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>$(i).value='https://maps.google.com/?q='+p.coords.latitude+','+p.coords.longitude,()=>toast('No se pudo obtener el GPS'),{enableHighAccuracy:true}):toast('Sin GPS')}
 async function guardarS(){
 const v=i=>$(i).value.trim(),n=i=>+$(i).value||0;
-if(!v('fecha')||!hh())return toast('Falta la fecha o la hora');
-const o={fecha:v('fecha'),hora:hh(),min_antes:n('min_antes'),ubic:v('ubic'),ubic_maps:v('ubic_maps'),destino:v('destino'),destino_maps:v('destino_maps'),costo:n('costo'),nota:v('nota'),pago:v('pago'),factura:$('factura').checked,expres:$('expres').checked,especial:$('especial').checked,aeropuerto:$('aeropuerto').checked,comision_tipo:v('comision_tipo'),comision_valor:n('comision_valor'),comision_iva:n('comision_iva')};
+let hora=hh(),ma=n('min_antes');
+if(!v('fecha'))return toast('Falta la fecha');
+if(!hora){if(!$('expres').checked)return toast('Pon la hora, o marca Exprés si sale ya');const d=new Date();hora=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');ma=0}
+const o={fecha:v('fecha'),hora:hora,min_antes:ma,ubic:v('ubic'),ubic_maps:v('ubic_maps'),destino:v('destino'),destino_maps:v('destino_maps'),costo:n('costo'),nota:v('nota'),pago:v('pago'),factura:$('factura').checked,expres:$('expres').checked,especial:$('especial').checked,aeropuerto:$('aeropuerto').checked,comision_tipo:v('comision_tipo'),comision_valor:n('comision_valor'),comision_iva:n('comision_iva')};
 let id=S.form.id,e;
 if(id){e=(await sb.from('servicios').update(o).eq('id',id)).error}
 else{const r=await sb.from('servicios').insert({...o,grupo_id:S.me.grupo_id,creado_por:S.me.id}).select('id').single();e=r.error;id=r.data&&r.data.id}
@@ -338,7 +340,9 @@ const e=(await sb.from('clientes_vigilados').delete().eq('id',id)).error;delVid=
 
 function horaSel(t){let h='',m='',pm='AM';if(t){let [a,b]=t.split(':');a=+a;m=b;pm=a>=12?'PM':'AM';h=String(a%12||12)}
 const o=(arr,v)=>arr.map(x=>`<option${String(x)==String(v)?' selected':''}>${x}</option>`).join('');
-return `<label>Hora programada</label><div class="r" style="flex-wrap:nowrap"><select id="h_h"><option value="">Hora</option>${o([1,2,3,4,5,6,7,8,9,10,11,12],h)}</select><select id="h_m">${o(Array.from({length:60},(_,i)=>String(i).padStart(2,'0')),m||'00')}</select><select id="h_p">${o(['AM','PM'],pm)}</select></div>`}
+return `<label>Hora programada <span class="mu">(si lo dejas vacío y es exprés, sale ya)</span></label><div class="r" style="flex-wrap:nowrap"><select id="h_h" onchange="hrCambio()"><option value="">Hora</option>${o([1,2,3,4,5,6,7,8,9,10,11,12],h)}</select><select id="h_m">${o(Array.from({length:60},(_,i)=>String(i).padStart(2,'0')),m||'00')}</select><select id="h_p">${o(['AM','PM'],pm)}</select></div>`}
+function hrCambio(){if($('h_h').value)$('expres').checked=false;if($('km'))sug()}
+function exCambio(){if($('expres').checked)$('h_h').value='';if($('km'))sug()}
 function hh(){const h=+$('h_h').value;if(!h)return '';const p=$('h_p').value;let x=h%12;if(p=='PM')x+=12;return String(x).padStart(2,'0')+':'+$('h_m').value}
 
 async function cargarD(){const {data}=await sb.from('clientes').select('*').order('nombre');S.D=data||[]}
