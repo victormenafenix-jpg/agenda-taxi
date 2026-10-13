@@ -61,7 +61,7 @@ if(fo(s))t+='\n🔖 Folio '+fo(s);
 if(s.pago!='Efectivo')t+='\n💳 '+s.pago;
 if(s.factura)t+='\n🧾 Requiere factura';
 t+='\n💰 Cobra $'+r2(c)+' · Deposita $'+r2(k.t)+' · Le queda $'+r2(c-k.t);
-if(S.g&&S.g.cuenta_deposito)t+='\n🏦 Depositar a: '+S.g.cuenta_deposito;
+if(S.g&&S.g.cuenta_deposito)t+='\n🏦 Depositar a:\n'+S.g.cuenta_deposito;
 t+='\n\n¿Quién lo toma? Tómalo aquí: '+location.href.split('#')[0].split('?')[0]+'\nO responde con tu # de taxi.'}
 return t.trim()}
 async function copiar(t){try{await navigator.clipboard.writeText(t);toast('Mensaje copiado. Pégalo en tu grupo de WhatsApp')}catch(e){window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')}}
@@ -125,7 +125,7 @@ const p=S.E.find(x=>x.id==s.tomado_por)||{};
 const L=[(p.linea?p.linea+' ':'')+s.tomado_taxi],tx='🚕 Taxi: *'+L[0]+'*\n👤 Operador(a): *'+s.tomado_nombre+'*'+(p.carro?'\n🚘 Unidad: *'+p.carro+'*':'')+(p.placas?'\n🔢 Placas: *'+p.placas+'*':'');
 const nm=c.nombre?' *'+c.nombre+'*':'';
 let t;
-if(pre){t='Buen día'+nm+' 🚖\n\nSu servicio'+(s.expres?'':' *programado*')+' está confirmado:\n\n📅 Día: *'+dia(s.fecha)+'*\n🕘 Hora: *'+h12(s.hora)+'*\n'+tx+(+s.costo>0?'\n💵 Costo del servicio: *$'+s.costo+'*'+(s.pago?' ('+s.pago+')':''):'')+(s.expres?'':'\n\n⏰ La unidad llegará con '+(s.min_antes||10)+' minutos de anticipación.')+(s.token?'\n\n📍 Siga su taxi en tiempo real aquí:\n'+location.href.split('#')[0].split('?')[0]+'?s='+s.token:'')+'\n\n¡Gracias por su preferencia!'}
+if(pre){t='Buen día'+nm+' 🚖\n\nSu servicio'+(s.expres?'':' *programado*')+' está confirmado:\n\n📅 Día: *'+dia(s.fecha)+'*\n🕘 Hora: *'+h12(s.hora)+'*\n'+tx+(+s.costo>0?'\n💵 Costo del servicio: *$'+s.costo+'*'+(s.pago?' ('+s.pago+')':''):'')+(s.expres?'':'\n\n⏰ La unidad llegará con '+(s.min_antes||10)+' minutos de anticipación.')+(s.pago=='Transferencia'&&p.cuenta_transferencia?'\n\n🏦 Datos para su transferencia:\n'+p.cuenta_transferencia:'')+(s.token?'\n\n📍 Siga su taxi en tiempo real aquí:\n'+location.href.split('#')[0].split('?')[0]+'?s='+s.token:'')+'\n\n¡Gracias por su preferencia!'}
 else{t='Buen día'+nm+' 🚖\nSu taxi *'+s.tomado_taxi+'* está en espera 📍'+(s.ubic?' *'+s.ubic+'*':'')+'.\nLo atiende *'+s.tomado_nombre+'*. Cuando esté listo, puede abordar.'}
 try{navigator.clipboard.writeText(t)}catch(e){}
 window.open('https://wa.me/'+tel(c.celular)+'?text='+encodeURIComponent(t),'_blank');
@@ -199,7 +199,7 @@ ${f('destino','Destino',s.destino)}
 <label>Link de Maps del destino</label><div class="r"><input id="destino_maps" style="flex:1;width:auto" value="${esc(s.destino_maps)}"><button class="s" onclick="gps('destino_maps')">📍</button></div>
 <label>💾 Guardar este destino en el cliente como</label><select id="g_dn">${opts(GL,'No guardar')}</select>
 <label>Tarifa fija</label><select id="tar" onchange="aplT()"><option value="">—</option>${S.T.map(t=>`<option value="${t.id}">${esc(t.nombre)} $${t.precio}</option>`).join('')}</select>
-<label>Kilómetros (para precio sugerido)</label><input id="km" type="number" oninput="sug()"><div id="sug" class="mu"></div>
+<label>Kilómetros (para precio sugerido)</label><div class="r"><input id="km" type="number" step="0.1" style="flex:1;width:auto" oninput="S.cotMin=0;sug()"><button class="s" onclick="cotizar()">💰 Cotizar con Maps</button></div><div id="sug" class="mu"></div>
 ${f('costo','Costo ($)',s.costo,'number')}
 <label><input type="checkbox" id="g_cost" style="width:auto"> 💾 Recordar este costo para este viaje (solo si el origen y el destino están guardados)</label>
 <div class="g"><div><label>Comisión</label><select id="comision_tipo"><option value="porcentaje"${s.comision_tipo=='porcentaje'?' selected':''}>% del costo</option><option value="fijo"${s.comision_tipo=='fijo'?' selected':''}>Monto fijo $</option></select></div><div>${f('comision_valor','Valor',s.comision_valor,'number')}</div></div>
@@ -216,9 +216,26 @@ ${f('nota','Nota',s.nota)}
 function aplT(){const t=S.T.find(x=>x.id==$('tar').value);if(!t)return;
 $('destino').value=t.nombre;$('costo').value=$('factura').checked&&t.precio_factura?t.precio_factura:t.precio;
 $('comision_tipo').value=t.comision_tipo;$('comision_valor').value=t.comision_valor;$('especial').checked=t.especial}
+const GKEY='AIzaSyCzDGvnfFkSMoQrfWOAUMk8yU3wPSjE0BI';
+function ptoRuta(txt,maps){txt=(txt||'').trim();maps=maps||'';
+const m=maps.match(/[?&](?:q|query|destination)=(-?\d+\.\d+),(-?\d+\.\d+)/)||maps.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)||maps.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+if(m)return {location:{latLng:{latitude:+m[1],longitude:+m[2]}}};
+if(txt)return {address:/campeche/i.test(txt)?txt:txt+', Campeche, México'};
+return null}
+async function cotizar(){const o=ptoRuta($('ubic').value,$('ubic_maps').value),d=ptoRuta($('destino').value,$('destino_maps').value);
+if(!o||!d)return toast('Primero pon la ubicación y el destino');
+$('sug').innerHTML='Calculando la ruta…';
+try{const r=await fetch('https://routes.googleapis.com/directions/v2:computeRoutes',{method:'POST',headers:{'Content-Type':'application/json','X-Goog-Api-Key':GKEY,'X-Goog-FieldMask':'routes.distanceMeters,routes.duration'},body:JSON.stringify({origin:o,destination:d,travelMode:'DRIVE',routingPreference:'TRAFFIC_UNAWARE',languageCode:'es-MX',regionCode:'MX'})});
+const j=await r.json();if(!r.ok)throw new Error((j.error&&j.error.message)||r.status);
+const rt=j.routes&&j.routes[0];if(!rt||!rt.distanceMeters)throw new Error('Google no encontró la ruta');
+$('km').value=Math.round(rt.distanceMeters/100)/10;S.cotMin=Math.round(parseInt(rt.duration)/60);sug()}
+catch(e){S.cotMin=0;$('sug').innerHTML='⚠️ No pude calcular la ruta ('+esc(String(e.message||e).slice(0,90))+'). Escribe los kilómetros a mano y te calculo el precio.'}}
 function sug(){const g=S.g,k=+$('km').value;if(!k||!g){$('sug').innerHTML='';return}
-const prog=!$('expres').checked&&!$('especial').checked,p=Math.round(+g.precio_base+Math.max(0,k-g.km_base)*g.precio_km+(prog?+g.recargo_programado:0));
-$('sug').innerHTML=`Sugerido: <b>$${p}</b>${prog?' (incluye $'+g.recargo_programado+' por programar)':''} <button class="s" onclick="$('costo').value=${p}">Usar</button>`}
+const txt=($('ubic').value+' '+$('destino').value).toLowerCase(),aer=$('aeropuerto').checked||/aeropuerto/.test(txt);
+const fija=(aer?S.T.find(t=>/aeropuerto/i.test(t.nombre)):null)||(/tren maya/.test(txt)?S.T.find(t=>/tren maya/i.test(t.nombre)):null);
+const prog=!$('expres').checked&&!$('especial').checked&&!aer,p=Math.round(+g.precio_base+Math.max(0,k-g.km_base)*g.precio_km+(prog?+g.recargo_programado:0));
+const vj=(S.SEL&&S.SEL.viajes||[]).slice(0,3).map(x=>esc((x.de||'')+' → '+(x.a||''))+': $'+x.costo).join(' · ');
+$('sug').innerHTML=`📏 ${k} km${S.cotMin?' · ⏱️ '+S.cotMin+' min':''}<br>`+(fija?`Tarifa fija <b>${esc(fija.nombre)}: $${fija.precio}</b> <button class="s" onclick="$('tar').value='${fija.id}';aplT()">Usar</button><br>`:'')+`Por kilómetro: <b>$${p}</b>${prog?' (incluye $'+g.recargo_programado+' por programar)':''} <button class="s" onclick="$('costo').value=${p}">Usar</button>`+(vj?`<br>Antes con este cliente: ${vj}`:'')}
 function gps(i){navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>$(i).value='https://maps.google.com/?q='+p.coords.latitude+','+p.coords.longitude,()=>toast('No se pudo obtener el GPS'),{enableHighAccuracy:true}):toast('Sin GPS')}
 async function guardarS(){
 const v=i=>$(i).value.trim(),n=i=>+$(i).value||0;
@@ -251,7 +268,7 @@ const f=(id,l,v,t)=>`<label>${l}</label><input id="e_${id}" type="${t||'text'}" 
 return `<div class="c"><b>${esc(p.nombre)}</b> · 📱 ${esc(p.cel)}
 ${ck('activo','Activo (puede entrar)',p.activo)}
 <label>Rol</label><select id="e_rol">${opts(['taxista','despachador','admin'],p.rol)}</select>
-${f('taxi','Número de taxi',p.taxi)}${f('linea','Línea',p.linea)}${f('carro','Tipo de carro',p.carro)}${f('placas','Placas',p.placas)}${f('cobra_con','Cobra con (efectivo, tarjeta, transferencia)',p.cobra_con)}${f('cuenta_transferencia','Datos para transferirle',p.cuenta_transferencia)}
+${f('taxi','Número de taxi',p.taxi)}${f('linea','Línea',p.linea)}${f('carro','Tipo de carro',p.carro)}${f('placas','Placas',p.placas)}${f('cobra_con','Cobra con (efectivo, tarjeta, transferencia)',p.cobra_con)}<label>Datos para transferirle (nombre, CLABE, banco)</label><textarea id="e_cuenta_transferencia" rows="4">${esc(p.cuenta_transferencia)}</textarea>
 ${ck('terminal','Tiene terminal',p.terminal)}${ck('transferencia','Recibe transferencia',p.transferencia)}${ck('factura','Puede facturar',p.factura)}${ck('unidad_ok','Unidad en buen estado',p.unidad_ok)}${ck('federal','✈️ Placas federales (puede tomar servicios del aeropuerto)',p.federal)}
 ${f('pagado_hasta','Renta pagada hasta',p.pagado_hasta,'date')}<button class="s" style="margin-top:6px" onclick="mas7()">+7 días de renta</button>
 ${eqPagos(p)}
@@ -364,7 +381,7 @@ const k=com(s),c=+s.costo||0;
 if(s.pago!='Efectivo')t+='\n💳 '+s.pago;
 if(s.factura)t+='\n🧾 Requiere factura';
 t+='\n💰 Cobra $'+r2(c)+' · Deposita $'+r2(k.t)+' · Le queda $'+r2(c-k.t);
-if(S.g&&S.g.cuenta_deposito&&k.t>0)t+='\n🏦 Depositar a: '+S.g.cuenta_deposito;
+if(S.g&&S.g.cuenta_deposito&&k.t>0)t+='\n🏦 Depositar a:\n'+S.g.cuenta_deposito;
 return t+'\n\nConfírmame que lo recibiste. Detalle aquí: '+location.href.split('#')[0].split('?')[0]}
 function envPanel(s){const p=S.E.find(x=>x.id==S.env.pid);if(!p)return'';
 return `<div class="c" style="margin:8px 0 0"><b>✅ Asignado a ${esc(p.taxi)} · ${esc(p.nombre)}</b><div class="mu">¿Cómo le avisas?</div><div class="r" style="margin-top:6px">${p.cel?`<button onclick="envPriv('${s.id}')">📲 Enviar privado</button>`:''}<button class="s" onclick="envGrupo('${s.id}')">📋 Copiar para el grupo</button><button class="s" onclick="S.env=null;render()">Listo</button></div></div>`}
