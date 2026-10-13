@@ -17,6 +17,7 @@ label{display:block;font-size:13px;color:var(--mu);margin:8px 0 3px}
 .c{background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:12px;margin:10px 0}
 .mu{color:var(--mu);font-size:14px}.hr{font-size:22px;font-weight:800}
 .t{font-size:12px;background:var(--bd);border-radius:6px;padding:2px 6px;margin-left:4px}
+.t.ex{background:#c0392b;color:#fff}.t.pr{background:#1f6feb;color:#fff}.t.pg{background:#dbe8ff;color:#12399a}.t.pc{background:#fddcd8;color:#8c1d18}
 .g{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 #toast{position:fixed;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));background:#1d1d1b;color:#fff;padding:12px;border-radius:12px;display:none;white-space:pre-line;z-index:9}
 </style></head>
@@ -28,6 +29,9 @@ const sb=supabase.createClient(U,K);
 const $=i=>document.getElementById(i),esc=v=>String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const r2=n=>Math.round(n*100)/100,iso=d=>d.toLocaleDateString('en-CA');
 let S={ses:false,me:null,g:null,modo:'in',tab:'serv',fecha:iso(new Date()),L:[],C:{},T:[],E:[],A:[],form:null,edit:null};
+const fo=s=>s.folio?'T-'+String(s.folio).padStart(4,'0'):'';
+const ST_COL={disponible:'#f2b705',tomado:'#1f6feb',en_camino:'#8e44ad',llego:'#e67e22',abordo:'#27ae60',terminado:'#8a8a85',cancelado:'#c0392b'},ST_TXT={disponible:'DISPONIBLE',tomado:'TOMADO',en_camino:'EN CAMINO',llego:'LLEGÓ',abordo:'ABORDÓ',terminado:'TERMINADO',cancelado:'CANCELADO'};
+const sinCub=s=>s.estado=='disponible'&&new Date(s.fecha+'T'+s.hora)<new Date();
 const EST={tomado:['en_camino','En camino'],en_camino:['llego','Llegué'],llego:['abordo','Abordó'],abordo:['terminado','Terminado']};
 const REG=['601 Personas Morales','605 Sueldos y Salarios','606 Arrendamiento','612 Actividad Empresarial','621 Incorporación Fiscal','625 Plataformas Tecnológicas','626 RESICO'];
 const staff=()=>S.me&&S.me.rol!='taxista',byId=id=>S.L.find(x=>x.id==id);
@@ -51,6 +55,7 @@ if(s.destino)t+='Destino:\n*'+s.destino+'*\n'+(s.destino_maps?s.destino_maps+'\n
 if(s.costo)t+='Costo\n*$ '+s.costo+'*\n';
 if(s.nota)t+='Nota\n*'+s.nota+'*\n';
 if(g){const k=com(s),c=+s.costo||0;
+if(fo(s))t+='\n🔖 Folio '+fo(s);
 if(s.pago!='Efectivo')t+='\n💳 '+s.pago;
 if(s.factura)t+='\n🧾 Requiere factura';
 t+='\n💰 Cobra $'+r2(c)+' · Deposita $'+r2(k.t)+' · Le queda $'+r2(c-k.t);
@@ -68,7 +73,7 @@ if(p&&p.activo){
 const g=await sb.from('grupos').select('*').maybeSingle();S.g=g.data;
 const t=await sb.from('tarifas').select('*').order('nombre');S.T=t.data||[];
 if(staff()){await cargarE();await cargarD()}
-if(S.me.rol=='admin'){await cargarA();await cargarV()}
+if(S.me.rol=='admin'){await cargarA();await cargarV();await cargarP()}
 await cargar()}
 render()}
 async function entrar(){
@@ -104,7 +109,7 @@ const tomar=id=>rpc('tomar_servicio',{p_id:id}),soltar=id=>rpc('soltar_servicio'
 function dia_(n){const d=new Date();d.setDate(d.getDate()+n);S.fecha=iso(d);cargar()}
 let bor=null;
 async function borrarS(id){
-if(bor!=id){bor=id;toast('Toca 🗑️ otra vez para borrar');setTimeout(()=>bor=null,4000);return}
+if(bor!=id){bor=id;toast('Toca 🗑️ otra vez para borrar de verdad (solo pruebas). Para servicios reales usa Cancelar');setTimeout(()=>bor=null,4000);return}
 await sb.from('servicios').delete().eq('id',id);bor=null;cargar()}
 function llego(id,pre){
 const s=byId(id),c=S.C[id];
@@ -130,19 +135,20 @@ ${S.modo=='up'?'<label>Tu nombre</label><input id="nom"><label>Código del grupo
 <p id="err" style="color:var(--rd)"></p><button onclick="entrar()" style="width:100%">${S.modo=='in'?'Entrar':'Crear cuenta'}</button></div>`;return}
 if(!S.me){a.innerHTML=`<h1>🚕 Agenda Taxi</h1><div class="c">Tu cuenta no está ligada a ningún grupo. Avisa al administrador.</div><button class="s" onclick="salir()">Salir</button>`;return}
 if(!S.me.activo){a.innerHTML=`<h1>🚕 Hola, ${esc(S.me.nombre)}</h1><div class="c">Tu registro está pendiente. El administrador debe activarte para que puedas entrar.</div><div class="r"><button onclick="iniciar()">Ya me activaron</button><button class="s" onclick="salir()">Salir</button></div>`;return}
-const tabs=[['serv','Servicios']].concat(staff()?[['nuevo','+ Nuevo']]:[]).concat(S.me.rol=='admin'?[['eq','Equipo'],['cli','Clientes']]:[]);
+const tabs=[['serv','Servicios']].concat(staff()?[['nuevo','+ Nuevo']]:[]).concat(S.me.rol=='admin'?[['eq','Equipo'],['cli','Clientes'],['res','Resumen']]:[]);
 a.innerHTML=`<div class="r" style="justify-content:space-between"><b>🚕 ${esc(S.me.nombre)}</b><span class="mu">${S.me.rol}${S.me.rol=='taxista'?' · renta hasta '+(S.me.pagado_hasta||'—'):''}</span><button class="s" onclick="salir()">Salir</button></div>
 <div class="r" style="margin:8px 0">${tabs.map(t=>`<button class="${S.tab==t[0]?'':'s'}" onclick="tab('${t[0]}')">${t[1]}</button>`).join('')}</div><div id="v"></div>`;
-({serv:vServ,nuevo:vForm,eq:vEq,cli:vCli})[S.tab]()}
-function tab(t){S.tab=t;S.edit=null;S.form=t=='nuevo'?{}:null;S.gdt=0;S.SEL=S.LO=S.LD=null;if(t=='serv')cargar();if(t=='cli'){S.CL=null;cargarCli()}render()}
+({serv:vServ,nuevo:vForm,eq:vEq,cli:vCli,res:vRes})[S.tab]()}
+function tab(t){S.tab=t;S.edit=null;S.form=t=='nuevo'?{}:null;S.gdt=0;S.SEL=S.LO=S.LD=null;if(t=='serv')cargar();if(t=='cli'){S.CL=null;cargarCli()}if(t=='res')cargarRes();render()}
 function editarS(id){S.tab='nuevo';S.form={id};render()}
 
 function card(s){
-const k=com(s),c=+s.costo||0,mine=s.tomado_por==S.me.id,cl=S.C[s.id],n=EST[s.estado];
-let x=`<div class="c" style="border-left:8px solid ${s.pago=='Tarjeta crédito'?'var(--rd)':s.pago!='Efectivo'?'var(--bl)':'var(--bd)'}">
-<div class="r" style="justify-content:space-between"><span class="hr">${h12(s.hora)}</span><span class="mu">Llegar ${h12(llegada(s))}</span></div>
+const k=com(s),c=+s.costo||0,mine=s.tomado_por==S.me.id,cl=S.C[s.id],n=EST[s.estado],sc=sinCub(s),col=sc?'#7b1d14':(ST_COL[s.estado]||'var(--bd)'),live=s.estado!='terminado'&&s.estado!='cancelado';
+let x=`<div class="c" style="border-left:8px solid ${col}">
+<div class="r" style="justify-content:space-between"><span class="hr">${h12(s.hora)} <span class="mu" style="font-size:13px;font-weight:600">${fo(s)}</span></span><span class="mu">Llegar ${h12(llegada(s))}</span></div>
 <div>${esc(s.ubic)} → <b>${esc(s.destino)}</b></div>
-<div class="mu">$${r2(c)}${s.pago!='Efectivo'?'<span class="t">'+esc(s.pago)+'</span>':''}${s.factura?'<span class="t">FACTURA</span>':''}${s.expres?'<span class="t">EXPRÉS</span>':''}${s.especial?'<span class="t">ESPECIAL</span>':''}<span class="t">${esc(s.estado)}</span></div>
+<div class="mu">$${r2(c)}<span class="t ${s.expres?'ex':'pr'}">${s.expres?'EXPRÉS':'PROGRAMADO'}</span><span class="t" style="background:${col};color:${s.estado=='disponible'&&!sc?'#1d1d1b':'#fff'}">${sc?'SIN CUBRIR':ST_TXT[s.estado]||esc(s.estado)}</span>${s.pago!='Efectivo'?'<span class="t '+(s.pago=='Tarjeta crédito'?'pc':'pg')+'">'+esc(s.pago)+'</span>':''}${s.factura?'<span class="t">FACTURA</span>':''}${s.especial?'<span class="t">ESPECIAL</span>':''}</div>
+${s.estado=='cancelado'&&s.cancel_motivo?`<div class="mu">❌ Motivo: ${esc(s.cancel_motivo)}</div>`:''}
 ${s.nota?`<div class="mu">📝 ${esc(s.nota)}</div>`:''}
 <div class="mu">💰 Cobra $${r2(c)} · Deposita $${r2(k.t)} · Le queda $${r2(c-k.t)}</div>
 ${s.tomado_nombre?`<div class="mu">🚕 ${esc(s.tomado_taxi)} · ${esc(s.tomado_nombre)}</div>`:''}
@@ -154,12 +160,18 @@ if(mine&&s.estado=='tomado')x+=`<button class="s" onclick="soltar('${s.id}')">So
 if(s.ubic_maps)x+=`<a class="b s" target="_blank" href="${esc(s.ubic_maps)}">🗺️</a>`;
 x+=`<a class="b s" target="_blank" href="${ruta(s)}">🧭</a>`;
 x+=`<button class="s" onclick="recordar('${s.id}')">⏰ Recordarme</button>`;
-if(staff())x+=`<button class="s" onclick="copiar(msg(byId('${s.id}'),true))">📋 Grupo</button><button class="s" onclick="llego('${s.id}',1)">📨 Datos del taxi</button>${s.estado=='disponible'?`<button class="s" onclick="asg('${s.id}')">👤 Asignar</button>`:''}<button class="s" onclick="llego('${s.id}')">📩 Ya llegó</button><button class="s" onclick="editarS('${s.id}')">✏️</button><button class="s" onclick="borrarS('${s.id}')">🗑️</button>`;
-return x+'</div>'+(S.asg==s.id?asgPanel(s):'')+'</div>'}
+if(staff()&&['tomado','en_camino','llego','abordo'].includes(s.estado))x+=`<button class="s" onclick="estado('${s.id}','terminado')">✅ Ya se cubrió</button>`;
+if(staff()){x+=`<button class="s" onclick="copiar(msg(byId('${s.id}'),true))">📋 Grupo</button><button class="s" onclick="llego('${s.id}',1)">📨 Datos del taxi</button>`;
+if(['disponible','tomado','en_camino','llego'].includes(s.estado))x+=`<button class="s" onclick="asg('${s.id}')">👤 ${s.estado=='disponible'?'Asignar':'Reasignar'}</button>`;
+x+=`<button class="s" onclick="llego('${s.id}')">📩 Ya llegó</button><button class="s" onclick="editarS('${s.id}')">✏️</button>`;
+if(live)x+=`<button class="s" onclick="cancelarS('${s.id}')">❌ Cancelar</button>`;
+if(S.me.rol=='admin')x+=`<button class="s" onclick="verHist('${s.id}')">📜 Historial</button><button class="s" onclick="borrarS('${s.id}')">🗑️</button>`}
+return x+'</div>'+(S.asg==s.id?asgPanel(s):'')+(S.env&&S.env.id==s.id?envPanel(s):'')+(S.hist&&S.hist.id==s.id?histPanel():'')+'</div>'}
 
 function vServ(){
 $('v').innerHTML=`<div class="r"><button class="s" onclick="dia_(0)">Hoy</button><button class="s" onclick="dia_(1)">Mañana</button><input type="date" value="${S.fecha}" style="flex:1;width:auto" onchange="S.fecha=this.value;cargar()"></div>
-<p class="mu">${dia(S.fecha)} · ${S.L.length} servicio(s)</p>${S.L.map(card).join('')||'<p class="mu">Sin servicios este día.</p>'}`}
+${(()=>{const fin=x=>x.estado=='terminado'||x.estado=='cancelado',A=S.L.filter(x=>!fin(x)),T=S.L.filter(fin);
+return `<p class="mu">${dia(S.fecha)} · ${A.length} pendiente(s)</p>${A.map(card).join('')||'<p class="mu">Sin servicios pendientes este día.</p>'}${T.length?`<button class="s" style="width:100%;margin-top:8px" onclick="S.vt=!S.vt;vServ()">${S.vt?'▲ Ocultar':'✅ Ver'} terminados (${T.length})</button>${S.vt?T.map(card).join(''):''}`:''}`})()}`}
 
 function vForm(){
 const s=S.form.id?byId(S.form.id):{fecha:S.fecha,min_antes:10,comision_tipo:'porcentaje',comision_valor:S.g?S.g.comision_default:10,comision_iva:0,pago:'Efectivo'};
@@ -230,6 +242,7 @@ ${ck('activo','Activo (puede entrar)',p.activo)}
 ${f('taxi','Número de taxi',p.taxi)}${f('linea','Línea',p.linea)}${f('carro','Tipo de carro',p.carro)}${f('placas','Placas',p.placas)}${f('cobra_con','Cobra con (efectivo, tarjeta, transferencia)',p.cobra_con)}${f('cuenta_transferencia','Datos para transferirle',p.cuenta_transferencia)}
 ${ck('terminal','Tiene terminal',p.terminal)}${ck('transferencia','Recibe transferencia',p.transferencia)}${ck('factura','Puede facturar',p.factura)}${ck('unidad_ok','Unidad en buen estado',p.unidad_ok)}
 ${f('pagado_hasta','Renta pagada hasta',p.pagado_hasta,'date')}<button class="s" style="margin-top:6px" onclick="mas7()">+7 días de renta</button>
+${eqPagos(p)}
 <div class="r" style="margin-top:8px"><button onclick="guardarE('${p.id}')" style="flex:1">Guardar</button><button class="s" onclick="S.edit=null;render()">Cancelar</button></div></div>`}
 function mas7(){const h=iso(new Date()),c=$('e_pagado_hasta').value,b=c&&c>h?c:h,d=new Date(b+'T12:00:00');d.setDate(d.getDate()+7);$('e_pagado_hasta').value=iso(d)}
 async function guardarE(id){
@@ -243,7 +256,7 @@ function asg(id){S.asg=S.asg==id?null:id;render()}
 function asgPanel(s){const L=S.E.filter(p=>p.activo&&p.taxi);return `<div class="c" style="margin:8px 0 0"><b>Asignar a:</b><div class="r" style="margin-top:6px">${L.map(p=>`<button class="s" onclick="asignarA('${s.id}','${p.id}')">${esc(p.taxi)} · ${esc(p.nombre)}</button>`).join('')||'<span class="mu">Aún no hay compañeros activos con taxi. Actívalos en Equipo.</span>'}</div></div>`}
 async function asignarA(id,pid){const p=S.E.find(x=>x.id==pid);
 const {error}=await sb.from('servicios').update({estado:'tomado',tomado_por:p.id,tomado_nombre:p.nombre,tomado_taxi:p.taxi,tomado_en:new Date().toISOString()}).eq('id',id);
-if(error)return toast('Error: '+error.message);S.asg=null;toast('Asignado a '+p.taxi);cargar()}
+if(error)return toast('Error: '+error.message);S.asg=null;S.env={id,pid};toast('Asignado a '+p.taxi);cargar()}
 function recordar(id){const s=byId(id),pd=n=>String(n).padStart(2,'0'),f=s.fecha.replace(/-/g,''),[h,m]=llegada(s).split(':'),fin=(+h+1)%24;
 const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//AgendaTaxi//ES','BEGIN:VEVENT','UID:'+s.id+'@agendataxi','DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z','DTSTART:'+f+'T'+h+m+'00','DTEND:'+f+'T'+pd(fin)+m+'00','SUMMARY:🚕 Servicio '+h12(s.hora)+' · '+(s.destino||''),'LOCATION:'+(s.ubic||''),'DESCRIPTION:Llegar '+h12(llegada(s))+'. Destino: '+(s.destino||'')+'. Costo $'+s.costo,'BEGIN:VALARM','TRIGGER:-PT30M','ACTION:DISPLAY','DESCRIPTION:Servicio en 30 minutos','END:VALARM','BEGIN:VALARM','TRIGGER:-PT10M','ACTION:DISPLAY','DESCRIPTION:Servicio en 10 minutos','END:VALARM','BEGIN:VALARM','TRIGGER:PT0M','ACTION:DISPLAY','DESCRIPTION:Hora de salir','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
 const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download='servicio.ics';document.body.appendChild(a);a.click();a.remove();toast('Abre el archivo descargado para agregarlo a tu calendario')}
@@ -317,4 +330,62 @@ function ponL(k,j){const l=S.SEL.lugares[j];
 if(k=='o'){$('ubic').value=l.t||'';$('ubic_maps').value=l.m||'';S.LO=l.n;$('g_ub').value='No guardar'}
 else{$('destino').value=l.t||'';$('destino_maps').value=l.m||'';S.LD=l.n;$('g_dn').value='No guardar'}
 const v=(S.SEL.viajes||[]).find(x=>x.de==S.LO&&x.a==S.LD);if(v){$('costo').value=v.costo;toast('Costo habitual puesto: $'+v.costo)}}
+
+async function cargarP(){const {data}=await sb.from('pagos').select('*').order('creado',{ascending:false}).limit(500);S.P=data||[]}
+function eqPagos(p){const L=(S.P||[]).filter(x=>x.perfil_id==p.id).slice(0,5);
+return `<div class="c" style="margin:10px 0"><b>💵 Registrar pago</b><div class="mu">Guarda primero los cambios de arriba. Si es renta, se suman 7 días a la renta pagada.</div><label>Tipo</label><select id="p_tipo"><option value="renta">Renta semanal</option><option value="comision">Comisión / depósito</option><option value="plataforma">Uso de plataforma</option><option value="otro">Otro</option></select><label>Monto ($)</label><input id="p_monto" type="number" value="80"><label>Nota (opcional)</label><input id="p_nota"><button style="margin-top:8px" onclick="regPago('${p.id}')">💾 Registrar pago</button>${L.map(x=>`<div class="mu">${new Date(x.creado).toLocaleDateString('es-MX')} · ${esc(x.tipo)} · $${x.monto}${x.nota?' · '+esc(x.nota):''}</div>`).join('')}</div>`}
+async function regPago(id){const mv=$('p_monto').value;if(mv===''||!(+mv>=0))return toast('Escribe el monto');
+const t=$('p_tipo').value,e=(await sb.from('pagos').insert({grupo_id:S.me.grupo_id,perfil_id:id,tipo:t,monto:+mv,nota:$('p_nota').value.trim()||null})).error;
+if(e)return toast('Error: '+e.message);
+if(t=='renta'){const p=S.E.find(x=>x.id==id),h=iso(new Date()),b=p.pagado_hasta&&p.pagado_hasta>h?p.pagado_hasta:h,d=new Date(b+'T12:00:00');d.setDate(d.getDate()+7);
+const er=(await sb.from('perfiles').update({pagado_hasta:iso(d)}).eq('id',id)).error;if(er)toast('Pago guardado, pero no se pudo mover la fecha: '+er.message)}
+await cargarE();await cargarP();render();toast('Pago registrado')}
+async function cancelarS(id){const m=prompt('Motivo de la cancelación (el cliente canceló, no hubo taxi, etc.)');if(m===null)return;
+const {error}=await sb.from('servicios').update({estado:'cancelado',cancel_motivo:m.trim()||'Sin motivo',cancel_por:S.me.id,cancel_en:new Date().toISOString()}).eq('id',id);
+if(error)return toast('Error: '+error.message);toast('Servicio cancelado');cargar()}
+function msgAsig(s,p,gr){const cl=S.C[s.id],pn=cl&&cl.nombre?cl.nombre.trim().split(/\s+/)[0]:'';let t=msg(s,false);
+if(gr)return '✅ *ASIGNADO* a *'+p.taxi+'* · '+p.nombre+(fo(s)?'\n🔖 Folio '+fo(s):'')+'\n\n'+t;
+t='Hola '+p.nombre.split(' ')[0]+', te asigné este servicio 🚖'+(fo(s)?'\n🔖 Folio *'+fo(s)+'*':'')+'\n\n'+t;
+if(pn)t+='\n\n👤 Cliente: *'+pn+'*';
+const k=com(s),c=+s.costo||0;
+if(s.pago!='Efectivo')t+='\n💳 '+s.pago;
+if(s.factura)t+='\n🧾 Requiere factura';
+t+='\n💰 Cobra $'+r2(c)+' · Deposita $'+r2(k.t)+' · Le queda $'+r2(c-k.t);
+if(S.g&&S.g.cuenta_deposito&&k.t>0)t+='\n🏦 Depositar a: '+S.g.cuenta_deposito;
+return t+'\n\nConfírmame que lo recibiste. Detalle aquí: '+location.href.split('#')[0].split('?')[0]}
+function envPanel(s){const p=S.E.find(x=>x.id==S.env.pid);if(!p)return'';
+return `<div class="c" style="margin:8px 0 0"><b>✅ Asignado a ${esc(p.taxi)} · ${esc(p.nombre)}</b><div class="mu">¿Cómo le avisas?</div><div class="r" style="margin-top:6px">${p.cel?`<button onclick="envPriv('${s.id}')">📲 Enviar privado</button>`:''}<button class="s" onclick="envGrupo('${s.id}')">📋 Copiar para el grupo</button><button class="s" onclick="S.env=null;render()">Listo</button></div></div>`}
+function envPriv(id){const p=S.E.find(x=>x.id==S.env.pid),s=byId(id);window.open('https://wa.me/'+tel(p.cel)+'?text='+encodeURIComponent(msgAsig(s,p,false)),'_blank')}
+function envGrupo(id){const p=S.E.find(x=>x.id==S.env.pid),s=byId(id);copiar(msgAsig(s,p,true))}
+async function verHist(id){if(S.hist&&S.hist.id==id){S.hist=null;return render()}
+const {data,error}=await sb.from('bitacora').select('*').eq('servicio_id',id).order('creado');if(error)return toast('Error: '+error.message);S.hist={id,rows:data||[]};render()}
+function histPanel(){const A={creado:'🆕 subió',editado:'✏️ editó',tomado:'✋ tomó',asignado:'👤 asignó a',reasignado:'🔁 reasignó',soltado:'↩️ soltó',estado:'➡️ cambió',cancelado:'❌ canceló',borrado:'🗑️ borró'};
+return `<div class="c" style="margin:8px 0 0"><b>📜 Historial</b>${S.hist.rows.map(r=>`<div class="mu">${new Date(r.creado).toLocaleString('es-MX',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})} · ${esc(r.usuario||'—')} · ${A[r.accion]||esc(r.accion)}${r.detalle?' '+esc(r.detalle):''}</div>`).join('')||'<div class="mu">Sin registros todavía.</div>'}</div>`}
+function rango(k){const h=new Date(),d=new Date(h.getFullYear(),h.getMonth(),h.getDate());let a,b;
+if(k=='sem'||k=='semp'){const w=(d.getDay()+6)%7;a=new Date(d);a.setDate(d.getDate()-w-(k=='semp'?7:0));b=new Date(a);b.setDate(a.getDate()+6)}
+else{const m=h.getMonth()-(k=='mesp'?1:0);a=new Date(h.getFullYear(),m,1);b=new Date(h.getFullYear(),m+1,0)}
+return [iso(a),iso(b)]}
+async function cargarRes(){S.RS=null;const [a,b]=rango(S.rp||'sem');
+const sv=await sb.from('servicios').select('id,folio,fecha,hora,estado,costo,comision_tipo,comision_valor,comision_iva,tomado_por,tomado_nombre,tomado_taxi,tomado_en,creado,expres,especial').gte('fecha',a).lte('fecha',b).order('fecha');
+const pg=await sb.from('pagos').select('*').gte('creado',new Date(a+'T00:00:00').toISOString()).lt('creado',new Date(new Date(b+'T00:00:00').getTime()+864e5).toISOString());
+if(sv.error)toast('Error: '+sv.error.message);S.RS={a,b,sv:sv.data||[],pg:pg.data||[]};render()}
+function vRes(){
+const R=S.RS,bt=(k,l)=>`<button class="${(S.rp||'sem')==k?'':'s'}" onclick="S.rp='${k}';cargarRes()">${l}</button>`;
+const h=`<div class="r">${bt('sem','Esta semana')}${bt('semp','Semana pasada')}${bt('mes','Este mes')}${bt('mesp','Mes pasado')}</div>`;
+if(!R){$('v').innerHTML=h+'<p class="mu">Cargando…</p>';return}
+const sv=R.sv,tot=sv.length,P=n=>tot?Math.round(n*100/tot)+'%':'—',fin=x=>x.estado=='terminado',can=x=>x.estado=='cancelado';
+const nT=sv.filter(fin).length,nC=sv.filter(can).length,nS=sv.filter(sinCub).length,nP=tot-nT-nC-nS;
+const tm=sv.filter(x=>x.tomado_en&&x.creado).map(x=>(new Date(x.tomado_en)-new Date(x.creado))/6e4).filter(m=>m>=0);
+const fm=m=>m<60?Math.round(m)+' min':m<1440?(m/60).toFixed(1)+' h':(m/1440).toFixed(1)+' días';
+const T={},mk=id=>{const e=S.E.find(y=>y.id==id)||{};return T[id]=T[id]||{nom:e.nombre,taxi:e.taxi,tom:0,ter:0,cob:0,dep:0,pag:0}};
+sv.forEach(x=>{if(!x.tomado_por||can(x))return;const t=mk(x.tomado_por);if(x.tomado_nombre)t.nom=x.tomado_nombre;if(x.tomado_taxi)t.taxi=x.tomado_taxi;t.tom++;if(fin(x)){t.ter++;t.cob+=+x.costo||0;t.dep+=com(x).t}});
+R.pg.forEach(y=>{mk(y.perfil_id).pag+=+y.monto||0});
+const L=Object.values(T).sort((a,b)=>b.ter-a.ter||b.tom-a.tom);
+const top=(f,lab,fmt)=>{const m=[...L].sort((a,b)=>f(b)-f(a))[0];return m&&f(m)>0?`<div>${lab}: <b>${esc(m.taxi||'')} ${esc(m.nom||'')}</b> (${fmt(f(m))})</div>`:''};
+const $$=n=>'$'+r2(n);
+$('v').innerHTML=h+`<p class="mu">Del ${R.a} al ${R.b}</p>
+<div class="c"><b>📊 Servicios del grupo</b><div>Total: <b>${tot}</b></div><div>✅ Cubiertos: <b>${nT}</b> (${P(nT)})</div><div>❌ Cancelados: <b>${nC}</b> (${P(nC)})</div><div>🚫 Sin cubrir: <b>${nS}</b> (${P(nS)})</div><div>⏳ Pendientes o en proceso: <b>${nP}</b> (${P(nP)})</div>${tm.length?`<div class="mu">Tiempo promedio para que lo tomen: ${fm(tm.reduce((a,b)=>a+b,0)/tm.length)}</div>`:''}</div>
+<div class="c"><b>🏆 Los que más destacan</b>${top(m=>m.ter,'Más servicios cubiertos',n=>n)||''}${top(m=>m.cob,'Quien más cobró',$$)}${top(m=>m.pag,'Quien más ha pagado',$$)}${L.length?'':'<p class="mu">Sin datos en este periodo.</p>'}</div>
+<div class="c"><b>🚕 Por taxista</b>${L.map(m=>`<div style="margin-top:8px"><b>${esc(m.taxi||'—')} · ${esc(m.nom||'')}</b><div class="mu">Tomó ${m.tom} · Cubrió ${m.ter} · Cobró ${$$(m.cob)} · Le toca depositar ${$$(m.dep)} · Pagó ${$$(m.pag)}</div></div>`).join('')||'<p class="mu">Sin datos en este periodo.</p>'}</div>
+<div class="c"><b>🤝 Otros grupos</b><div class="mu">Cuántos servicios cubrió cada grupo y qué taxi apoya más aparecerá aquí cuando la página tenga varios grupos.</div></div>`}
 </script></body></html>
