@@ -32,7 +32,7 @@ const r2=n=>Math.round(n*100)/100,iso=d=>d.toLocaleDateString('en-CA');
 let S={ses:false,me:null,g:null,modo:'in',tab:'serv',fecha:iso(new Date()),L:[],C:{},T:[],E:[],A:[],form:null,edit:null};
 const fo=s=>s.folio?'T-'+String(s.folio).padStart(4,'0'):'';
 const ST_COL={disponible:'#f2b705',tomado:'#1f6feb',en_camino:'#8e44ad',llego:'#e67e22',abordo:'#27ae60',terminado:'#8a8a85',cancelado:'#c0392b'},ST_TXT={disponible:'DISPONIBLE',tomado:'TOMADO',en_camino:'EN CAMINO',llego:'LLEGÓ',abordo:'ABORDÓ',terminado:'TERMINADO',cancelado:'CANCELADO'};
-const sinCub=s=>s.estado=='disponible'&&new Date(s.fecha+'T'+s.hora)<new Date();
+const sinCub=s=>s.estado=='disponible'&&new Date(new Date(s.fecha+'T'+s.hora).getTime()+(s.expres?15*60000:0))<new Date();
 const EST={tomado:['en_camino','En camino'],en_camino:['llego','Llegué'],llego:['abordo','Abordó'],abordo:['terminado','Terminado']};
 const REG=['601 General de Ley Personas Morales','603 Personas Morales con Fines no Lucrativos','605 Sueldos y Salarios e Ingresos Asimilados','606 Arrendamiento','607 Enajenación o Adquisición de Bienes','608 Demás ingresos','610 Residentes en el Extranjero sin Establecimiento Permanente','611 Ingresos por Dividendos','612 Personas Físicas con Actividades Empresariales y Profesionales','614 Ingresos por Intereses','615 Ingresos por Obtención de Premios','616 Sin Obligaciones Fiscales','620 Sociedades Cooperativas de Producción','621 Incorporación Fiscal','622 Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras','623 Opcional para Grupos de Sociedades','624 Coordinados','625 Actividades Empresariales con Ingresos por Plataformas Tecnológicas','626 Régimen Simplificado de Confianza (RESICO)','628 Hidrocarburos','629 Regímenes Fiscales Preferentes y Empresas Multinacionales','630 Enajenación de Acciones en Bolsa de Valores','Otro (escríbelo en la nota)'];
 const staff=()=>S.me&&S.me.rol!='taxista',byId=id=>S.L.find(x=>x.id==id);
@@ -41,6 +41,7 @@ const GL=['No guardar','Casa','Trabajo','Hotel','Otro lugar'],ic=n=>({Casa:'🏠
 const nrm=c=>{const p=String(c||'').trim().startsWith('+'),d=String(c||'').replace(/\D/g,'');if(!d)return'';if(d.length==13&&d.startsWith('521'))return'52'+d.slice(3);if(!p&&d.length==10)return'52'+d;return d};
 const shw=k=>k.length==12&&k.startsWith('52')?k.slice(2):'+'+k;
 const tel=c=>{c=String(c||'').replace(/\D/g,'');return c.length==10?'52'+c:c};
+function nomL(el){if(el.value!='__otro')return;const n=(prompt('¿Con qué nombre lo guardo? (ej. Casa de mi hermana)')||'').trim();if(!n){el.value='No guardar';return}const o=document.createElement('option');o.textContent=n;o.value=n;el.insertBefore(o,el.lastChild);el.value=n}
 const opts=(a,v)=>a.map(o=>`<option${o==v?' selected':''}>${o}</option>`).join('');
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t.h);t.h=setTimeout(()=>t.style.display='none',4500)}
 const h12=t=>{let [h,m]=t.split(':');h=+h;return (h%12||12)+':'+m+' '+(h>=12?'pm':'am')};
@@ -152,7 +153,7 @@ function editarS(id){S.tab='nuevo';S.form={id};render()}
 function card(s){
 const k=com(s),c=+s.costo||0,mine=s.tomado_por==S.me.id,cl=S.C[s.id],n=EST[s.estado],sc=sinCub(s),col=sc?'#7b1d14':(ST_COL[s.estado]||'var(--bd)'),live=s.estado!='terminado'&&s.estado!='cancelado';
 let x=`<div class="c" style="border-left:8px solid ${col}${s.aeropuerto?';outline:2px solid #0f9d9a':''}${S.hl==s.id?';box-shadow:0 0 0 4px #f2b705':''}">
-<div class="r" style="justify-content:space-between"><span class="hr">${h12(s.hora)} <span class="mu" style="font-size:13px;font-weight:600">${fo(s)}</span></span><span class="mu">Llegar ${h12(llegada(s))}</span></div>
+<div class="r" style="justify-content:space-between">${s.expres?`<span class="hr" style="color:#c0261b">⚡ EXPRÉS <span class="mu" style="font-size:13px;font-weight:600">${fo(s)} · subido ${h12(s.hora)}</span></span><span class="mu">¡Ya!</span>`:`<span class="hr">${h12(s.hora)} <span class="mu" style="font-size:13px;font-weight:600">${fo(s)}</span></span><span class="mu">Llegar ${h12(llegada(s))}</span>`}</div>
 <div>${esc(s.ubic)} → <b>${esc(s.destino)}</b></div>
 <div class="mu">$${r2(c)}<span class="t ${s.expres?'ex':'pr'}">${s.expres?'EXPRÉS':'PROGRAMADO'}</span><span class="t" style="background:${col};color:${s.estado=='disponible'&&!sc?'#1d1d1b':'#fff'}">${sc?'SIN CUBRIR':ST_TXT[s.estado]||esc(s.estado)}</span>${s.pago!='Efectivo'?'<span class="t '+(s.pago=='Tarjeta crédito'?'pc':'pg')+'">'+esc(s.pago)+'</span>':''}${s.factura?'<span class="t">FACTURA</span>':''}${s.especial?'<span class="t">ESPECIAL</span>':''}${s.aeropuerto?'<span class="t ae">✈️ AEROPUERTO · PLACAS FEDERALES</span>':''}</div>
 ${s.estado=='cancelado'&&s.cancel_motivo?`<div class="mu">❌ Motivo: ${esc(s.cancel_motivo)}</div>`:''}
@@ -194,10 +195,10 @@ $('v').innerHTML=`<div class="c"><b>${S.form.id?'Editar servicio':'Nuevo servici
 ${f('min_antes','Minutos antes de llegar',s.min_antes,'number')}
 <label>Ubicación (texto)</label><input id="ubic" value="${esc(s.ubic)}" oninput="if(/aeropuerto/i.test(this.value))$('aeropuerto').checked=true">
 <label>Link de Maps de la ubicación</label><div class="r"><input id="ubic_maps" style="flex:1;width:auto" value="${esc(s.ubic_maps)}"><button class="s" onclick="gps('ubic_maps')">📍</button></div>
-<label>💾 Guardar esta ubicación en el cliente como</label><select id="g_ub" onchange="S.gdt=1">${opts(GL,'No guardar')}</select>
+<label>💾 Guardar esta ubicación en el cliente como</label><select id="g_ub" onchange="S.gdt=1;nomL(this)">${opts(GL,'No guardar')}<option value="__otro">✏️ Otro nombre…</option></select>
 ${f('destino','Destino',s.destino)}
 <label>Link de Maps del destino</label><div class="r"><input id="destino_maps" style="flex:1;width:auto" value="${esc(s.destino_maps)}"><button class="s" onclick="gps('destino_maps')">📍</button></div>
-<label>💾 Guardar este destino en el cliente como</label><select id="g_dn">${opts(GL,'No guardar')}</select>
+<label>💾 Guardar este destino en el cliente como</label><select id="g_dn" onchange="nomL(this)">${opts(GL,'No guardar')}<option value="__otro">✏️ Otro nombre…</option></select>
 <label>Tarifa fija</label><select id="tar" onchange="aplT()"><option value="">—</option>${S.T.map(t=>`<option value="${t.id}">${esc(t.nombre)} $${t.precio}</option>`).join('')}</select>
 <label>Kilómetros (para precio sugerido)</label><div class="r"><input id="km" type="number" step="0.1" style="flex:1;width:auto" oninput="S.cotMin=0;sug()"><button class="s" onclick="cotizar()">💰 Cotizar con Maps</button></div><div id="sug" class="mu"></div>
 ${f('costo','Costo ($)',s.costo,'number')}
