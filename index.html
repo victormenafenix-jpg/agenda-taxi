@@ -52,7 +52,7 @@ if(s.pago!='Efectivo')t+='\n💳 '+s.pago;
 if(s.factura)t+='\n🧾 Requiere factura';
 t+='\n💰 Cobra $'+r2(c)+' · Deposita $'+r2(k.t)+' · Le queda $'+r2(c-k.t);
 if(S.g&&S.g.cuenta_deposito)t+='\n🏦 Depositar a: '+S.g.cuenta_deposito;
-t+='\n\n¿Quién lo toma? Responde con tu # de taxi.'}
+t+='\n\n¿Quién lo toma? Tómalo aquí: '+location.href.split('#')[0].split('?')[0]+'\nO responde con tu # de taxi.'}
 return t.trim()}
 async function copiar(t){try{await navigator.clipboard.writeText(t);toast('Mensaje copiado. Pégalo en tu grupo de WhatsApp')}catch(e){window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')}}
 
@@ -102,12 +102,12 @@ let bor=null;
 async function borrarS(id){
 if(bor!=id){bor=id;toast('Toca 🗑️ otra vez para borrar');setTimeout(()=>bor=null,4000);return}
 await sb.from('servicios').delete().eq('id',id);bor=null;cargar()}
-function llego(id){
+function llego(id,pre){
 const s=byId(id),c=S.C[id];
 if(!c||!c.celular)return toast('No hay celular del cliente');
 if(!s.tomado_taxi)return toast('Aún no tiene taxi asignado');
 const p=S.E.find(x=>x.id==s.tomado_por)||{},car=[p.carro,p.placas].filter(Boolean).join(' · ');
-const t='Buen día '+c.nombre+', ya llegó su taxi número '+s.tomado_taxi+', conducido por '+s.tomado_nombre+(car?' ('+car+')':'')+(p.linea?', línea '+p.linea:'')+'. Lo está esperando en: '+(s.ubic||'su ubicación')+'.';
+const t=pre?'Buen día '+c.nombre+', su servicio del '+dia(s.fecha)+' a las '+h12(s.hora)+' lo cubrirá el taxi número '+s.tomado_taxi+', conducido por '+s.tomado_nombre+(car?' ('+car+')':'')+(p.linea?', línea '+p.linea:'')+'.':'Buen día '+c.nombre+', ya llegó su taxi número '+s.tomado_taxi+', conducido por '+s.tomado_nombre+(car?' ('+car+')':'')+(p.linea?', línea '+p.linea:'')+'. Lo está esperando en: '+(s.ubic||'su ubicación')+'.';
 try{navigator.clipboard.writeText(t)}catch(e){}
 window.open('https://wa.me/'+tel(c.celular)+'?text='+encodeURIComponent(t),'_blank')}
 
@@ -145,8 +145,9 @@ if((mine||staff())&&n)x+=`<button onclick="estado('${s.id}','${n[0]}')">➡️ $
 if(mine&&s.estado=='tomado')x+=`<button class="s" onclick="soltar('${s.id}')">Soltar</button>`;
 if(s.ubic_maps)x+=`<a class="b s" target="_blank" href="${esc(s.ubic_maps)}">🗺️</a>`;
 x+=`<a class="b s" target="_blank" href="${ruta(s)}">🧭</a>`;
-if(staff())x+=`<button class="s" onclick="copiar(msg(byId('${s.id}'),true))">📋 Grupo</button><button class="s" onclick="llego('${s.id}')">📩 Ya llegó</button><button class="s" onclick="editarS('${s.id}')">✏️</button><button class="s" onclick="borrarS('${s.id}')">🗑️</button>`;
-return x+'</div></div>'}
+x+=`<button class="s" onclick="recordar('${s.id}')">⏰ Recordarme</button>`;
+if(staff())x+=`<button class="s" onclick="copiar(msg(byId('${s.id}'),true))">📋 Grupo</button><button class="s" onclick="llego('${s.id}',1)">📨 Datos del taxi</button>${s.estado=='disponible'?`<button class="s" onclick="asg('${s.id}')">👤 Asignar</button>`:''}<button class="s" onclick="llego('${s.id}')">📩 Ya llegó</button><button class="s" onclick="editarS('${s.id}')">✏️</button><button class="s" onclick="borrarS('${s.id}')">🗑️</button>`;
+return x+'</div>'+(S.asg==s.id?asgPanel(s):'')+'</div>'}
 
 function vServ(){
 $('v').innerHTML=`<div class="r"><button class="s" onclick="dia_(0)">Hoy</button><button class="s" onclick="dia_(1)">Mañana</button><input type="date" value="${S.fecha}" style="flex:1;width:auto" onchange="S.fecha=this.value;cargar()"></div>
@@ -216,6 +217,14 @@ const {error}=await sb.from('perfiles').update(o).eq('id',id);
 if(error)return toast('Error: '+error.message);
 S.edit=null;await cargarE();render();toast('Guardado')}
 
+function asg(id){S.asg=S.asg==id?null:id;render()}
+function asgPanel(s){const L=S.E.filter(p=>p.activo&&p.taxi);return `<div class="c" style="margin:8px 0 0"><b>Asignar a:</b><div class="r" style="margin-top:6px">${L.map(p=>`<button class="s" onclick="asignarA('${s.id}','${p.id}')">${esc(p.taxi)} · ${esc(p.nombre)}</button>`).join('')||'<span class="mu">Aún no hay compañeros activos con taxi. Actívalos en Equipo.</span>'}</div></div>`}
+async function asignarA(id,pid){const p=S.E.find(x=>x.id==pid);
+const {error}=await sb.from('servicios').update({estado:'tomado',tomado_por:p.id,tomado_nombre:p.nombre,tomado_taxi:p.taxi,tomado_en:new Date().toISOString()}).eq('id',id);
+if(error)return toast('Error: '+error.message);S.asg=null;toast('Asignado a '+p.taxi);cargar()}
+function recordar(id){const s=byId(id),pd=n=>String(n).padStart(2,'0'),f=s.fecha.replace(/-/g,''),[h,m]=llegada(s).split(':'),fin=(+h+1)%24;
+const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//AgendaTaxi//ES','BEGIN:VEVENT','UID:'+s.id+'@agendataxi','DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z','DTSTART:'+f+'T'+h+m+'00','DTEND:'+f+'T'+pd(fin)+m+'00','SUMMARY:🚕 Servicio '+h12(s.hora)+' · '+(s.destino||''),'LOCATION:'+(s.ubic||''),'DESCRIPTION:Llegar '+h12(llegada(s))+'. Destino: '+(s.destino||'')+'. Costo $'+s.costo,'BEGIN:VALARM','TRIGGER:-PT30M','ACTION:DISPLAY','DESCRIPTION:Servicio en 30 minutos','END:VALARM','BEGIN:VALARM','TRIGGER:-PT10M','ACTION:DISPLAY','DESCRIPTION:Servicio en 10 minutos','END:VALARM','BEGIN:VALARM','TRIGGER:PT0M','ACTION:DISPLAY','DESCRIPTION:Hora de salir','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
+const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download='servicio.ics';document.body.appendChild(a);a.click();a.remove();toast('Abre el archivo descargado para agregarlo a tu calendario')}
 iniciar();
 setInterval(()=>{if(S.me&&S.me.activo&&S.tab=='serv'&&!(document.activeElement&&/INPUT|SELECT/.test(document.activeElement.tagName)))cargar()},20000);
 </script></body></html>
