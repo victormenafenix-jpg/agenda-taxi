@@ -17,6 +17,7 @@ label{display:block;font-size:13px;color:var(--mu);margin:8px 0 3px}
 .c{background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:12px;margin:10px 0}
 .mu{color:var(--mu);font-size:14px}.hr{font-size:22px;font-weight:800}
 .t{font-size:12px;background:var(--bd);border-radius:6px;padding:2px 6px;margin-left:4px}
+.t.ae{background:#0f9d9a;color:#fff}
 .t.ex{background:#c0392b;color:#fff}.t.pr{background:#1f6feb;color:#fff}.t.pg{background:#dbe8ff;color:#12399a}.t.pc{background:#fddcd8;color:#8c1d18}
 .g{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 #toast{position:fixed;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));background:#1d1d1b;color:#fff;padding:12px;border-radius:12px;display:none;white-space:pre-line;z-index:9}
@@ -33,7 +34,7 @@ const fo=s=>s.folio?'T-'+String(s.folio).padStart(4,'0'):'';
 const ST_COL={disponible:'#f2b705',tomado:'#1f6feb',en_camino:'#8e44ad',llego:'#e67e22',abordo:'#27ae60',terminado:'#8a8a85',cancelado:'#c0392b'},ST_TXT={disponible:'DISPONIBLE',tomado:'TOMADO',en_camino:'EN CAMINO',llego:'LLEGÓ',abordo:'ABORDÓ',terminado:'TERMINADO',cancelado:'CANCELADO'};
 const sinCub=s=>s.estado=='disponible'&&new Date(s.fecha+'T'+s.hora)<new Date();
 const EST={tomado:['en_camino','En camino'],en_camino:['llego','Llegué'],llego:['abordo','Abordó'],abordo:['terminado','Terminado']};
-const REG=['601 Personas Morales','605 Sueldos y Salarios','606 Arrendamiento','612 Actividad Empresarial','621 Incorporación Fiscal','625 Plataformas Tecnológicas','626 RESICO'];
+const REG=['601 General de Ley Personas Morales','603 Personas Morales con Fines no Lucrativos','605 Sueldos y Salarios e Ingresos Asimilados','606 Arrendamiento','607 Enajenación o Adquisición de Bienes','608 Demás ingresos','610 Residentes en el Extranjero sin Establecimiento Permanente','611 Ingresos por Dividendos','612 Personas Físicas con Actividades Empresariales y Profesionales','614 Ingresos por Intereses','615 Ingresos por Obtención de Premios','616 Sin Obligaciones Fiscales','620 Sociedades Cooperativas de Producción','621 Incorporación Fiscal','622 Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras','623 Opcional para Grupos de Sociedades','624 Coordinados','625 Actividades Empresariales con Ingresos por Plataformas Tecnológicas','626 Régimen Simplificado de Confianza (RESICO)','628 Hidrocarburos','629 Regímenes Fiscales Preferentes y Empresas Multinacionales','630 Enajenación de Acciones en Bolsa de Valores','Otro (escríbelo en la nota)'];
 const staff=()=>S.me&&S.me.rol!='taxista',byId=id=>S.L.find(x=>x.id==id);
 const mail=c=>c.replace(/\D/g,'')+'@agendataxi.mx';
 const GL=['No guardar','Casa','Trabajo','Hotel','Otro lugar'],ic=n=>({Casa:'🏠',Trabajo:'💼',Hotel:'🏨'}[n]||'📌');
@@ -54,6 +55,7 @@ if(s.ubic)t+='Ubicación\n*'+s.ubic+'*\n';
 if(s.destino)t+='Destino:\n*'+s.destino+'*\n'+(s.destino_maps?s.destino_maps+'\n':'');
 if(s.costo)t+='Costo\n*$ '+s.costo+'*\n';
 if(s.nota)t+='Nota\n*'+s.nota+'*\n';
+if(s.aeropuerto)t+='✈️ *Aeropuerto: solo taxis con placas federales*\n';
 if(g){const k=com(s),c=+s.costo||0;
 if(fo(s))t+='\n🔖 Folio '+fo(s);
 if(s.pago!='Efectivo')t+='\n💳 '+s.pago;
@@ -103,7 +105,7 @@ if(S.tab=='serv'&&!S.form)render()}
 async function cargarE(){const {data}=await sb.from('perfiles').select('*').order('nombre');S.E=data||[]}
 async function rpc(fn,a){
 const {data,error}=await sb.rpc(fn,a);if(error){toast(error.message);return}
-const m={ok:'Listo',ya_tomado:'Otro compañero ya lo tomó',renta_vencida:'Tu renta semanal está vencida',sin_taxi:'Te falta número de taxi. Avisa al administrador',sin_acceso:'Sin acceso',no_permitido:'No permitido'};
+const m={ok:'Listo',ya_tomado:'Otro compañero ya lo tomó',renta_vencida:'Tu renta semanal está vencida',sin_taxi:'Te falta número de taxi. Avisa al administrador',sin_federal:'Este servicio es del aeropuerto y solo lo pueden tomar taxis con placas federales',sin_acceso:'Sin acceso',no_permitido:'No permitido'};
 toast(m[data]||data);cargar()}
 const tomar=id=>rpc('tomar_servicio',{p_id:id}),soltar=id=>rpc('soltar_servicio',{p_id:id}),estado=(id,e)=>rpc('cambiar_estado',{p_id:id,p_estado:e});
 function dia_(n){const d=new Date();d.setDate(d.getDate()+n);S.fecha=iso(d);cargar()}
@@ -144,10 +146,10 @@ function editarS(id){S.tab='nuevo';S.form={id};render()}
 
 function card(s){
 const k=com(s),c=+s.costo||0,mine=s.tomado_por==S.me.id,cl=S.C[s.id],n=EST[s.estado],sc=sinCub(s),col=sc?'#7b1d14':(ST_COL[s.estado]||'var(--bd)'),live=s.estado!='terminado'&&s.estado!='cancelado';
-let x=`<div class="c" style="border-left:8px solid ${col}">
+let x=`<div class="c" style="border-left:8px solid ${col}${s.aeropuerto?';outline:2px solid #0f9d9a':''}">
 <div class="r" style="justify-content:space-between"><span class="hr">${h12(s.hora)} <span class="mu" style="font-size:13px;font-weight:600">${fo(s)}</span></span><span class="mu">Llegar ${h12(llegada(s))}</span></div>
 <div>${esc(s.ubic)} → <b>${esc(s.destino)}</b></div>
-<div class="mu">$${r2(c)}<span class="t ${s.expres?'ex':'pr'}">${s.expres?'EXPRÉS':'PROGRAMADO'}</span><span class="t" style="background:${col};color:${s.estado=='disponible'&&!sc?'#1d1d1b':'#fff'}">${sc?'SIN CUBRIR':ST_TXT[s.estado]||esc(s.estado)}</span>${s.pago!='Efectivo'?'<span class="t '+(s.pago=='Tarjeta crédito'?'pc':'pg')+'">'+esc(s.pago)+'</span>':''}${s.factura?'<span class="t">FACTURA</span>':''}${s.especial?'<span class="t">ESPECIAL</span>':''}</div>
+<div class="mu">$${r2(c)}<span class="t ${s.expres?'ex':'pr'}">${s.expres?'EXPRÉS':'PROGRAMADO'}</span><span class="t" style="background:${col};color:${s.estado=='disponible'&&!sc?'#1d1d1b':'#fff'}">${sc?'SIN CUBRIR':ST_TXT[s.estado]||esc(s.estado)}</span>${s.pago!='Efectivo'?'<span class="t '+(s.pago=='Tarjeta crédito'?'pc':'pg')+'">'+esc(s.pago)+'</span>':''}${s.factura?'<span class="t">FACTURA</span>':''}${s.especial?'<span class="t">ESPECIAL</span>':''}${s.aeropuerto?'<span class="t ae">✈️ AEROPUERTO · PLACAS FEDERALES</span>':''}</div>
 ${s.estado=='cancelado'&&s.cancel_motivo?`<div class="mu">❌ Motivo: ${esc(s.cancel_motivo)}</div>`:''}
 ${s.nota?`<div class="mu">📝 ${esc(s.nota)}</div>`:''}
 <div class="mu">💰 Cobra $${r2(c)} · Deposita $${r2(k.t)} · Le queda $${r2(c-k.t)}</div>
@@ -181,7 +183,7 @@ $('v').innerHTML=`<div class="c"><b>${S.form.id?'Editar servicio':'Nuevo servici
 <label>Nombre del cliente (opcional)</label><input id="c_nombre" value="${esc(c.nombre)}" oninput="buscarC()"><label>Celular del cliente (10 dígitos; si es de otro país, con + y lada)</label><input id="c_cel" type="tel" value="${esc(c.celular)}" oninput="buscarC()"><div id="sgc"></div>
 <div class="g"><div>${f('fecha','Fecha',s.fecha,'date')}</div><div>${horaSel(s.hora)}</div></div>
 ${f('min_antes','Minutos antes de llegar',s.min_antes,'number')}
-${f('ubic','Ubicación (texto)',s.ubic)}
+<label>Ubicación (texto)</label><input id="ubic" value="${esc(s.ubic)}" oninput="if(/aeropuerto/i.test(this.value))$('aeropuerto').checked=true">
 <label>Link de Maps de la ubicación</label><div class="r"><input id="ubic_maps" style="flex:1;width:auto" value="${esc(s.ubic_maps)}"><button class="s" onclick="gps('ubic_maps')">📍</button></div>
 <label>💾 Guardar esta ubicación en el cliente como</label><select id="g_ub" onchange="S.gdt=1">${opts(GL,'No guardar')}</select>
 ${f('destino','Destino',s.destino)}
@@ -196,6 +198,7 @@ ${f('costo','Costo ($)',s.costo,'number')}
 ${f('nota','Nota',s.nota)}
 <label>Pago</label><select id="pago">${opts(['Efectivo','Tarjeta débito','Tarjeta crédito','Transferencia'],s.pago)}</select>
 <label><input type="checkbox" id="expres"${s.expres?' checked':''} style="width:auto"> Exprés (sale ya)</label>
+<label><input type="checkbox" id="aeropuerto"${s.aeropuerto?' checked':''} style="width:auto"> ✈️ Sale del aeropuerto (solo taxis con placas federales)</label>
 <label><input type="checkbox" id="especial"${s.especial?' checked':''} style="width:auto"> Especial (aeropuerto, Tren Maya, carretera)</label>
 <label><input type="checkbox" id="factura"${s.factura?' checked':''} style="width:auto" onchange="$('fx').hidden=!this.checked"> Requiere factura</label>
 <label><input type="checkbox" id="g_pago" style="width:auto"> 💾 Recordar forma de pago y datos de factura de este cliente</label>
@@ -211,7 +214,7 @@ function gps(i){navigator.geolocation?navigator.geolocation.getCurrentPosition(p
 async function guardarS(){
 const v=i=>$(i).value.trim(),n=i=>+$(i).value||0;
 if(!v('fecha')||!hh())return toast('Falta la fecha o la hora');
-const o={fecha:v('fecha'),hora:hh(),min_antes:n('min_antes'),ubic:v('ubic'),ubic_maps:v('ubic_maps'),destino:v('destino'),destino_maps:v('destino_maps'),costo:n('costo'),nota:v('nota'),pago:v('pago'),factura:$('factura').checked,expres:$('expres').checked,especial:$('especial').checked,comision_tipo:v('comision_tipo'),comision_valor:n('comision_valor'),comision_iva:n('comision_iva')};
+const o={fecha:v('fecha'),hora:hh(),min_antes:n('min_antes'),ubic:v('ubic'),ubic_maps:v('ubic_maps'),destino:v('destino'),destino_maps:v('destino_maps'),costo:n('costo'),nota:v('nota'),pago:v('pago'),factura:$('factura').checked,expres:$('expres').checked,especial:$('especial').checked,aeropuerto:$('aeropuerto').checked,comision_tipo:v('comision_tipo'),comision_valor:n('comision_valor'),comision_iva:n('comision_iva')};
 let id=S.form.id,e;
 if(id){e=(await sb.from('servicios').update(o).eq('id',id)).error}
 else{const r=await sb.from('servicios').insert({...o,grupo_id:S.me.grupo_id,creado_por:S.me.id}).select('id').single();e=r.error;id=r.data&&r.data.id}
@@ -233,28 +236,29 @@ const er=(await sb.from('clientes').upsert(d,{onConflict:'grupo_id,cel'})).error
 S.fecha=o.fecha;toast('Guardado');tab('serv')}
 
 function vEq(){
-$('v').innerHTML=panelAut()+S.E.map(p=>S.edit==p.id?eqForm(p):`<div class="c"><b>${esc(p.nombre)}</b><span class="t">${p.rol}</span>${p.activo?'':'<span class="t" style="background:var(--rd);color:#fff">PENDIENTE</span>'}<div class="mu">📱 ${esc(p.cel)} · Taxi ${esc(p.taxi)} · Renta hasta ${p.pagado_hasta||'—'}</div><button class="s" style="margin-top:6px" onclick="S.edit='${p.id}';render()">Editar</button></div>`).join('')}
+$('v').innerHTML=panelAut()+S.E.map(p=>S.edit==p.id?eqForm(p):`<div class="c"><b>${esc(p.nombre)}</b><span class="t">${p.rol}</span>${p.activo?'':'<span class="t" style="background:var(--rd);color:#fff">PENDIENTE</span>'}<div class="mu">📱 ${esc(p.cel)} · Taxi ${esc(p.taxi)}${p.federal?' · ✈️ federal':''} · Renta hasta ${p.pagado_hasta||'—'}</div><button class="s" style="margin-top:6px" onclick="S.edit='${p.id}';render()">Editar</button></div>`).join('')}
 function eqForm(p){
 const f=(id,l,v,t)=>`<label>${l}</label><input id="e_${id}" type="${t||'text'}" value="${esc(v)}">`,ck=(id,l,v)=>`<label><input type="checkbox" id="e_${id}"${v?' checked':''} style="width:auto"> ${l}</label>`;
 return `<div class="c"><b>${esc(p.nombre)}</b> · 📱 ${esc(p.cel)}
 ${ck('activo','Activo (puede entrar)',p.activo)}
 <label>Rol</label><select id="e_rol">${opts(['taxista','despachador','admin'],p.rol)}</select>
 ${f('taxi','Número de taxi',p.taxi)}${f('linea','Línea',p.linea)}${f('carro','Tipo de carro',p.carro)}${f('placas','Placas',p.placas)}${f('cobra_con','Cobra con (efectivo, tarjeta, transferencia)',p.cobra_con)}${f('cuenta_transferencia','Datos para transferirle',p.cuenta_transferencia)}
-${ck('terminal','Tiene terminal',p.terminal)}${ck('transferencia','Recibe transferencia',p.transferencia)}${ck('factura','Puede facturar',p.factura)}${ck('unidad_ok','Unidad en buen estado',p.unidad_ok)}
+${ck('terminal','Tiene terminal',p.terminal)}${ck('transferencia','Recibe transferencia',p.transferencia)}${ck('factura','Puede facturar',p.factura)}${ck('unidad_ok','Unidad en buen estado',p.unidad_ok)}${ck('federal','✈️ Placas federales (puede tomar servicios del aeropuerto)',p.federal)}
 ${f('pagado_hasta','Renta pagada hasta',p.pagado_hasta,'date')}<button class="s" style="margin-top:6px" onclick="mas7()">+7 días de renta</button>
 ${eqPagos(p)}
 <div class="r" style="margin-top:8px"><button onclick="guardarE('${p.id}')" style="flex:1">Guardar</button><button class="s" onclick="S.edit=null;render()">Cancelar</button></div></div>`}
 function mas7(){const h=iso(new Date()),c=$('e_pagado_hasta').value,b=c&&c>h?c:h,d=new Date(b+'T12:00:00');d.setDate(d.getDate()+7);$('e_pagado_hasta').value=iso(d)}
 async function guardarE(id){
 const v=i=>$('e_'+i).value.trim()||null,k=i=>$('e_'+i).checked;
-const o={activo:k('activo'),rol:$('e_rol').value,taxi:v('taxi'),linea:v('linea'),carro:v('carro'),placas:v('placas'),cobra_con:v('cobra_con'),cuenta_transferencia:v('cuenta_transferencia'),terminal:k('terminal'),transferencia:k('transferencia'),factura:k('factura'),unidad_ok:k('unidad_ok'),pagado_hasta:v('pagado_hasta')};
+const o={activo:k('activo'),rol:$('e_rol').value,taxi:v('taxi'),linea:v('linea'),carro:v('carro'),placas:v('placas'),cobra_con:v('cobra_con'),cuenta_transferencia:v('cuenta_transferencia'),terminal:k('terminal'),transferencia:k('transferencia'),factura:k('factura'),unidad_ok:k('unidad_ok'),federal:k('federal'),pagado_hasta:v('pagado_hasta')};
 const {error}=await sb.from('perfiles').update(o).eq('id',id);
 if(error)return toast('Error: '+error.message);
 S.edit=null;await cargarE();render();toast('Guardado')}
 
 function asg(id){S.asg=S.asg==id?null:id;render()}
-function asgPanel(s){const L=S.E.filter(p=>p.activo&&p.taxi);return `<div class="c" style="margin:8px 0 0"><b>Asignar a:</b><div class="r" style="margin-top:6px">${L.map(p=>`<button class="s" onclick="asignarA('${s.id}','${p.id}')">${esc(p.taxi)} · ${esc(p.nombre)}</button>`).join('')||'<span class="mu">Aún no hay compañeros activos con taxi. Actívalos en Equipo.</span>'}</div></div>`}
-async function asignarA(id,pid){const p=S.E.find(x=>x.id==pid);
+function asgPanel(s){const L=S.E.filter(p=>p.activo&&p.taxi);return `<div class="c" style="margin:8px 0 0"><b>${s.estado=='disponible'?'Asignar':'Reasignar'} a:</b>${s.aeropuerto?'<div class="mu">✈️ Servicio del aeropuerto: los taxis con ✈️ tienen placas federales.</div>':''}<div class="r" style="margin-top:6px">${L.map(p=>`<button class="s" onclick="asignarA('${s.id}','${p.id}')">${p.federal?'✈️ ':''}${esc(p.taxi)} · ${esc(p.nombre)}</button>`).join('')||'<span class="mu">Aún no hay compañeros activos con taxi. Actívalos en Equipo.</span>'}</div></div>`}
+async function asignarA(id,pid){const p=S.E.find(x=>x.id==pid),sv=byId(id);
+if(sv&&sv.aeropuerto&&!p.federal&&!confirm(p.taxi+' no tiene placas federales y este servicio sale del aeropuerto. ¿Asignarlo de todos modos?'))return;
 const {error}=await sb.from('servicios').update({estado:'tomado',tomado_por:p.id,tomado_nombre:p.nombre,tomado_taxi:p.taxi,tomado_en:new Date().toISOString()}).eq('id',id);
 if(error)return toast('Error: '+error.message);S.asg=null;S.env={id,pid};toast('Asignado a '+p.taxi);cargar()}
 function recordar(id){const s=byId(id),pd=n=>String(n).padStart(2,'0'),f=s.fecha.replace(/-/g,''),[h,m]=llegada(s).split(':'),fin=(+h+1)%24;
