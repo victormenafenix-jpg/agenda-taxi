@@ -2,6 +2,12 @@
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f2b705">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Agenda Taxi">
 <title>Agenda Taxi</title>
 <style>
 :root{--bg:#f6f5f0;--cd:#fff;--tx:#1d1d1b;--mu:#6b6b66;--ac:#f2b705;--bd:#e2e0d8;--rd:#c0392b;--bl:#1f6feb}
@@ -451,4 +457,4 @@ ${e!='cancelado'&&e!='disponible'?`<div class="c">${E.map((x,j)=>`<div style="pa
 <p class="mu">Esta pantalla se actualiza sola. No necesita iniciar sesión.</p>`}
 await ver();setInterval(()=>{if(!document.hidden)ver()},8000)}
 setInterval(()=>{if(S.me&&S.me.activo&&S.tab=='serv'&&!S.form&&!document.hidden&&!new URLSearchParams(location.search).get('s'))cargar()},20000);
-</script></body></html>
+</script><script>if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{})</script></body></html>
