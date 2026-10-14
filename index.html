@@ -200,10 +200,10 @@ $('v').innerHTML=`<div class="c"><b>${S.form.id?'Editar servicio':'Nuevo servici
 <label>Nombre del cliente (opcional)</label><input id="c_nombre" value="${esc(c.nombre)}" oninput="buscarC()"><label>Celular del cliente (10 dígitos; si es de otro país, con + y lada)</label><input id="c_cel" type="tel" value="${esc(c.celular)}" oninput="buscarC()"><div id="sgc"></div>
 <div class="g"><div>${f('fecha','Fecha',s.fecha,'date')}</div><div>${horaSel(s.hora)}</div></div>
 ${f('min_antes','Minutos antes de llegar',s.min_antes,'number')}
-<label>Ubicación (texto)</label><input id="ubic" value="${esc(s.ubic)}" oninput="if(/aeropuerto/i.test(this.value))$('aeropuerto').checked=true">
+<label>Ubicación (texto) <span class="mu">· escribe y elige de la lista</span></label><input id="ubic" value="${esc(s.ubic)}" autocomplete="off" oninput="if(/aeropuerto/i.test(this.value))$('aeropuerto').checked=true;acBuscar('ubic')"><div id="ac_ubic"></div>
 <label>Link de Maps de la ubicación</label><div class="r"><input id="ubic_maps" style="flex:1;width:auto" value="${esc(s.ubic_maps)}"><button class="s" onclick="gps('ubic_maps')">📍</button></div>
 <label>💾 Guardar esta ubicación en el cliente como</label><select id="g_ub" onchange="S.gdt=1;nomL(this)">${opts(GL,'No guardar')}<option value="__otro">✏️ Otro nombre…</option></select>
-${f('destino','Destino',s.destino)}
+<label>Destino <span class="mu">· escribe y elige de la lista</span></label><input id="destino" value="${esc(s.destino)}" autocomplete="off" oninput="acBuscar('destino')"><div id="ac_destino"></div>
 <label>Link de Maps del destino</label><div class="r"><input id="destino_maps" style="flex:1;width:auto" value="${esc(s.destino_maps)}"><button class="s" onclick="gps('destino_maps')">📍</button></div>
 <label>💾 Guardar este destino en el cliente como</label><select id="g_dn" onchange="nomL(this)">${opts(GL,'No guardar')}<option value="__otro">✏️ Otro nombre…</option></select>
 <label>Tarifa fija</label><select id="tar" onchange="aplT()"><option value="">—</option>${S.T.map(t=>`<option value="${t.id}">${esc(t.nombre)} $${t.precio}</option>`).join('')}</select>
@@ -245,6 +245,24 @@ const prog=!$('expres').checked&&!$('especial').checked&&!aer,p=Math.round(+g.pr
 S.sugP=fija?+fija.precio:p;{const c=$('costo');if(c&&(c.value===''||+c.value===S.autoC)){c.value=p;S.autoC=p}}
 const vj=(S.SEL&&S.SEL.viajes||[]).slice(0,3).map(x=>esc((x.de||'')+' → '+(x.a||''))+': $'+x.costo).join(' · ');
 $('sug').innerHTML=`📏 ${k} km${S.cotMin?' · ⏱️ '+S.cotMin+' min':''}<br>`+(fija?`Tarifa fija <b>${esc(fija.nombre)}: $${fija.precio}</b> <button class="s" onclick="$('tar').value='${fija.id}';aplT()">Usar</button><br>`:'')+`Por kilómetro: <b>$${p}</b>${prog?' (incluye $'+g.recargo_programado+' por programar)':''} <button class="s" onclick="$('costo').value=${p}">Usar</button>`+(vj?`<br>Antes con este cliente: ${vj}`:'')}
+let acT=null,acTok=null;
+function acBuscar(id){clearTimeout(acT);const q=$(id).value.trim(),box=$('ac_'+id);if(q.length<4){box.innerHTML='';return}
+acT=setTimeout(async()=>{try{if(!acTok)acTok=(crypto.randomUUID?crypto.randomUUID():String(Date.now()));
+const r=await fetch('https://places.googleapis.com/v1/places:autocomplete',{method:'POST',headers:{'Content-Type':'application/json','X-Goog-Api-Key':GKEY},body:JSON.stringify({input:q,languageCode:'es',regionCode:'mx',sessionToken:acTok,locationBias:{circle:{center:{latitude:19.845,longitude:-90.523},radius:35000}}})});
+const j=await r.json();if(!r.ok)throw new Error((j.error&&j.error.message)||r.status);
+if($(id).value.trim()!=q)return;
+const L=(j.suggestions||[]).filter(x=>x.placePrediction).slice(0,5);
+S.AC=S.AC||{};S.AC[id]=L.map(x=>x.placePrediction);
+box.innerHTML=L.length?L.map((x,i)=>`<button class="s" style="display:block;width:100%;text-align:left;margin-top:4px" onclick="acElegir('${id}',${i})">📍 ${esc(x.placePrediction.text.text)}</button>`).join(''):'<div class="mu">Sin sugerencias. Puedes pegar el link de Maps.</div>'}
+catch(e){box.innerHTML='<div class="mu">No pude buscar direcciones ('+esc(String(e.message||e).slice(0,70))+'). Puedes pegar el link de Maps.</div>'}},350)}
+async function acElegir(id,i){const pr=S.AC[id][i],box=$('ac_'+id);box.innerHTML='<div class="mu">Buscando ubicación…</div>';
+try{const r=await fetch('https://places.googleapis.com/v1/places/'+pr.placeId+'?sessionToken='+encodeURIComponent(acTok||'')+'&languageCode=es',{headers:{'X-Goog-Api-Key':GKEY,'X-Goog-FieldMask':'location,displayName,formattedAddress'}});
+const j=await r.json();if(!r.ok)throw new Error((j.error&&j.error.message)||r.status);
+const nm=(j.displayName&&j.displayName.text)||'',ad=j.formattedAddress||pr.text.text,txt=(nm&&!ad.startsWith(nm)?nm+', ':'')+ad.replace(/, México$/,'');
+$(id).value=txt;$(id+'_maps').value='https://maps.google.com/?q='+j.location.latitude+','+j.location.longitude;box.innerHTML='';acTok=null;
+if(/aeropuerto/i.test(txt))$('aeropuerto').checked=true;
+if($('ubic').value&&$('destino').value&&$('km')&&!$('km').value)cotizar()}
+catch(e){box.innerHTML='<div class="mu">No pude traer la ubicación ('+esc(String(e.message||e).slice(0,70))+')</div>'}}
 function gps(i){navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>$(i).value='https://maps.google.com/?q='+p.coords.latitude+','+p.coords.longitude,()=>toast('No se pudo obtener el GPS'),{enableHighAccuracy:true}):toast('Sin GPS')}
 async function guardarS(){
 const v=i=>$(i).value.trim(),n=i=>+$(i).value||0;
