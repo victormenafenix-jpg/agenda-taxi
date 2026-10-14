@@ -49,6 +49,8 @@ const nrm=c=>{const p=String(c||'').trim().startsWith('+'),d=String(c||'').repla
 const shw=k=>k.length==12&&k.startsWith('52')?k.slice(2):'+'+k;
 const tel=c=>{c=String(c||'').replace(/\D/g,'');return c.length==10?'52'+c:c};
 function nomL(el){if(el.value!='__otro')return;const n=(prompt('¿Con qué nombre lo guardo? (ej. Casa de mi hermana)')||'').trim();if(!n){el.value='No guardar';return}const o=document.createElement('option');o.textContent=n;o.value=n;el.insertBefore(o,el.lastChild);el.value=n}
+const lugNombres=()=>{const c=((S.SEL&&S.SEL.lugares)||[]).map(l=>l.n).filter(n=>n&&!GL.includes(n));return GL.concat([...new Set(c)])};
+const lugOpts=sel=>{const L=lugNombres();if(sel&&!L.includes(sel))L.push(sel);return opts(L,sel||'No guardar')+'<option value="__otro">✏️ Otro nombre…</option>'};
 const opts=(a,v)=>a.map(o=>`<option${o==v?' selected':''}>${o}</option>`).join('');
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t.h);t.h=setTimeout(()=>t.style.display='none',4500)}
 const h12=t=>{let [h,m]=t.split(':');h=+h;return (h%12||12)+':'+m+' '+(h>=12?'pm':'am')};
@@ -312,7 +314,7 @@ ${f('nota','Nota',s.nota)}
 ${f('min_antes','Minutos antes de llegar',s.min_antes,'number')}
 <label>💾 Guardar esta ubicación en el cliente como</label><select id="g_ub" onchange="S.gdt=1;nomL(this)">${opts(GL,'No guardar')}<option value="__otro">✏️ Otro nombre…</option></select>
 <label>💾 Guardar este destino en el cliente como</label><select id="g_dn" onchange="nomL(this)">${opts(GL,'No guardar')}<option value="__otro">✏️ Otro nombre…</option></select>
-<label><input type="checkbox" id="g_cost" style="width:auto"> 💾 Recordar este costo para este viaje (solo si el origen y el destino están guardados)</label>
+<label><input type="checkbox" id="g_cost" style="width:auto"> 💾 Guardar este recorrido completo con su costo (todos los puntos necesitan nombre)</label>
 <div class="g"><div><label>Comisión</label><select id="comision_tipo"><option value="porcentaje"${s.comision_tipo=='porcentaje'?' selected':''}>% del costo</option><option value="fijo"${s.comision_tipo=='fijo'?' selected':''}>Monto fijo $</option></select></div><div>${f('comision_valor','Valor',s.comision_valor,'number')}</div></div>
 <label>IVA sobre la comisión</label><select id="comision_iva"><option value="0">Sin IVA</option><option value="16"${s.comision_iva==16?' selected':''}>IVA 16%</option></select>
 <label><input type="checkbox" id="aeropuerto"${s.aeropuerto?' checked':''} style="width:auto" onchange="S.aerAuto=false"> ✈️ Sale del aeropuerto (solo taxis con placas federales)</label>
@@ -346,7 +348,7 @@ const txt=($('ubic').value+' '+$('destino').value).toLowerCase(),aer=$('aeropuer
 const fija=(aer?S.T.find(t=>/aeropuerto/i.test(t.nombre)):null)||(/tren maya/.test(txt)?S.T.find(t=>/tren maya/i.test(t.nombre)):null);
 const prog=!$('expres').checked&&!$('especial').checked&&!aer,p=Math.round(+g.precio_base+Math.max(0,k-g.km_base)*g.precio_km+(prog?+g.recargo_programado:0));
 S.sugP=fija?+fija.precio:p;{const c=$('costo');if(c&&(c.value===''||+c.value===S.autoC)){c.value=p;S.autoC=p}}
-const vj=(S.SEL&&S.SEL.viajes||[]).slice(0,3).map(x=>esc((x.de||'')+' → '+(x.a||''))+': $'+x.costo).join(' · ');
+const vj=(S.SEL&&S.SEL.viajes||[]).slice(0,3).map(x=>esc((x.de||'')+(x.via&&x.via.length?' → '+x.via.join(' → '):'')+' → '+(x.a||''))+': $'+x.costo).join(' · ');
 $('sug').innerHTML=`📏 ${k} km${S.cotMin?' · ⏱️ '+S.cotMin+' min':''}<br>`+(fija?`Tarifa fija <b>${esc(fija.nombre)}: $${fija.precio}</b> <button class="s" onclick="$('tar').value='${fija.id}';aplT()">Usar</button><br>`:'')+`Por kilómetro: <b>$${p}</b>${prog?' (incluye $'+g.recargo_programado+' por programar)':''} <button class="s" onclick="$('costo').value=${p}">Usar</button>`+(vj?`<br>Antes con este cliente: ${vj}`:'')}
 let acT=null,acTok=null;
 function acBuscar(id){clearTimeout(acT);const q=$(id).value.trim(),box=$('ac_'+id);if(q.length<4){box.innerHTML='';return}
@@ -368,8 +370,9 @@ MP.act=id;if(MP.map)mapaPines(false).then(()=>{const l=mpLL(id);if(l){MP.map.pan
 if($('ubic').value&&$('destino').value&&$('km')&&!$('km').value)cotizar()}
 catch(e){box.innerHTML='<div class="mu">No pude traer la ubicación ('+esc(String(e.message||e).slice(0,70))+')</div>'}}
 /* ===== PARADAS Y MAPA ===== */
-function parSync(){S.PAR=(S.PAR||[]).map((p,i)=>({t:$('par_t_'+i)?$('par_t_'+i).value.trim():p.t,m:$('par_t_'+i+'_maps')?$('par_t_'+i+'_maps').value.trim():p.m}))}
-function parRender(){const b=$('par_box');if(!b)return;b.innerHTML=(S.PAR||[]).map((p,i)=>`<div class="c" style="margin:6px 0"><label>🛑 Parada ${i+1} <span class="mu">· escribe y elige de la lista</span></label><div class="r"><input id="par_t_${i}" style="flex:1;width:auto" autocomplete="off" value="${esc(p.t)}" onfocus="mpElegir('par_t_${i}')" oninput="acBuscar('par_t_${i}')"><button class="s" onclick="parDel(${i})">🗑️</button></div><div id="ac_par_t_${i}"></div><input id="par_t_${i}_maps" placeholder="Link de Maps (se llena solo)" value="${esc(p.m)}"></div>`).join('')}
+function parSync(){S.PAR=(S.PAR||[]).map((p,i)=>({t:$('par_t_'+i)?$('par_t_'+i).value.trim():p.t,m:$('par_t_'+i+'_maps')?$('par_t_'+i+'_maps').value.trim():p.m,g:$('par_g_'+i)?$('par_g_'+i).value:(p.g||'No guardar')}))}
+function parPon(i,j){if(j==='')return;parSync();const l=((S.SEL&&S.SEL.lugares)||[])[+j];if(!l)return;S.PAR[i]={t:l.t||'',m:l.m||'',g:'No guardar'};parRender();mpBotones();if(MP.map)mapaPines(false);if($('ubic').value&&$('destino').value)cotizar()}
+function parRender(){const b=$('par_box');if(!b)return;b.innerHTML=(S.PAR||[]).map((p,i)=>`<div class="c" style="margin:6px 0"><label>🛑 Parada ${i+1} <span class="mu">· escribe y elige de la lista</span></label><div class="r"><input id="par_t_${i}" style="flex:1;width:auto" autocomplete="off" value="${esc(p.t)}" onfocus="mpElegir('par_t_${i}')" oninput="acBuscar('par_t_${i}')"><button class="s" onclick="parDel(${i})">🗑️</button></div><div id="ac_par_t_${i}"></div><input id="par_t_${i}_maps" placeholder="Link de Maps (se llena solo)" value="${esc(p.m)}">${((S.SEL&&S.SEL.lugares)||[]).length?`<select style="margin-top:6px" onchange="parPon(${i},this.value)"><option value="">📌 Poner un lugar guardado del cliente…</option>${S.SEL.lugares.map((l,j)=>`<option value="${j}">${esc(l.n)}</option>`).join('')}</select>`:''}<label>💾 Guardar esta parada en el cliente como</label><select id="par_g_${i}" onchange="nomL(this)">${lugOpts(p.g||'No guardar')}</select></div>`).join('')}
 function parAdd(){parSync();S.PAR.push({t:'',m:''});parCambio();$('par_t_'+(S.PAR.length-1)).focus()}
 function parDel(i){parSync();S.PAR.splice(i,1);parCambio();if($('km')&&$('km').value)cotizar()}
 function decPoly(s){let i=0,la=0,ln=0,o=[];while(i<s.length){let b,sh=0,r=0;do{b=s.charCodeAt(i++)-63;r|=(b&31)<<sh;sh+=5}while(b>=32);la+=(r&1)?~(r>>1):(r>>1);sh=0;r=0;do{b=s.charCodeAt(i++)-63;r|=(b&31)<<sh;sh+=5}while(b>=32);ln+=(r&1)?~(r>>1):(r>>1);o.push({lat:la/1e5,lng:ln/1e5})}return o}
@@ -518,7 +521,7 @@ const hayHora=!!hh();
 if(!S.form.id){const dp=await hayDup(v('fecha'),hora,v('c_cel'),v('ubic'));if(dp&&!confirm('⚠️ Ya hay un servicio parecido ese día:\n'+fo(dp)+' · '+h12(hm(dp.hora))+' · '+(dp.ubic||'')+' → '+(dp.destino||'')+'\n\n¿Guardar este de todos modos?'))return}
 const o={fecha:v('fecha'),hora:hora,min_antes:ma,ubic:v('ubic'),ubic_maps:v('ubic_maps'),destino:v('destino'),destino_maps:v('destino_maps'),costo:n('costo'),nota:v('nota'),pago:v('pago'),factura:$('factura').checked,expres:hayHora?false:$('expres').checked,especial:$('especial').checked,aeropuerto:$('aeropuerto').checked,comision_tipo:v('comision_tipo'),comision_valor:n('comision_valor'),comision_iva:n('comision_iva')};
 if(n('km')>0){o.km=n('km');o.precio_sug=S.sugP||null}
-parSync();{const pr=(S.PAR||[]).filter(p=>p.t||p.m);if(pr.length)o.paradas=pr;else if(S.form.id&&byId(S.form.id).paradas)o.paradas=null}
+parSync();{const pr=(S.PAR||[]).filter(p=>p.t||p.m);if(pr.length)o.paradas=pr.map(x=>({t:x.t,m:x.m}));else if(S.form.id&&byId(S.form.id).paradas)o.paradas=null}
 let id=S.form.id,e;
 if(id){e=(await sb.from('servicios').update(o).eq('id',id)).error}
 else{const r=await sb.from('servicios').insert({...o,grupo_id:S.me.grupo_id,creado_por:S.me.id}).select('id').single();e=r.error;id=r.data&&r.data.id}
@@ -532,8 +535,10 @@ if(v('c_nombre'))d.nombre=v('c_nombre');
 const lab=(sel,t,m)=>{if(sel!='No guardar'&&(t||m)){const q=LG.find(x=>x.n==sel);if(q){q.t=t;q.m=m}else LG.push({n:sel,t,m});return sel}
 const q=LG.find(x=>x.t==t&&(x.m||'')==(m||''));return q?q.n:''};
 const lo=lab($('g_ub').value,v('ubic'),v('ubic_maps')),ld=lab($('g_dn').value,v('destino'),v('destino_maps'));
+const vl=(S.PAR||[]).filter(p=>p.t||p.m).map(p=>lab(p.g||'No guardar',p.t,p.m));
 d.lugares=LG;
-if($('g_cost').checked&&lo&&ld&&n('costo')>0){const q=VJ.find(x=>x.de==lo&&x.a==ld);if(q)q.costo=n('costo');else VJ.push({de:lo,a:ld,costo:n('costo')})}
+if($('g_cost').checked&&lo&&ld&&vl.every(Boolean)&&n('costo')>0){const q=VJ.find(x=>x.de==lo&&x.a==ld&&(x.via||[]).join('|')==vl.join('|'));if(q){q.costo=n('costo');if(n('km')>0)q.km=n('km')}else{const nv={de:lo,a:ld,costo:n('costo')};if(vl.length)nv.via=vl;if(n('km')>0)nv.km=n('km');VJ.push(nv)}}
+else if($('g_cost').checked)toast('Para guardar el recorrido, todos los puntos (origen, paradas y destino) necesitan nombre')
 d.viajes=VJ;
 if($('g_pago').checked){d.pago=v('pago');d.factura=$('factura').checked;if(d.factura)Object.assign(d,{rfc:v('rfc').toUpperCase(),regimen:v('regimen'),razon_social:v('razon_social'),correo:v('correo'),cp:v('cp')})}
 const er=(await sb.from('clientes').upsert(d,{onConflict:'grupo_id,cel'})).error;if(er)toast('Servicio guardado, pero no se pudo guardar el cliente: '+er.message);await cargarD()}
@@ -658,14 +663,21 @@ if(!S.form.id&&!S.gdt&&k.length>=12){const ex=S.D.find(x=>x.cel==k);$('g_ub').va
 $('sgc').innerHTML=S.SG.map((x,i)=>`<button class="s" style="display:block;width:100%;text-align:left;margin-top:6px" onclick="elegirC(${i})">👤 ${esc(x.nombre||'Sin nombre')} · ${esc(shw(x.cel))}${x.domicilio?'<br><span class="mu">🏠 '+esc(x.domicilio)+'</span>':''}</button>`).join('')}
 function elegirC(i){const x=S.SG[i],L=x.lugares||[];S.SEL=x;S.LO=S.LD=null;$('c_nombre').value=x.nombre||'';$('c_cel').value=shw(x.cel);
 const bt=k=>L.map((l,j)=>`<button class="s" onclick="ponL('${k}',${j})">${ic(l.n)} ${esc(l.n)}</button>`).join('');
-$('sgc').innerHTML=`<div class="c" style="margin:8px 0"><b>👤 ${esc(x.nombre||'Cliente sin nombre')}</b>${x.pago||x.factura?`<div class="mu">Habitual: ${esc(x.pago||'')}${x.factura?' · con factura':''}</div>`:''}${L.length?`<label>📍 Recoger en</label><div class="r">${bt('o')}</div><label>🏁 Destino</label><div class="r">${bt('d')}</div><div class="mu" style="margin-top:6px">Si es otro lugar, escríbelo abajo.</div>`:'<div class="mu">Aún no tiene lugares guardados. Escribe la ubicación abajo y elige cómo guardarla.</div>'}</div>`;
+const rec=(x.viajes||[]).map((v,j)=>+v.costo>0?`<button class="s" onclick="ponV(${j})">🔁 ${esc(v.de)}${(v.via||[]).map(a=>' → '+esc(a)).join('')} → ${esc(v.a)} · $${v.costo}</button>`:'').join('');
+$('sgc').innerHTML=`<div class="c" style="margin:8px 0"><b>👤 ${esc(x.nombre||'Cliente sin nombre')}</b>${x.pago||x.factura?`<div class="mu">Habitual: ${esc(x.pago||'')}${x.factura?' · con factura':''}</div>`:''}${L.length?`<label>📍 Recoger en</label><div class="r">${bt('o')}</div><label>🏁 Destino</label><div class="r">${bt('d')}</div><div class="mu" style="margin-top:6px">Si es otro lugar, escríbelo abajo.</div>`:'<div class="mu">Aún no tiene lugares guardados. Escribe la ubicación abajo y elige cómo guardarla.</div>'}${rec?`<label>🔁 Recorridos guardados (un toque llena todo)</label><div class="r">${rec}</div>`:''}</div>`;
+['g_ub','g_dn'].forEach(id=>{const e=$(id);if(e)e.innerHTML=lugOpts('No guardar')});parRender();
 if(x.pago)$('pago').value=x.pago;
 if(x.factura){$('factura').checked=true;$('fx').hidden=false;['regimen','rfc','razon_social','correo','cp'].forEach(f=>{if(x[f])$(f).value=x[f]})}
 $('g_ub').value='No guardar'}
 function ponL(k,j){const l=S.SEL.lugares[j];
 if(k=='o'){$('ubic').value=l.t||'';$('ubic_maps').value=l.m||'';S.LO=l.n;$('g_ub').value='No guardar'}
 else{$('destino').value=l.t||'';$('destino_maps').value=l.m||'';S.LD=l.n;$('g_dn').value='No guardar'}
-const v=(S.SEL.viajes||[]).find(x=>x.de==S.LO&&x.a==S.LD);if(v){$('costo').value=v.costo;toast('Costo habitual puesto: $'+v.costo)}}
+const v=(S.SEL.viajes||[]).find(x=>x.de==S.LO&&x.a==S.LD&&!(x.via||[]).length);if(v){$('costo').value=v.costo;toast('Costo habitual puesto: $'+v.costo)}}
+function ponV(j){const v=(S.SEL.viajes||[])[j],L=S.SEL.lugares||[];if(!v)return;const g=n=>L.find(x=>x.n==n)||{t:n,m:''},o=g(v.de),d=g(v.a);
+$('ubic').value=o.t||'';$('ubic_maps').value=o.m||'';$('destino').value=d.t||'';$('destino_maps').value=d.m||'';
+S.PAR=(v.via||[]).map(n=>{const l=g(n);return {t:l.t||'',m:l.m||'',g:'No guardar'}});S.LO=v.de;S.LD=v.a;$('g_ub').value='No guardar';$('g_dn').value='No guardar';
+parRender();mpBotones();tarVis();$('costo').value=v.costo;if(v.km)$('km').value=v.km;if(MP.map)mapaPines(true);
+toast('Recorrido puesto: $'+v.costo);if($('ubic').value&&$('destino').value)cotizar()}
 
 async function cargarP(){const {data}=await sb.from('pagos').select('*').order('creado',{ascending:false}).limit(500);S.P=data||[]}
 function eqPagos(p){const L=(S.P||[]).filter(x=>x.perfil_id==p.id).slice(0,5);
