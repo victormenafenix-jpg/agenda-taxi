@@ -138,6 +138,7 @@ async function cargar(){
 const {data,error}=await sb.from('servicios').select('*').eq('fecha',S.fecha).order('hora');
 if(error){toast('Error: '+error.message);return}
 S.L=data||[];S.C={};
+await cargarQ();
 await cargarAv();
 if(staff()&&S.L.length){const {data:C}=await sb.from('servicio_cliente').select('*').in('servicio_id',S.L.map(x=>x.id));(C||[]).forEach(c=>S.C[c.servicio_id]=c)}
 S.CN=S.CN||{};
@@ -170,11 +171,67 @@ await sb.from('avisos_leidos').insert({aviso_id:r.data.id,usuario_id:S.me.id});
 await cargarAv();render();toast('✅ Aviso publicado')}
 function avCompartir(){const t=$('av_t').value.trim();if(!t)return toast('Escribe el aviso');copiar('📢 *Aviso '+((S.g&&S.g.nombre)||'')+'*\n\n'+t)}
 async function avBorrar(id){if(!confirm('¿Borrar este aviso para todos?'))return;const r=await sb.from('avisos').delete().eq('id',id);if(r.error)return toast('Error: '+r.error.message);await cargarAv();render()}
+
+/* ---------- "Lo quiero" con GPS ---------- */
+const modoQ=()=>!!(S.g&&S.g.modo_quiero);
+async function cargarQ(){const ant=new Set(Object.keys(S.Q||{}).filter(k=>(S.Q[k]||[]).some(r=>r.usuario_id==(S.me&&S.me.id))));
+try{const ids=(S.L||[]).filter(x=>x.estado=='disponible').map(x=>x.id);const Q={};
+if(ids.length){const r=await sb.from('interesados').select('*').in('servicio_id',ids).order('creado');if(!r.error)(r.data||[]).forEach(x=>{(Q[x.servicio_id]=Q[x.servicio_id]||[]).push(x)})}
+S.Q=Q}catch(e){S.Q={}}
+ant.forEach(id=>{if((S.Q[id]||[]).some(r=>r.usuario_id==S.me.id))return;const sv=(S.L||[]).find(x=>x.id==id);if(!sv||sv.estado=='disponible')return;
+if(sv.tomado_por==S.me.id){toast('🎉 ¡Te asignaron el servicio de '+h12(sv.hora)+'!');try{navigator.vibrate&&navigator.vibrate([300,150,300,150,300])}catch(e){}}
+else if(sv.tomado_nombre)toast('El servicio de '+h12(sv.hora)+' se lo asignaron a '+sv.tomado_nombre)})}
+const yoQuiero=s=>(S.Q&&S.Q[s.id]||[]).some(r=>r.usuario_id==S.me.id);
+function btnTomar(s){if(!modoQ()||staff())return `<button onclick="tomar('${s.id}')">✋ Lo tomo</button>`;
+if(yoQuiero(s))return `<span class="t" style="background:#8e44ad;color:#fff">⏳ Ya pediste este servicio</span><button class="s" onclick="yaNoQuiero('${s.id}')">Retirar</button>`;
+return `<button onclick="quiero('${s.id}')">🙋 Lo quiero</button>`}
+function qBadge(s){const n=(S.Q&&S.Q[s.id]||[]).length;return n&&s.estado=='disponible'?` <span class="t" style="background:#8e44ad;color:#fff">🙋 ${n} ${n==1?'lo quiere':'lo quieren'}</span>`:''}
+function quiero(id){const sv=byId(id);if(!navigator.geolocation){if(confirm('Este celular no da ubicación. ¿Pedir el servicio sin ubicación? Quedarás al final de la fila.'))quieroEnvia(id,null);return}
+toast('📍 Tomando tu ubicación…');
+navigator.geolocation.getCurrentPosition(p=>quieroEnvia(id,p.coords),e=>{if(confirm('No pude tomar tu ubicación (revisa que el GPS esté prendido y que diste permiso a la app).\n\n¿Pedir el servicio sin ubicación? Quedarás al final de la fila.'))quieroEnvia(id,null)},{enableHighAccuracy:true,timeout:12000,maximumAge:0})}
+async function quieroEnvia(id,c){const r=await rpc('lo_quiero',{p_id:id,p_lat:c?c.latitude:null,p_lng:c?c.longitude:null,p_prec:c?Math.round(c.accuracy||0):null},c?'🙋 Listo. Si eres el más cercano, el servicio es tuyo.':'🙋 Listo, pero sin ubicación quedas al final.');
+if(r=='ok')try{navigator.vibrate&&navigator.vibrate(120)}catch(e){}}
+const yaNoQuiero=id=>rpc('ya_no_lo_quiero',{p_id:id},'Listo, ya no lo quieres');
+S.ETA=S.ETA||{};S.AUTO=S.AUTO||{};
+async function qEta(sid){const sv=byId(sid),R=(S.Q&&S.Q[sid])||[];if(!sv)return;const d=ptoRuta(sv.ubic,sv.ubic_maps);if(!d)return;
+let nuevos=0;await Promise.all(R.filter(r=>r.lat!=null&&r.lng!=null&&!S.ETA[r.id+r.creado]).map(async r=>{S.ETA[r.id+r.creado]={min:null,km:null,cargando:1};
+try{const x=await fetch('https://routes.googleapis.com/directions/v2:computeRoutes',{method:'POST',headers:{'Content-Type':'application/json','X-Goog-Api-Key':GKEY,'X-Goog-FieldMask':'routes.distanceMeters,routes.duration'},body:JSON.stringify({origin:{location:{latLng:{latitude:r.lat,longitude:r.lng}}},destination:d,travelMode:'DRIVE',routingPreference:'TRAFFIC_UNAWARE',languageCode:'es-MX',regionCode:'MX'})});
+const j=await x.json(),rt=j.routes&&j.routes[0];if(!x.ok||!rt)throw 0;S.ETA[r.id+r.creado]={min:Math.max(1,Math.round(parseInt(rt.duration)/60)),km:Math.round(rt.distanceMeters/100)/10};nuevos++}
+catch(e){delete S.ETA[r.id+r.creado]}}));return nuevos}
+function qOrden(sid){const R=((S.Q&&S.Q[sid])||[]).slice();const e=r=>S.ETA[r.id+r.creado];
+return R.sort((a,b)=>{const ea=e(a)&&e(a).min!=null?e(a).min:1e9,eb=e(b)&&e(b).min!=null?e(b).min:1e9;return ea-eb||new Date(a.creado)-new Date(b.creado)})}
+function qPanel(s){if(!staff()||s.estado!='disponible')return '';const R=(S.Q&&S.Q[s.id])||[];if(!R.length)return '';
+qEta(s.id).then(n=>{if(n&&S.tab=='serv'&&!S.form&&!S.qrr){S.qrr=1;setTimeout(()=>{S.qrr=0;vServ()},300)}});
+const O=qOrden(s.id),ahora=Date.now(),seg=+(S.g&&S.g.quiero_seg)||60,t0=new Date(R[0].creado).getTime(),falta=Math.max(0,Math.round(seg-(ahora-t0)/1000));
+const fila=(r,i)=>{const e=S.ETA[r.id+r.creado],hace=Math.max(0,Math.round((ahora-new Date(r.creado))/1000)),pr=r.precision_m>500?' ⚠️ ubicación poco exacta (±'+r.precision_m+' m)':(r.precision_m?' (±'+r.precision_m+' m)':'');
+const ub=r.lat==null?'📍 <b>sin ubicación</b>':(e&&e.min!=null?'⏱️ <b>'+e.min+' min</b> · '+e.km+' km':'⏱️ calculando…');
+return `<div class="r" style="justify-content:space-between;flex-wrap:nowrap;margin-top:6px;gap:6px"><div>${i==0?'⭐ ':''}<b>🚕 ${esc(r.taxi||'')}</b> · ${esc(r.nombre||'')}<div class="mu">${ub}${pr} · pidió hace ${hace<60?hace+' s':Math.round(hace/60)+' min'}</div></div><button class="${i==0?'':'s'}" onclick="asignarQ('${s.id}','${r.usuario_id}')">Asignar</button></div>`};
+return `<div class="c" style="margin:8px 0 0;border:2px solid #8e44ad"><b>🙋 ${R.length} ${R.length==1?'quiere':'quieren'} este servicio</b>${modoQ()?`<div class="mu">${falta>0?'Se asigna solo al más cercano en ~'+falta+' s (si alguien de la oficina tiene la app abierta).':'Se asignará al más cercano en unos segundos.'}</div>`:''}${O.map(fila).join('')}</div>`}
+async function asignarQ(sid,uid,auto){const p=S.E.find(x=>x.id==uid);if(!p){if(!auto)toast('No encontré a ese compañero');return}
+const {data,error}=await sb.from('servicios').update({estado:'tomado',tomado_por:p.id,tomado_nombre:p.nombre,tomado_taxi:p.taxi,tomado_en:new Date().toISOString()}).eq('id',sid).eq('estado','disponible').select('id');
+if(error){if(!auto)toast('Error: '+error.message);return}
+if(!data||!data.length){if(!auto)toast('Ese servicio ya no estaba disponible');cargar();return}
+sb.from('interesados').delete().eq('servicio_id',sid).then(()=>{});
+toast((auto?'🤖 Asignado al más cercano: ':'Asignado a ')+p.taxi+' · '+p.nombre);cargar()}
+async function qTick(){if(!S.me||!S.me.activo||!staff()||!modoQ()||document.hidden||S.form)return;
+const seg=(+S.g.quiero_seg||60)*1000;
+for(const sv of (S.L||[]).filter(x=>x.estado=='disponible')){const R=(S.Q&&S.Q[sv.id])||[];if(!R.length||S.AUTO[sv.id])continue;
+const t0=Math.min(...R.map(r=>new Date(r.creado).getTime()));if(Date.now()-t0<seg)continue;
+S.AUTO[sv.id]=1;await qEta(sv.id);const O=qOrden(sv.id);if(!O.length)continue;
+await asignarQ(sv.id,O[0].usuario_id,true)}}
+setInterval(async()=>{if(S.me&&S.me.activo&&modoQ()&&S.tab=='serv'&&!S.form&&!document.hidden&&!S.mis&&!S.bq&&!new URLSearchParams(location.search).get('s')){const a=JSON.stringify(Object.keys(S.Q||{}).map(k=>k+':'+S.Q[k].length));await cargarQ();if(a!=JSON.stringify(Object.keys(S.Q||{}).map(k=>k+':'+S.Q[k].length)))vServ();qTick()}},5000);
+async function guardarQ(){const m=$('g_mq').value=='1',sg=Math.min(300,Math.max(20,parseInt($('g_qs').value)||60));
+const {error}=await sb.from('grupos').update({modo_quiero:m,quiero_seg:sg}).eq('id',S.g.id);if(error)return toast('Error: '+error.message);S.g.modo_quiero=m;S.g.quiero_seg=sg;toast(m?'✅ Ahora los taxistas ven "🙋 Lo quiero" (se asigna al más cercano a los '+sg+' s)':'✅ Ahora los taxistas ven "✋ Lo tomo" (el primero que toque)');vEq()}
+function panelQ(){const g=S.g||{};return `<div class="c"><b>Cómo se toman los servicios</b><div class="mu">Con "Lo quiero", cada taxista toca el botón, la app toma su ubicación una sola vez y se asigna al que llegue más pronto al cliente.</div>
+<label>Modo</label><select id="g_mq"><option value="0" ${g.modo_quiero?'':'selected'}>✋ El primero que toque "Lo tomo"</option><option value="1" ${g.modo_quiero?'selected':''}>🙋 Por cercanía: "Lo quiero" con GPS</option></select>
+<label>Segundos de espera antes de asignar al más cercano (20 a 300)</label><input id="g_qs" type="number" inputmode="numeric" value="${+g.quiero_seg||60}">
+<div class="mu">Las asignaciones automáticas solo ocurren mientras alguien de la oficina (admin o despachador) tenga la app abierta. Tú siempre puedes asignar a mano antes.</div>
+<button style="margin-top:8px" onclick="guardarQ()">Guardar</button></div>`}
 async function cargarE(){const {data}=await sb.from('perfiles').select('*').order('nombre');S.E=data||[]}
-async function rpc(fn,a){
+async function rpc(fn,a,okMsg){
 const {data,error}=await sb.rpc(fn,a);if(error){toast(error.message);return}
 const m={ok:'Listo',ya_tomado:'Otro compañero ya lo tomó',renta_vencida:'Tu renta semanal está vencida',sin_taxi:'Te falta número de taxi. Avisa al administrador',sin_federal:'Este servicio es del aeropuerto y solo lo pueden tomar taxis con placas federales',sin_acceso:'Sin acceso',no_permitido:'No permitido'};
-toast(m[data]||data);cargar();return data}
+if(okMsg)m.ok=okMsg;toast(m[data]||data);cargar();return data}
 const tomar=async id=>{const r=await rpc('tomar_servicio',{p_id:id});if(r=='ok'&&confirm('¿Quieres poner una alarma en tu calendario para este servicio?'))recordar(id)},soltar=id=>rpc('soltar_servicio',{p_id:id}),estado=(id,e)=>rpc('cambiar_estado',{p_id:id,p_estado:e});
 function dia_(n){const d=new Date();d.setDate(d.getDate()+n);S.fecha=iso(d);cargar()}
 let bor=null;
@@ -232,11 +289,11 @@ let x=`<div class="c" style="border-left:8px solid ${col};padding:8px 10px;margi
 <div onclick="ab('${s.id}')" style="cursor:pointer">
 <div class="r" style="justify-content:space-between;flex-wrap:nowrap"><span style="font-weight:800;font-size:17px;color:${s.expres?'#c0261b':'#1c4fa1'}">${s.expres?'⚡ EXPRÉS':'🕐 '+h12(s.hora)}</span><span style="font-weight:800;font-size:20px">$${r2(c)}</span></div>
 <div style="font-weight:700;margin:2px 0">${esc(zona(s.ubic))} → ${esc(zona(s.destino))}${(s.paradas||[]).length?' · 🛑'+s.paradas.length:''}${+s.km>0?' · '+s.km+' km':''}</div>
-<div class="mu"><span class="t" style="background:${col};color:${s.estado=='disponible'&&!sc?'#1d1d1b':'#fff'}">${sc?(s.expres?'⏱️ NADIE LO TOMÓ':'SIN CUBRIR'):ST_TXT[s.estado]||esc(s.estado)}</span>${s.pago!='Efectivo'?'<span class="t '+(s.pago=='Tarjeta crédito'?'pc':'pg')+'">'+esc(s.pago)+'</span>':''}${s.factura?'<span class="t">FACTURA</span>':''}${s.aeropuerto?'<span class="t ae">✈️ FEDERAL</span>':''}${s.tomado_nombre?' 🚕 Ya lo tiene '+esc(s.tomado_nombre):''}</div></div>
+<div class="mu"><span class="t" style="background:${col};color:${s.estado=='disponible'&&!sc?'#1d1d1b':'#fff'}">${sc?(s.expres?'⏱️ NADIE LO TOMÓ':'SIN CUBRIR'):ST_TXT[s.estado]||esc(s.estado)}</span>${s.pago!='Efectivo'?'<span class="t '+(s.pago=='Tarjeta crédito'?'pc':'pg')+'">'+esc(s.pago)+'</span>':''}${s.factura?'<span class="t">FACTURA</span>':''}${s.aeropuerto?'<span class="t ae">✈️ FEDERAL</span>':''}${s.tomado_nombre?' 🚕 Ya lo tiene '+esc(s.tomado_nombre):''}${qBadge(s)}</div></div>
 <div class="r" style="margin-top:6px">`;
-if(s.estado=='disponible')x+=`<button onclick="tomar('${s.id}')">✋ Lo tomo</button>`;
+if(s.estado=='disponible')x+=btnTomar(s);
 if((mine||staff())&&n)x+=`<button onclick="estado('${s.id}','${n[0]}')">➡️ ${n[1]}</button>`;
-return x+`<button class="s" onclick="ab('${s.id}')">▾ Ver más</button></div></div>`}
+return x+`<button class="s" onclick="ab('${s.id}')">▾ Ver más</button></div>`+qPanel(s)+'</div>'}
 function cardFull(s){
 const k=com(s),c=+s.costo||0,mine=s.tomado_por==S.me.id,cl=S.C[s.id],n=EST[s.estado],sc=sinCub(s),col=sc?'#7b1d14':(ST_COL[s.estado]||'var(--bd)'),live=s.estado!='terminado'&&s.estado!='cancelado';
 let x=`<div class="c" style="border-left:8px solid ${col}${s.aeropuerto?';outline:2px solid #0f9d9a':''}${S.hl==s.id?';box-shadow:0 0 0 4px #f2b705':''}">
@@ -252,7 +309,7 @@ ${!staff()&&mine&&S.CN&&S.CN[s.id]?`<div>👤 Cliente: <b>${esc(S.CN[s.id])}</b>
 ${s.tomado_nombre?`<div class="mu">🚕 ${esc(s.tomado_taxi)} · ${esc(s.tomado_nombre)}</div>`:''}
 ${cl?`<div class="mu">👤 ${esc(cl.nombre||'Cliente sin nombre')} · ${esc(cl.celular)}${S.me.rol=='admin'&&S.VS&&S.VS.has(nrm(cl.celular))?' · ⭐ VIGILADO':''}${cl.rfc?' · RFC '+esc(cl.rfc)+' · '+esc(cl.regimen)+' · '+esc(cl.razon_social)+' · '+esc(cl.correo)+' · CP '+esc(cl.cp):''}</div>`:''}
 <div class="r" style="margin-top:8px"><button class="s" onclick="ab('${s.id}')">▴ Menos</button>`;
-if(s.estado=='disponible')x+=`<button onclick="tomar('${s.id}')">✋ Lo tomo</button>`;
+if(s.estado=='disponible')x+=btnTomar(s);
 if((mine||staff())&&n)x+=`<button onclick="estado('${s.id}','${n[0]}')">➡️ ${n[1]}</button>`;
 if(mine&&s.estado=='tomado')x+=`<button class="s" onclick="soltar('${s.id}')">Soltar</button>`;
 if(s.ubic_maps)x+=`<a class="b s" target="_blank" href="${esc(s.ubic_maps)}">🗺️ Ubicación</a>`;
@@ -266,7 +323,7 @@ if(['tomado','en_camino'].includes(s.estado))x+=`<button class="s" onclick="reco
 x+=`<button class="s" onclick="llego('${s.id}')">📩 Ya llegó</button><button class="s" onclick="editarS('${s.id}')">✏️</button>`;
 if(live)x+=`<button class="s" onclick="cancelarS('${s.id}')">❌ Cancelar</button>`;
 if(S.me.rol=='admin')x+=`<button class="s" onclick="verHist('${s.id}')">📜 Historial</button><button class="s" onclick="borrarS('${s.id}')">🗑️</button>`}
-return x+'</div>'+(S.asg==s.id?asgPanel(s):'')+(S.env&&S.env.id==s.id?envPanel(s):'')+(S.hist&&S.hist.id==s.id?histPanel():'')+'</div>'}
+return x+'</div>'+qPanel(s)+(S.asg==s.id?asgPanel(s):'')+(S.env&&S.env.id==s.id?envPanel(s):'')+(S.hist&&S.hist.id==s.id?histPanel():'')+'</div>'}
 
 async function buscar(q,quiet){
 S.mis=false;
@@ -593,6 +650,7 @@ const ch=(k,l)=>`<button class="${F==k?'':'s'}" onclick="S.eqf='${k}';vEq()" sty
 $('v').innerHTML=`<div class="r" style="margin-bottom:6px">${ch('todos','Todos '+(S.E.length+por.length))}${ch('sin','🔴 Sin acceso '+nS)}${ch('por','🟡 Por registrarse '+por.length)}${ch('act','🟢 Activos '+nA)}</div>
 <input id="eqq" type="search" placeholder="🔎 Buscar por nombre, celular o taxi" value="${esc(S.eqq||'')}" oninput="S.eqq=this.value;eqLista()" style="margin-bottom:6px">
 <div id="eqlist"></div>
+<details class="c"><summary style="font-weight:700;cursor:pointer">🙋 Cómo se toman los servicios (Lo tomo / Lo quiero)</summary>${panelQ()}</details>
 <details class="c"><summary style="font-weight:700;cursor:pointer">⚙️ Autorizar celulares y código del grupo</summary>${panelAut()}</details>`;
 eqLista()}
 function eqLista(){
@@ -637,7 +695,7 @@ function asgPanel(s){const L=S.E.filter(p=>p.activo&&p.taxi);return `<div class=
 async function asignarA(id,pid){const p=S.E.find(x=>x.id==pid),sv=byId(id);
 if(sv&&sv.aeropuerto&&!p.federal&&!confirm(p.taxi+' no tiene placas federales y este servicio sale del aeropuerto. ¿Asignarlo de todos modos?'))return;
 const {error}=await sb.from('servicios').update({estado:'tomado',tomado_por:p.id,tomado_nombre:p.nombre,tomado_taxi:p.taxi,tomado_en:new Date().toISOString()}).eq('id',id);
-if(error)return toast('Error: '+error.message);S.asg=null;S.env={id,pid};toast('Asignado a '+p.taxi);cargar()}
+if(error)return toast('Error: '+error.message);sb.from('interesados').delete().eq('servicio_id',id).then(()=>{});S.asg=null;S.env={id,pid};toast('Asignado a '+p.taxi);cargar()}
 function recordar(id){const s=byId(id),pd=n=>String(n).padStart(2,'0'),f=s.fecha.replace(/-/g,''),[h,m]=llegada(s).split(':'),fin=(+h+1)%24;
 const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//AgendaTaxi//ES','BEGIN:VEVENT','UID:'+s.id+'@agendataxi','DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z','DTSTART:'+f+'T'+h+m+'00','DTEND:'+f+'T'+pd(fin)+m+'00','SUMMARY:🚕 Servicio '+h12(s.hora)+' · '+(s.destino||''),'LOCATION:'+(s.ubic||''),'DESCRIPTION:Llegar '+h12(llegada(s))+'. Destino: '+(s.destino||'')+'. Costo $'+s.costo,'BEGIN:VALARM','TRIGGER:-PT30M','ACTION:DISPLAY','DESCRIPTION:Servicio en 30 minutos','END:VALARM','BEGIN:VALARM','TRIGGER:-PT10M','ACTION:DISPLAY','DESCRIPTION:Servicio en 10 minutos','END:VALARM','BEGIN:VALARM','TRIGGER:PT0M','ACTION:DISPLAY','DESCRIPTION:Hora de salir','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
 const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download='servicio.ics';document.body.appendChild(a);a.click();a.remove();toast('Abre el archivo descargado para agregarlo a tu calendario')}
