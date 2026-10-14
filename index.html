@@ -13,6 +13,7 @@
 :root{--bg:#f6f5f0;--cd:#fff;--tx:#1d1d1b;--mu:#6b6b66;--ac:#f2b705;--bd:#e2e0d8;--rd:#c0392b;--bl:#1f6feb}
 @media(prefers-color-scheme:dark){:root{--bg:#161614;--cd:#222220;--tx:#f1f0ea;--mu:#9d9c94;--bd:#363632}}
 *{box-sizing:border-box}
+.mpfull{position:fixed!important;inset:0;z-index:40;background:var(--bg);margin:0!important;border-radius:0!important;display:flex;flex-direction:column;gap:8px;overflow:auto;padding:10px}.mpfull #mpmap{height:auto!important;flex:1;min-height:300px}
 body{margin:0 auto;background:var(--bg);color:var(--tx);font:16px system-ui,-apple-system,sans-serif;padding:12px;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:calc(60px + env(safe-area-inset-bottom));max-width:640px}
 h1{font-size:20px;margin:6px 0}
 .r{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -166,7 +167,22 @@ a.innerHTML=`<div class="r" style="justify-content:space-between"><b>🚕 ${esc(
 function tab(t){S.tab=t;S.edit=null;S.form=t=='nuevo'?{}:null;S.gdt=0;S.SEL=S.LO=S.LD=null;if(t=='serv')cargar();if(t=='cli'){S.CL=null;cargarCli()}if(t=='res')cargarRes();render()}
 function editarS(id){S.tab='nuevo';S.form={id};render()}
 
-function card(s){
+const zona=t=>{const p=String(t||'').split(',').map(x=>x.trim()).filter(Boolean);if(!p.length)return '—';let z=p[0];if((/^(calle|c\.|av\.?|avenida|and\.?|andador|prol|carretera|blvd|boulevard|circuito)/i.test(z)||/\d/.test(z))&&p[1])z=p[1];return z.length>26?z.slice(0,25)+'…':z};
+function ab(id){S.OP=S.OP||{};const abierto=S.OP[id]||S.hl==id||S.asg==id||(S.env&&S.env.id==id)||(S.hist&&S.hist.id==id);S.OP[id]=!abierto;if(S.hl==id)S.hl=null;if(abierto){if(S.asg==id)S.asg=null;if(S.env&&S.env.id==id)S.env=null;if(S.hist&&S.hist.id==id)S.hist=null}vServ()}
+function abTodos(){S.OP=S.OP||{};const fin=x=>x.estado=='terminado'||x.estado=='cancelado',A=S.L.filter(x=>!fin(x));const algunaCerrada=A.some(x=>!S.OP[x.id]);A.forEach(x=>S.OP[x.id]=algunaCerrada);vServ()}
+function card(s){S.OP=S.OP||{};
+if(S.OP[s.id]||S.hl==s.id||S.asg==s.id||(S.env&&S.env.id==s.id)||(S.hist&&S.hist.id==s.id))return cardFull(s);
+const c=+s.costo||0,sc=sinCub(s),col=sc?'#7b1d14':(ST_COL[s.estado]||'var(--bd)'),n=EST[s.estado],mine=s.tomado_por==S.me.id;
+let x=`<div class="c" style="border-left:8px solid ${col};padding:8px 10px;margin:6px 0${s.aeropuerto?';outline:2px solid #0f9d9a':''}">
+<div onclick="ab('${s.id}')" style="cursor:pointer">
+<div class="r" style="justify-content:space-between;flex-wrap:nowrap"><span style="font-weight:800;font-size:17px;color:${s.expres?'#c0261b':'#1c4fa1'}">${s.expres?'⚡ EXPRÉS':'🕐 '+h12(s.hora)}</span><span style="font-weight:800;font-size:20px">$${r2(c)}</span></div>
+<div style="font-weight:700;margin:2px 0">${esc(zona(s.ubic))} → ${esc(zona(s.destino))}${(s.paradas||[]).length?' · 🛑'+s.paradas.length:''}${+s.km>0?' · '+s.km+' km':''}</div>
+<div class="mu"><span class="t" style="background:${col};color:${s.estado=='disponible'&&!sc?'#1d1d1b':'#fff'}">${sc?'SIN CUBRIR':ST_TXT[s.estado]||esc(s.estado)}</span>${s.pago!='Efectivo'?'<span class="t '+(s.pago=='Tarjeta crédito'?'pc':'pg')+'">'+esc(s.pago)+'</span>':''}${s.factura?'<span class="t">FACTURA</span>':''}${s.aeropuerto?'<span class="t ae">✈️ FEDERAL</span>':''}${s.tomado_nombre?' 🚕 Ya lo tiene '+esc(s.tomado_nombre):''}</div></div>
+<div class="r" style="margin-top:6px">`;
+if(s.estado=='disponible')x+=`<button onclick="tomar('${s.id}')">✋ Lo tomo</button>`;
+if((mine||staff())&&n)x+=`<button onclick="estado('${s.id}','${n[0]}')">➡️ ${n[1]}</button>`;
+return x+`<button class="s" onclick="ab('${s.id}')">▾ Ver más</button></div></div>`}
+function cardFull(s){
 const k=com(s),c=+s.costo||0,mine=s.tomado_por==S.me.id,cl=S.C[s.id],n=EST[s.estado],sc=sinCub(s),col=sc?'#7b1d14':(ST_COL[s.estado]||'var(--bd)'),live=s.estado!='terminado'&&s.estado!='cancelado';
 let x=`<div class="c" style="border-left:8px solid ${col}${s.aeropuerto?';outline:2px solid #0f9d9a':''}${S.hl==s.id?';box-shadow:0 0 0 4px #f2b705':''}">
 <div class="r" style="justify-content:space-between">${s.expres?`<span class="hr" style="color:#c0261b">⚡ EXPRÉS <span class="mu" style="font-size:13px;font-weight:600">${fo(s)} · subido ${h12(s.hora)}</span></span><span class="mu">¡Ya!</span>`:`<span class="hr" style="color:#1c4fa1">🕐 PROGRAMADO ${h12(s.hora)} <span class="mu" style="font-size:13px;font-weight:600">${fo(s)}</span></span><span class="mu">Llegar ${h12(llegada(s))}</span>`}</div>
@@ -181,7 +197,7 @@ ${s.nota?`<div class="mu">📝 ${esc(s.nota)}</div>`:''}
 ${!staff()&&mine&&S.CN&&S.CN[s.id]?`<div>👤 Cliente: <b>${esc(S.CN[s.id])}</b></div>`:''}
 ${s.tomado_nombre?`<div class="mu">🚕 ${esc(s.tomado_taxi)} · ${esc(s.tomado_nombre)}</div>`:''}
 ${cl?`<div class="mu">👤 ${esc(cl.nombre||'Cliente sin nombre')} · ${esc(cl.celular)}${S.me.rol=='admin'&&S.VS&&S.VS.has(nrm(cl.celular))?' · ⭐ VIGILADO':''}${cl.rfc?' · RFC '+esc(cl.rfc)+' · '+esc(cl.regimen)+' · '+esc(cl.razon_social)+' · '+esc(cl.correo)+' · CP '+esc(cl.cp):''}</div>`:''}
-<div class="r" style="margin-top:8px">`;
+<div class="r" style="margin-top:8px"><button class="s" onclick="ab('${s.id}')">▴ Menos</button>`;
 if(s.estado=='disponible')x+=`<button onclick="tomar('${s.id}')">✋ Lo tomo</button>`;
 if((mine||staff())&&n)x+=`<button onclick="estado('${s.id}','${n[0]}')">➡️ ${n[1]}</button>`;
 if(mine&&s.estado=='tomado')x+=`<button class="s" onclick="soltar('${s.id}')">Soltar</button>`;
@@ -201,7 +217,7 @@ return x+'</div>'+(S.asg==s.id?asgPanel(s):'')+(S.env&&S.env.id==s.id?envPanel(s
 function vServ(){
 $('v').innerHTML=`<div class="r"><button class="s" onclick="dia_(0)">Hoy</button><button class="s" onclick="dia_(1)">Mañana</button><input type="date" value="${S.fecha}" style="flex:1;width:auto" onchange="S.fecha=this.value;cargar()"></div>
 ${(()=>{const fin=x=>x.estado=='terminado'||x.estado=='cancelado',A=S.L.filter(x=>!fin(x)),T=S.L.filter(fin);
-return `${staff()?avisos():''}<p class="mu">${dia(S.fecha)} · ${A.length} pendiente(s)</p>${A.map(card).join('')||'<p class="mu">Sin servicios pendientes este día.</p>'}${T.length?`<button class="s" style="width:100%;margin-top:8px" onclick="S.vt=!S.vt;vServ()">${S.vt?'▲ Ocultar':'✅ Ver'} terminados (${T.length})</button>${S.vt?T.map(card).join(''):''}`:''}`})()}`}
+return `${staff()?avisos():''}<div class="r" style="justify-content:space-between"><p class="mu" style="margin:6px 0">${dia(S.fecha)} · ${A.length} pendiente(s)</p>${A.length>1?'<button class="s" onclick="abTodos()">↕️ Abrir/cerrar todos</button>':''}</div>${A.map(card).join('')||'<p class="mu">Sin servicios pendientes este día.</p>'}${T.length?`<button class="s" style="width:100%;margin-top:8px" onclick="S.vt=!S.vt;vServ()">${S.vt?'▲ Ocultar':'✅ Ver'} terminados (${T.length})</button>${S.vt?T.map(card).join(''):''}`:''}`})()}`}
 
 function vForm(){
 const s=S.form.id?byId(S.form.id):{fecha:S.fecha,expres:true,min_antes:10,comision_tipo:'porcentaje',comision_valor:S.g?S.g.comision_default:10,comision_iva:0,pago:'Efectivo'};
@@ -211,14 +227,14 @@ $('v').innerHTML=`<div class="c"><b>${S.form.id?'Editar servicio':'Nuevo servici
 <label>Nombre del cliente (opcional)</label><input id="c_nombre" value="${esc(c.nombre)}" oninput="buscarC()"><label>Celular del cliente (10 dígitos; si es de otro país, con + y lada)</label><input id="c_cel" type="tel" value="${esc(c.celular)}" oninput="buscarC()"><div id="sgc"></div>
 <div class="g"><div>${f('fecha','Fecha',s.fecha,'date')}</div><div>${horaSel(s.hora)}</div></div>
 ${f('min_antes','Minutos antes de llegar',s.min_antes,'number')}
-<label>Ubicación (texto) <span class="mu">· escribe y elige de la lista</span></label><input id="ubic" value="${esc(s.ubic)}" autocomplete="off" oninput="if(/aeropuerto/i.test(this.value))$('aeropuerto').checked=true;acBuscar('ubic')"><div id="ac_ubic"></div>
+<label>Ubicación (texto) <span class="mu">· escribe y elige de la lista</span></label><input id="ubic" value="${esc(s.ubic)}" autocomplete="off" onfocus="mpElegir('ubic')" oninput="if(/aeropuerto/i.test(this.value))$('aeropuerto').checked=true;acBuscar('ubic')"><div id="ac_ubic"></div>
 <label>Link de Maps de la ubicación</label><div class="r"><input id="ubic_maps" style="flex:1;width:auto" value="${esc(s.ubic_maps)}"><button class="s" onclick="gps('ubic_maps')">📍</button></div>
 <label>💾 Guardar esta ubicación en el cliente como</label><select id="g_ub" onchange="S.gdt=1;nomL(this)">${opts(GL,'No guardar')}<option value="__otro">✏️ Otro nombre…</option></select>
+<div id="mapbox" class="c" style="margin:10px 0"><div class="r" style="justify-content:space-between"><b>🗺️ Mapa · pon el pin exacto</b><button class="s" id="mpbig" onclick="mapaGrande()">⤢ Agrandar</button></div><div class="r" id="mpsel" style="margin-top:6px"></div><div class="mu" id="mphint"></div><div id="mpmap" style="height:250px;border-radius:12px;overflow:hidden;background:#ddd;margin-top:6px"></div><div id="mpinfo" class="mu"></div></div>
 <div id="par_box"></div><button class="s" onclick="parAdd()" style="margin-top:6px">➕ Agregar parada (otro destino)</button>
-<label>Destino final <span class="mu">· escribe y elige de la lista</span></label><input id="destino" value="${esc(s.destino)}" autocomplete="off" oninput="acBuscar('destino')"><div id="ac_destino"></div>
+<label>Destino final <span class="mu">· escribe y elige de la lista</span></label><input id="destino" value="${esc(s.destino)}" autocomplete="off" onfocus="mpElegir('destino')" oninput="acBuscar('destino')"><div id="ac_destino"></div>
 <label>Link de Maps del destino</label><div class="r"><input id="destino_maps" style="flex:1;width:auto" value="${esc(s.destino_maps)}"><button class="s" onclick="gps('destino_maps')">📍</button></div>
 <label>💾 Guardar este destino en el cliente como</label><select id="g_dn" onchange="nomL(this)">${opts(GL,'No guardar')}<option value="__otro">✏️ Otro nombre…</option></select>
-<button class="s" onclick="mapaAbrir()" style="width:100%;margin-top:10px">🗺️ Ver en mapa y mover los pines</button>
 <label>Tarifa fija</label><select id="tar" onchange="aplT()"><option value="">—</option>${S.T.map(t=>`<option value="${t.id}">${esc(t.nombre)} $${t.precio}</option>`).join('')}</select>
 <label>Kilómetros (para precio sugerido)</label><div class="r"><input id="km" type="number" step="0.1" style="flex:1;width:auto" oninput="S.cotMin=0;sug()"><button class="s" onclick="cotizar()">💰 Cotizar con Maps</button></div><div id="sug" class="mu"></div>
 ${f('costo','Costo ($)',s.costo,'number')}
@@ -234,7 +250,7 @@ ${f('nota','Nota',s.nota)}
 <label><input type="checkbox" id="g_pago" style="width:auto"> 💾 Recordar forma de pago y datos de factura de este cliente</label>
 <div id="fx" ${s.factura?'':'hidden'}><label>Régimen fiscal</label><select id="regimen"><option value="">Elegir…</option>${opts(REG,c.regimen)}</select>${f('rfc','RFC',c.rfc)}${f('razon_social','Razón social',c.razon_social)}${f('correo','Correo',c.correo,'email')}${f('cp','CP fiscal',c.cp)}</div>
 </div><div class="r"><button onclick="guardarS()" style="flex:1">Guardar</button><button class="s" onclick="tab('serv')">Cancelar</button></div>`;
-S.PAR=(s.paradas||[]).map(x=>({...x}));S.poly=null;parRender()}
+S.PAR=(s.paradas||[]).map(x=>({...x}));S.poly=null;parRender();mapaIniciar()}
 function aplT(){const t=S.T.find(x=>x.id==$('tar').value);if(!t)return;
 $('destino').value=t.nombre;$('costo').value=$('factura').checked&&t.precio_factura?t.precio_factura:t.precio;
 $('comision_tipo').value=t.comision_tipo;$('comision_valor').value=t.comision_valor;$('especial').checked=t.especial}
@@ -252,7 +268,7 @@ const j=await r.json();if(!r.ok)throw new Error((j.error&&j.error.message)||r.st
 const rt=j.routes&&j.routes[0];if(!rt||!rt.distanceMeters)throw new Error('Google no encontró la ruta');
 $('km').value=Math.round(rt.distanceMeters/100)/10;S.cotMin=Math.round(parseInt(rt.duration)/60);S.poly=rt.polyline&&rt.polyline.encodedPolyline||null;sug()}
 catch(e){S.cotMin=0;$('sug').innerHTML='⚠️ No pude calcular la ruta ('+esc(String(e.message||e).slice(0,90))+'). Escribe los kilómetros a mano y te calculo el precio.'}
-mapaRefrescar()}
+(MP.map?mapaPines(true):Promise.resolve()).then(mapaRefrescar)}
 function sug(){const g=S.g,k=+$('km').value;if(!k||!g){$('sug').innerHTML='';return}
 const txt=($('ubic').value+' '+$('destino').value).toLowerCase(),aer=$('aeropuerto').checked||/aeropuerto/.test(txt);
 const fija=(aer?S.T.find(t=>/aeropuerto/i.test(t.nombre)):null)||(/tren maya/.test(txt)?S.T.find(t=>/tren maya/i.test(t.nombre)):null);
@@ -276,46 +292,47 @@ const j=await r.json();if(!r.ok)throw new Error((j.error&&j.error.message)||r.st
 const nm=(j.displayName&&j.displayName.text)||'',ad=j.formattedAddress||pr.text.text,txt=(nm&&!ad.startsWith(nm)?nm+', ':'')+ad.replace(/, México$/,'');
 $(id).value=txt;$(id+'_maps').value='https://maps.google.com/?q='+j.location.latitude+','+j.location.longitude;box.innerHTML='';acTok=null;
 if(/aeropuerto/i.test(txt))$('aeropuerto').checked=true;
+MP.act=id;if(MP.map)mapaPines(false).then(()=>{const l=mpLL(id);if(l){MP.map.panTo(l);MP.map.setZoom(17)}});
 if($('ubic').value&&$('destino').value&&$('km')&&!$('km').value)cotizar()}
 catch(e){box.innerHTML='<div class="mu">No pude traer la ubicación ('+esc(String(e.message||e).slice(0,70))+')</div>'}}
 /* ===== PARADAS Y MAPA ===== */
 function parSync(){S.PAR=(S.PAR||[]).map((p,i)=>({t:$('par_t_'+i)?$('par_t_'+i).value.trim():p.t,m:$('par_t_'+i+'_maps')?$('par_t_'+i+'_maps').value.trim():p.m}))}
-function parRender(){const b=$('par_box');if(!b)return;b.innerHTML=(S.PAR||[]).map((p,i)=>`<div class="c" style="margin:6px 0"><label>🛑 Parada ${i+1} <span class="mu">· escribe y elige de la lista</span></label><div class="r"><input id="par_t_${i}" style="flex:1;width:auto" autocomplete="off" value="${esc(p.t)}" oninput="acBuscar('par_t_${i}')"><button class="s" onclick="parDel(${i})">🗑️</button></div><div id="ac_par_t_${i}"></div><input id="par_t_${i}_maps" placeholder="Link de Maps (se llena solo)" value="${esc(p.m)}"></div>`).join('')}
-function parAdd(){parSync();S.PAR.push({t:'',m:''});parRender();$('par_t_'+(S.PAR.length-1)).focus()}
-function parDel(i){parSync();S.PAR.splice(i,1);parRender();if($('km')&&$('km').value)cotizar()}
+function parRender(){const b=$('par_box');if(!b)return;b.innerHTML=(S.PAR||[]).map((p,i)=>`<div class="c" style="margin:6px 0"><label>🛑 Parada ${i+1} <span class="mu">· escribe y elige de la lista</span></label><div class="r"><input id="par_t_${i}" style="flex:1;width:auto" autocomplete="off" value="${esc(p.t)}" onfocus="mpElegir('par_t_${i}')" oninput="acBuscar('par_t_${i}')"><button class="s" onclick="parDel(${i})">🗑️</button></div><div id="ac_par_t_${i}"></div><input id="par_t_${i}_maps" placeholder="Link de Maps (se llena solo)" value="${esc(p.m)}"></div>`).join('')}
+function parAdd(){parSync();S.PAR.push({t:'',m:''});parCambio();$('par_t_'+(S.PAR.length-1)).focus()}
+function parDel(i){parSync();S.PAR.splice(i,1);parCambio();if($('km')&&$('km').value)cotizar()}
 function decPoly(s){let i=0,la=0,ln=0,o=[];while(i<s.length){let b,sh=0,r=0;do{b=s.charCodeAt(i++)-63;r|=(b&31)<<sh;sh+=5}while(b>=32);la+=(r&1)?~(r>>1):(r>>1);sh=0;r=0;do{b=s.charCodeAt(i++)-63;r|=(b&31)<<sh;sh+=5}while(b>=32);ln+=(r&1)?~(r>>1):(r>>1);o.push({lat:la/1e5,lng:ln/1e5})}return o}
-const MP={map:null,mk:{},line:null,act:'ubic',ids:[],lib:null,gc:null,t:null};
+const MP={map:null,mk:{},line:null,act:'ubic',lib:null,gc:null,t:null,cache:{}};
 function gmapsLoad(){return new Promise((res,rej)=>{if(window.google&&google.maps&&google.maps.importLibrary)return res();if(window._gml){window._gml.push([res,rej]);return}window._gml=[[res,rej]];window.__gmcb=()=>{const a=window._gml;window._gml=null;a.forEach(x=>x[0]())};const s=document.createElement('script');s.src='https://maps.googleapis.com/maps/api/js?key='+GKEY+'&callback=__gmcb&v=weekly&language=es&region=MX';s.onerror=()=>{const a=window._gml||[];window._gml=null;a.forEach(x=>x[1](new Error('No cargó Google Maps')))};document.head.appendChild(s)})}
-const mpLL=id=>{const m=($(id+'_maps')?$(id+'_maps').value:'').match(/[?&](?:q|query|destination)=(-?\d+\.\d+),(-?\d+\.\d+)/)||($(id+'_maps')?$(id+'_maps').value:'').match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);return m?{lat:+m[1],lng:+m[2]}:null};
-const mpName=(id,i,n)=>id=='ubic'?'A · Recoger':id=='destino'?'B · Destino':'🛑 '+(i)+' · Parada';
-function mpBotones(){$('mpsel').innerHTML=MP.ids.map((id,i)=>`<button class="${id==MP.act?'':'s'}" onclick="mpElegir('${id}')">${id=='ubic'?'A · Recoger':id=='destino'?'B · Destino':'🛑 Parada '+i}</button>`).join('')}
-function mpElegir(id){MP.act=id;mpBotones();$('mphint').textContent=MP.mk[id]?'Arrastra el pin o toca el mapa para moverlo.':'Toca el mapa para poner este punto.'}
-function mpPin(id,ll){const L=MP.lib;if(MP.mk[id]){MP.mk[id].position=ll;return}
-const k=MP.ids.indexOf(id),last=MP.ids.length-1,txt=id=='ubic'?'A':id=='destino'?'B':String(k),bg=id=='ubic'?'#188038':id=='destino'?'#c0392b':'#1f6feb';
+const mpLL=id=>{const v=$(id+'_maps')?$(id+'_maps').value:'',m=v.match(/[?&](?:q|query|destination)=(-?\d+\.\d+),(-?\d+\.\d+)/)||v.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);return m?{lat:+m[1],lng:+m[2]}:null};
+const mpIds=()=>['ubic',...(S.PAR||[]).map((p,i)=>'par_t_'+i),'destino'];
+function mpBotones(){if(!$('mpsel'))return;$('mpsel').innerHTML=mpIds().map((id,i)=>`<button class="${id==MP.act?'':'s'}" onclick="mpElegir('${id}')">${id=='ubic'?'A · Recoger':id=='destino'?'B · Destino':'🛑 Parada '+i}</button>`).join('')}
+function mpElegir(id){MP.act=id;if(!$('mpsel'))return;mpBotones();$('mphint').textContent=!MP.map?'Cargando mapa…':MP.mk[id]?'Arrastra el pin o toca el mapa para moverlo.':'Toca el mapa para poner este punto.'}
+function mpPin(id,ll){if(MP.mk[id]){MP.mk[id].position=ll;return}
+const L=MP.lib,ids=mpIds(),k=ids.indexOf(id),txt=id=='ubic'?'A':id=='destino'?'B':String(k),bg=id=='ubic'?'#188038':id=='destino'?'#c0392b':'#1f6feb';
 const pe=new L.PinElement({glyphText:txt,glyphColor:'#fff',background:bg,borderColor:'#1d1d1b'});
-const m=new L.AdvancedMarkerElement({map:MP.map,position:ll,gmpDraggable:true,content:pe.element,title:mpName(id,k)});
+const m=new L.AdvancedMarkerElement({map:MP.map,position:ll,gmpDraggable:true,content:pe.element,title:id});
 m.addListener('dragend',()=>{const p=m.position;mpSet(id,{lat:typeof p.lat=='function'?p.lat():p.lat,lng:typeof p.lng=='function'?p.lng():p.lng})});
 m.addListener('gmp-click',()=>mpElegir(id));MP.mk[id]=m}
 async function mpSet(id,ll){mpPin(id,ll);$(id+'_maps').value='https://maps.google.com/?q='+ll.lat.toFixed(6)+','+ll.lng.toFixed(6);
 try{const r=await MP.gc.geocode({location:ll});const rs=r.results||[];const x=rs.find(a=>/street_address|premise|route/.test((a.types||[]).join(',')))||rs[0];if(x)$(id).value=x.formatted_address.replace(/, México$/,'')}catch(e){toast('Moví el pin. Si la dirección no se llenó, escríbela a mano.')}
-clearTimeout(MP.t);MP.t=setTimeout(()=>{if(MP.ids.filter(i=>mpLL(i)).length>=2)cotizar()},500)}
-async function mapaAbrir(){parSync();MP.ids=['ubic',...(S.PAR||[]).map((p,i)=>'par_t_'+i),'destino'];MP.act='ubic';MP.mk={};MP.line=null;
-const o=document.createElement('div');o.id='mapov';o.style.cssText='position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column;padding:10px;gap:8px';
-o.innerHTML='<div class="r" style="justify-content:space-between"><b>🗺️ Ubicación en el mapa</b><button class="s" onclick="mapaCerrar()">✅ Listo</button></div><div class="r" id="mpsel"></div><div class="mu" id="mphint">Cargando mapa…</div><div id="mpmap" style="flex:1;min-height:280px;border-radius:12px;overflow:hidden;background:#ddd"></div><div id="mpinfo" class="mu" style="max-height:30vh;overflow:auto"></div>';
-document.body.appendChild(o);mpBotones();mapaRefrescar();
-try{await gmapsLoad();const [a,b,c]=await Promise.all([google.maps.importLibrary('maps'),google.maps.importLibrary('marker'),google.maps.importLibrary('geocoding')]);
-MP.lib=b;MP.gc=new c.Geocoder();MP.map=new a.Map($('mpmap'),{center:{lat:19.845,lng:-90.523},zoom:13,mapId:'DEMO_MAP_ID',gestureHandling:'greedy',streetViewControl:false,mapTypeControl:false,fullscreenControl:false});
-MP.map.addListener('click',e=>mpSet(MP.act,{lat:e.latLng.lat(),lng:e.latLng.lng()}));
-const bd=new a.LatLngBounds();let n=0;
-for(const id of MP.ids){let ll=mpLL(id);const txt=$(id)?$(id).value.trim():'';
-if(!ll&&txt){try{const r=await MP.gc.geocode({address:(/campeche/i.test(txt)?txt:txt+', Campeche, México')});const g=r.results&&r.results[0];if(g)ll={lat:g.geometry.location.lat(),lng:g.geometry.location.lng()}}catch(e){}}
+clearTimeout(MP.t);MP.t=setTimeout(()=>{if(mpIds().filter(i=>mpLL(i)).length>=2)cotizar()},500)}
+async function mapaPines(fit){if(!MP.map)return;Object.values(MP.mk).forEach(m=>{m.map=null});MP.mk={};const bd=new google.maps.LatLngBounds();let n=0;
+for(const id of mpIds()){let ll=mpLL(id);const txt=$(id)?$(id).value.trim():'';
+if(!ll&&txt&&MP.cache[txt]!==false){if(MP.cache[txt])ll=MP.cache[txt];else{try{const r=await MP.gc.geocode({address:(/campeche/i.test(txt)?txt:txt+', Campeche, México')});const g=r.results&&r.results[0];ll=g?{lat:g.geometry.location.lat(),lng:g.geometry.location.lng()}:null}catch(e){ll=null}MP.cache[txt]=ll||false}}
 if(ll){mpPin(id,ll);bd.extend(ll);n++}}
-if(n>1)MP.map.fitBounds(bd,60);else if(n==1){MP.map.setCenter(bd.getCenter());MP.map.setZoom(16)}
-const first=MP.ids.find(i=>!MP.mk[i]);mpElegir(first||'ubic');mapaRefrescar()}
-catch(e){$('mphint').textContent='⚠️ No pude abrir el mapa ('+String(e.message||e).slice(0,80)+'). Revisa que Maps JavaScript API esté activa.'}}
+if(fit!==false){if(n>1)MP.map.fitBounds(bd,60);else if(n==1){MP.map.setCenter(bd.getCenter());MP.map.setZoom(16)}}
+mpElegir(MP.act)}
+async function mapaIniciar(){MP.map=null;MP.mk={};MP.line=null;MP.act='ubic';if(!$('mpmap'))return;mpBotones();$('mphint').textContent='Cargando mapa…';
+try{await gmapsLoad();const [a,b,c]=await Promise.all([google.maps.importLibrary('maps'),google.maps.importLibrary('marker'),google.maps.importLibrary('geocoding')]);
+if(!$('mpmap'))return;MP.lib=b;MP.gc=new c.Geocoder();
+MP.map=new a.Map($('mpmap'),{center:{lat:19.845,lng:-90.523},zoom:13,mapId:'DEMO_MAP_ID',gestureHandling:'greedy',streetViewControl:false,mapTypeControl:true,fullscreenControl:false});
+MP.map.addListener('click',e=>mpSet(MP.act,{lat:e.latLng.lat(),lng:e.latLng.lng()}));
+await mapaPines(true);mapaRefrescar()}
+catch(e){if($('mphint'))$('mphint').textContent='⚠️ No pude abrir el mapa ('+String(e.message||e).slice(0,80)+'). Revisa que Maps JavaScript API esté activa.'}}
 function mapaRefrescar(){const o=$('mpinfo');if(!o)return;o.innerHTML=$('sug')?$('sug').innerHTML:'';
 if(MP.map&&S.poly&&MP.lib){if(MP.line)MP.line.setMap(null);MP.line=new google.maps.Polyline({path:decPoly(S.poly),strokeColor:'#1f6feb',strokeOpacity:.85,strokeWeight:5,map:MP.map})}}
-function mapaCerrar(){const o=$('mapov');if(o)o.remove();MP.map=null;MP.mk={};MP.line=null;if($('km')&&$('km').value)sug()}
+function mapaGrande(){const b=$('mapbox');if(!b)return;b.classList.toggle('mpfull');const f=b.classList.contains('mpfull');$('mpbig').textContent=f?'✅ Listo':'⤢ Agrandar';document.body.style.overflow=f?'hidden':'';if(!f&&$('km')&&$('km').value)sug();mapaRefrescar();setTimeout(()=>{if(MP.map)google.maps.event.trigger(MP.map,'resize')},250)}
+function parCambio(){parRender();mpBotones();mapaPines(false)}
 function gps(i){navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>$(i).value='https://maps.google.com/?q='+p.coords.latitude+','+p.coords.longitude,()=>toast('No se pudo obtener el GPS'),{enableHighAccuracy:true}):toast('Sin GPS')}
 async function guardarS(){
 const v=i=>$(i).value.trim(),n=i=>+$(i).value||0;
