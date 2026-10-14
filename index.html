@@ -55,10 +55,11 @@ const llegada=s=>{let [h,m]=s.hora.split(':'),x=(+h)*60+(+m)-(+s.min_antes);if(x
 const dia=f=>{const t=new Date(f+'T12:00:00').toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}).replace(',','');return t[0].toUpperCase()+t.slice(1)};
 const com=s=>{const v=+s.comision_valor||0,c=s.comision_tipo=='fijo'?v:(+s.costo||0)*v/100,i=c*(+s.comision_iva||0)/100;return{c,i,t:c+i}};
 function pt(l,t){const m=(l||'').match(/(?:q=|@)(-?\d+\.\d+),(-?\d+\.\d+)/);return m?m[1]+','+m[2]:t}
-const ruta=s=>'https://www.google.com/maps/dir/?api=1&travelmode=driving&origin='+encodeURIComponent(pt(s.ubic_maps,s.ubic))+'&destination='+encodeURIComponent(pt(s.destino_maps,s.destino));
+const ruta=s=>'https://www.google.com/maps/dir/?api=1&travelmode=driving&origin='+encodeURIComponent(pt(s.ubic_maps,s.ubic))+'&destination='+encodeURIComponent(pt(s.destino_maps,s.destino))+(s.paradas&&s.paradas.length?'&waypoints='+encodeURIComponent(s.paradas.map(p=>pt(p.m,p.t)).join('|')):'');
 function msg(s,g){let t='';if(s.ubic_maps)t+=s.ubic_maps+'\n\n';
 t+='Servicio '+(s.expres?'Exprés':'Programado')+' *'+dia(s.fecha)+'*\nHora de llegada\n*'+h12(llegada(s))+'*\nHora programada\n*'+h12(s.hora)+'*\n';
 if(s.ubic)t+='Ubicación\n*'+s.ubic+'*\n';
+if(s.paradas&&s.paradas.length)t+='Paradas:\n'+s.paradas.map((p,i)=>'*'+(i+1)+'. '+p.t+'*'+(p.m?'\n'+p.m:'')).join('\n')+'\n';
 if(s.destino)t+='Destino:\n*'+s.destino+'*\n'+(s.destino_maps?s.destino_maps+'\n':'');
 if(s.costo)t+='Costo\n*$ '+s.costo+'*\n';
 if(s.nota)t+='Nota\n*'+s.nota+'*\n';
@@ -170,6 +171,7 @@ const k=com(s),c=+s.costo||0,mine=s.tomado_por==S.me.id,cl=S.C[s.id],n=EST[s.est
 let x=`<div class="c" style="border-left:8px solid ${col}${s.aeropuerto?';outline:2px solid #0f9d9a':''}${S.hl==s.id?';box-shadow:0 0 0 4px #f2b705':''}">
 <div class="r" style="justify-content:space-between">${s.expres?`<span class="hr" style="color:#c0261b">⚡ EXPRÉS <span class="mu" style="font-size:13px;font-weight:600">${fo(s)} · subido ${h12(s.hora)}</span></span><span class="mu">¡Ya!</span>`:`<span class="hr" style="color:#1c4fa1">🕐 PROGRAMADO ${h12(s.hora)} <span class="mu" style="font-size:13px;font-weight:600">${fo(s)}</span></span><span class="mu">Llegar ${h12(llegada(s))}</span>`}</div>
 <div>${esc(s.ubic)} → <b>${esc(s.destino)}</b></div>
+${(s.paradas||[]).length?`<div style="font-weight:700">🛑 Paradas: ${s.paradas.map(p=>esc(p.t)).join(' → ')}</div>`:''}
 ${+s.km>0?`<div style="font-size:19px;font-weight:800;margin:4px 0">📏 ${s.km} km${+s.precio_sug>0?` · Mapa $${r2(+s.precio_sug)}${c>+s.precio_sug?` → Se cobra $${r2(c)} <span style="color:#0a7a3c">(+$${r2(c-s.precio_sug)})</span>`:c<+s.precio_sug?` → Se cobra $${r2(c)} <span style="color:#c0261b">(−$${r2(s.precio_sug-c)})</span>`:` · Se cobra $${r2(c)}`}`:''}</div>`:''}
 <div class="mu"><b style="font-size:18px;color:var(--tx,#1d1d1b)">$${r2(c)}</b><span class="t ${s.expres?'ex':'pr'}">${s.expres?'EXPRÉS':'PROGRAMADO'}</span><span class="t" style="background:${col};color:${s.estado=='disponible'&&!sc?'#1d1d1b':'#fff'}">${sc?'SIN CUBRIR':ST_TXT[s.estado]||esc(s.estado)}</span>${s.pago!='Efectivo'?'<span class="t '+(s.pago=='Tarjeta crédito'?'pc':'pg')+'">'+esc(s.pago)+'</span>':''}${s.factura?'<span class="t">FACTURA</span>':''}${s.especial?'<span class="t">ESPECIAL</span>':''}${s.aeropuerto?'<span class="t ae">✈️ AEROPUERTO · PLACAS FEDERALES</span>':''}</div>
 ${s.estado=='cancelado'&&s.cancel_motivo?`<div class="mu">❌ Motivo: ${esc(s.cancel_motivo)}</div>`:''}
@@ -212,9 +214,11 @@ ${f('min_antes','Minutos antes de llegar',s.min_antes,'number')}
 <label>Ubicación (texto) <span class="mu">· escribe y elige de la lista</span></label><input id="ubic" value="${esc(s.ubic)}" autocomplete="off" oninput="if(/aeropuerto/i.test(this.value))$('aeropuerto').checked=true;acBuscar('ubic')"><div id="ac_ubic"></div>
 <label>Link de Maps de la ubicación</label><div class="r"><input id="ubic_maps" style="flex:1;width:auto" value="${esc(s.ubic_maps)}"><button class="s" onclick="gps('ubic_maps')">📍</button></div>
 <label>💾 Guardar esta ubicación en el cliente como</label><select id="g_ub" onchange="S.gdt=1;nomL(this)">${opts(GL,'No guardar')}<option value="__otro">✏️ Otro nombre…</option></select>
-<label>Destino <span class="mu">· escribe y elige de la lista</span></label><input id="destino" value="${esc(s.destino)}" autocomplete="off" oninput="acBuscar('destino')"><div id="ac_destino"></div>
+<div id="par_box"></div><button class="s" onclick="parAdd()" style="margin-top:6px">➕ Agregar parada (otro destino)</button>
+<label>Destino final <span class="mu">· escribe y elige de la lista</span></label><input id="destino" value="${esc(s.destino)}" autocomplete="off" oninput="acBuscar('destino')"><div id="ac_destino"></div>
 <label>Link de Maps del destino</label><div class="r"><input id="destino_maps" style="flex:1;width:auto" value="${esc(s.destino_maps)}"><button class="s" onclick="gps('destino_maps')">📍</button></div>
 <label>💾 Guardar este destino en el cliente como</label><select id="g_dn" onchange="nomL(this)">${opts(GL,'No guardar')}<option value="__otro">✏️ Otro nombre…</option></select>
+<button class="s" onclick="mapaAbrir()" style="width:100%;margin-top:10px">🗺️ Ver en mapa y mover los pines</button>
 <label>Tarifa fija</label><select id="tar" onchange="aplT()"><option value="">—</option>${S.T.map(t=>`<option value="${t.id}">${esc(t.nombre)} $${t.precio}</option>`).join('')}</select>
 <label>Kilómetros (para precio sugerido)</label><div class="r"><input id="km" type="number" step="0.1" style="flex:1;width:auto" oninput="S.cotMin=0;sug()"><button class="s" onclick="cotizar()">💰 Cotizar con Maps</button></div><div id="sug" class="mu"></div>
 ${f('costo','Costo ($)',s.costo,'number')}
@@ -229,7 +233,8 @@ ${f('nota','Nota',s.nota)}
 <label><input type="checkbox" id="factura"${s.factura?' checked':''} style="width:auto" onchange="$('fx').hidden=!this.checked"> Requiere factura</label>
 <label><input type="checkbox" id="g_pago" style="width:auto"> 💾 Recordar forma de pago y datos de factura de este cliente</label>
 <div id="fx" ${s.factura?'':'hidden'}><label>Régimen fiscal</label><select id="regimen"><option value="">Elegir…</option>${opts(REG,c.regimen)}</select>${f('rfc','RFC',c.rfc)}${f('razon_social','Razón social',c.razon_social)}${f('correo','Correo',c.correo,'email')}${f('cp','CP fiscal',c.cp)}</div>
-</div><div class="r"><button onclick="guardarS()" style="flex:1">Guardar</button><button class="s" onclick="tab('serv')">Cancelar</button></div>`}
+</div><div class="r"><button onclick="guardarS()" style="flex:1">Guardar</button><button class="s" onclick="tab('serv')">Cancelar</button></div>`;
+S.PAR=(s.paradas||[]).map(x=>({...x}));S.poly=null;parRender()}
 function aplT(){const t=S.T.find(x=>x.id==$('tar').value);if(!t)return;
 $('destino').value=t.nombre;$('costo').value=$('factura').checked&&t.precio_factura?t.precio_factura:t.precio;
 $('comision_tipo').value=t.comision_tipo;$('comision_valor').value=t.comision_valor;$('especial').checked=t.especial}
@@ -239,14 +244,15 @@ const m=maps.match(/[?&](?:q|query|destination)=(-?\d+\.\d+),(-?\d+\.\d+)/)||map
 if(m)return {location:{latLng:{latitude:+m[1],longitude:+m[2]}}};
 if(txt)return {address:/campeche/i.test(txt)?txt:txt+', Campeche, México'};
 return null}
-async function cotizar(){const o=ptoRuta($('ubic').value,$('ubic_maps').value),d=ptoRuta($('destino').value,$('destino_maps').value);
+async function cotizar(){parSync();const o=ptoRuta($('ubic').value,$('ubic_maps').value),d=ptoRuta($('destino').value,$('destino_maps').value),inter=(S.PAR||[]).map(p=>ptoRuta(p.t,p.m)).filter(Boolean);
 if(!o||!d)return toast('Primero pon la ubicación y el destino');
 $('sug').innerHTML='Calculando la ruta…';
-try{const r=await fetch('https://routes.googleapis.com/directions/v2:computeRoutes',{method:'POST',headers:{'Content-Type':'application/json','X-Goog-Api-Key':GKEY,'X-Goog-FieldMask':'routes.distanceMeters,routes.duration'},body:JSON.stringify({origin:o,destination:d,travelMode:'DRIVE',routingPreference:'TRAFFIC_UNAWARE',languageCode:'es-MX',regionCode:'MX'})});
+try{const r=await fetch('https://routes.googleapis.com/directions/v2:computeRoutes',{method:'POST',headers:{'Content-Type':'application/json','X-Goog-Api-Key':GKEY,'X-Goog-FieldMask':'routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline'},body:JSON.stringify({origin:o,destination:d,...(inter.length?{intermediates:inter}:{}),travelMode:'DRIVE',routingPreference:'TRAFFIC_UNAWARE',languageCode:'es-MX',regionCode:'MX'})});
 const j=await r.json();if(!r.ok)throw new Error((j.error&&j.error.message)||r.status);
 const rt=j.routes&&j.routes[0];if(!rt||!rt.distanceMeters)throw new Error('Google no encontró la ruta');
-$('km').value=Math.round(rt.distanceMeters/100)/10;S.cotMin=Math.round(parseInt(rt.duration)/60);sug()}
-catch(e){S.cotMin=0;$('sug').innerHTML='⚠️ No pude calcular la ruta ('+esc(String(e.message||e).slice(0,90))+'). Escribe los kilómetros a mano y te calculo el precio.'}}
+$('km').value=Math.round(rt.distanceMeters/100)/10;S.cotMin=Math.round(parseInt(rt.duration)/60);S.poly=rt.polyline&&rt.polyline.encodedPolyline||null;sug()}
+catch(e){S.cotMin=0;$('sug').innerHTML='⚠️ No pude calcular la ruta ('+esc(String(e.message||e).slice(0,90))+'). Escribe los kilómetros a mano y te calculo el precio.'}
+mapaRefrescar()}
 function sug(){const g=S.g,k=+$('km').value;if(!k||!g){$('sug').innerHTML='';return}
 const txt=($('ubic').value+' '+$('destino').value).toLowerCase(),aer=$('aeropuerto').checked||/aeropuerto/.test(txt);
 const fija=(aer?S.T.find(t=>/aeropuerto/i.test(t.nombre)):null)||(/tren maya/.test(txt)?S.T.find(t=>/tren maya/i.test(t.nombre)):null);
@@ -272,6 +278,44 @@ $(id).value=txt;$(id+'_maps').value='https://maps.google.com/?q='+j.location.lat
 if(/aeropuerto/i.test(txt))$('aeropuerto').checked=true;
 if($('ubic').value&&$('destino').value&&$('km')&&!$('km').value)cotizar()}
 catch(e){box.innerHTML='<div class="mu">No pude traer la ubicación ('+esc(String(e.message||e).slice(0,70))+')</div>'}}
+/* ===== PARADAS Y MAPA ===== */
+function parSync(){S.PAR=(S.PAR||[]).map((p,i)=>({t:$('par_t_'+i)?$('par_t_'+i).value.trim():p.t,m:$('par_t_'+i+'_maps')?$('par_t_'+i+'_maps').value.trim():p.m}))}
+function parRender(){const b=$('par_box');if(!b)return;b.innerHTML=(S.PAR||[]).map((p,i)=>`<div class="c" style="margin:6px 0"><label>🛑 Parada ${i+1} <span class="mu">· escribe y elige de la lista</span></label><div class="r"><input id="par_t_${i}" style="flex:1;width:auto" autocomplete="off" value="${esc(p.t)}" oninput="acBuscar('par_t_${i}')"><button class="s" onclick="parDel(${i})">🗑️</button></div><div id="ac_par_t_${i}"></div><input id="par_t_${i}_maps" placeholder="Link de Maps (se llena solo)" value="${esc(p.m)}"></div>`).join('')}
+function parAdd(){parSync();S.PAR.push({t:'',m:''});parRender();$('par_t_'+(S.PAR.length-1)).focus()}
+function parDel(i){parSync();S.PAR.splice(i,1);parRender();if($('km')&&$('km').value)cotizar()}
+function decPoly(s){let i=0,la=0,ln=0,o=[];while(i<s.length){let b,sh=0,r=0;do{b=s.charCodeAt(i++)-63;r|=(b&31)<<sh;sh+=5}while(b>=32);la+=(r&1)?~(r>>1):(r>>1);sh=0;r=0;do{b=s.charCodeAt(i++)-63;r|=(b&31)<<sh;sh+=5}while(b>=32);ln+=(r&1)?~(r>>1):(r>>1);o.push({lat:la/1e5,lng:ln/1e5})}return o}
+const MP={map:null,mk:{},line:null,act:'ubic',ids:[],lib:null,gc:null,t:null};
+function gmapsLoad(){return new Promise((res,rej)=>{if(window.google&&google.maps&&google.maps.importLibrary)return res();if(window._gml){window._gml.push([res,rej]);return}window._gml=[[res,rej]];window.__gmcb=()=>{const a=window._gml;window._gml=null;a.forEach(x=>x[0]())};const s=document.createElement('script');s.src='https://maps.googleapis.com/maps/api/js?key='+GKEY+'&callback=__gmcb&v=weekly&language=es&region=MX';s.onerror=()=>{const a=window._gml||[];window._gml=null;a.forEach(x=>x[1](new Error('No cargó Google Maps')))};document.head.appendChild(s)})}
+const mpLL=id=>{const m=($(id+'_maps')?$(id+'_maps').value:'').match(/[?&](?:q|query|destination)=(-?\d+\.\d+),(-?\d+\.\d+)/)||($(id+'_maps')?$(id+'_maps').value:'').match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);return m?{lat:+m[1],lng:+m[2]}:null};
+const mpName=(id,i,n)=>id=='ubic'?'A · Recoger':id=='destino'?'B · Destino':'🛑 '+(i)+' · Parada';
+function mpBotones(){$('mpsel').innerHTML=MP.ids.map((id,i)=>`<button class="${id==MP.act?'':'s'}" onclick="mpElegir('${id}')">${id=='ubic'?'A · Recoger':id=='destino'?'B · Destino':'🛑 Parada '+i}</button>`).join('')}
+function mpElegir(id){MP.act=id;mpBotones();$('mphint').textContent=MP.mk[id]?'Arrastra el pin o toca el mapa para moverlo.':'Toca el mapa para poner este punto.'}
+function mpPin(id,ll){const L=MP.lib;if(MP.mk[id]){MP.mk[id].position=ll;return}
+const k=MP.ids.indexOf(id),last=MP.ids.length-1,txt=id=='ubic'?'A':id=='destino'?'B':String(k),bg=id=='ubic'?'#188038':id=='destino'?'#c0392b':'#1f6feb';
+const pe=new L.PinElement({glyphText:txt,glyphColor:'#fff',background:bg,borderColor:'#1d1d1b'});
+const m=new L.AdvancedMarkerElement({map:MP.map,position:ll,gmpDraggable:true,content:pe.element,title:mpName(id,k)});
+m.addListener('dragend',()=>{const p=m.position;mpSet(id,{lat:typeof p.lat=='function'?p.lat():p.lat,lng:typeof p.lng=='function'?p.lng():p.lng})});
+m.addListener('gmp-click',()=>mpElegir(id));MP.mk[id]=m}
+async function mpSet(id,ll){mpPin(id,ll);$(id+'_maps').value='https://maps.google.com/?q='+ll.lat.toFixed(6)+','+ll.lng.toFixed(6);
+try{const r=await MP.gc.geocode({location:ll});const rs=r.results||[];const x=rs.find(a=>/street_address|premise|route/.test((a.types||[]).join(',')))||rs[0];if(x)$(id).value=x.formatted_address.replace(/, México$/,'')}catch(e){toast('Moví el pin. Si la dirección no se llenó, escríbela a mano.')}
+clearTimeout(MP.t);MP.t=setTimeout(()=>{if(MP.ids.filter(i=>mpLL(i)).length>=2)cotizar()},500)}
+async function mapaAbrir(){parSync();MP.ids=['ubic',...(S.PAR||[]).map((p,i)=>'par_t_'+i),'destino'];MP.act='ubic';MP.mk={};MP.line=null;
+const o=document.createElement('div');o.id='mapov';o.style.cssText='position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column;padding:10px;gap:8px';
+o.innerHTML='<div class="r" style="justify-content:space-between"><b>🗺️ Ubicación en el mapa</b><button class="s" onclick="mapaCerrar()">✅ Listo</button></div><div class="r" id="mpsel"></div><div class="mu" id="mphint">Cargando mapa…</div><div id="mpmap" style="flex:1;min-height:280px;border-radius:12px;overflow:hidden;background:#ddd"></div><div id="mpinfo" class="mu" style="max-height:30vh;overflow:auto"></div>';
+document.body.appendChild(o);mpBotones();mapaRefrescar();
+try{await gmapsLoad();const [a,b,c]=await Promise.all([google.maps.importLibrary('maps'),google.maps.importLibrary('marker'),google.maps.importLibrary('geocoding')]);
+MP.lib=b;MP.gc=new c.Geocoder();MP.map=new a.Map($('mpmap'),{center:{lat:19.845,lng:-90.523},zoom:13,mapId:'DEMO_MAP_ID',gestureHandling:'greedy',streetViewControl:false,mapTypeControl:false,fullscreenControl:false});
+MP.map.addListener('click',e=>mpSet(MP.act,{lat:e.latLng.lat(),lng:e.latLng.lng()}));
+const bd=new a.LatLngBounds();let n=0;
+for(const id of MP.ids){let ll=mpLL(id);const txt=$(id)?$(id).value.trim():'';
+if(!ll&&txt){try{const r=await MP.gc.geocode({address:(/campeche/i.test(txt)?txt:txt+', Campeche, México')});const g=r.results&&r.results[0];if(g)ll={lat:g.geometry.location.lat(),lng:g.geometry.location.lng()}}catch(e){}}
+if(ll){mpPin(id,ll);bd.extend(ll);n++}}
+if(n>1)MP.map.fitBounds(bd,60);else if(n==1){MP.map.setCenter(bd.getCenter());MP.map.setZoom(16)}
+const first=MP.ids.find(i=>!MP.mk[i]);mpElegir(first||'ubic');mapaRefrescar()}
+catch(e){$('mphint').textContent='⚠️ No pude abrir el mapa ('+String(e.message||e).slice(0,80)+'). Revisa que Maps JavaScript API esté activa.'}}
+function mapaRefrescar(){const o=$('mpinfo');if(!o)return;o.innerHTML=$('sug')?$('sug').innerHTML:'';
+if(MP.map&&S.poly&&MP.lib){if(MP.line)MP.line.setMap(null);MP.line=new google.maps.Polyline({path:decPoly(S.poly),strokeColor:'#1f6feb',strokeOpacity:.85,strokeWeight:5,map:MP.map})}}
+function mapaCerrar(){const o=$('mapov');if(o)o.remove();MP.map=null;MP.mk={};MP.line=null;if($('km')&&$('km').value)sug()}
 function gps(i){navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>$(i).value='https://maps.google.com/?q='+p.coords.latitude+','+p.coords.longitude,()=>toast('No se pudo obtener el GPS'),{enableHighAccuracy:true}):toast('Sin GPS')}
 async function guardarS(){
 const v=i=>$(i).value.trim(),n=i=>+$(i).value||0;
@@ -282,6 +326,7 @@ if(!(n('costo')>0)&&!confirm('El costo está en $0. ¿Guardar así?'))return;
 const hayHora=!!hh();
 const o={fecha:v('fecha'),hora:hora,min_antes:ma,ubic:v('ubic'),ubic_maps:v('ubic_maps'),destino:v('destino'),destino_maps:v('destino_maps'),costo:n('costo'),nota:v('nota'),pago:v('pago'),factura:$('factura').checked,expres:hayHora?false:$('expres').checked,especial:$('especial').checked,aeropuerto:$('aeropuerto').checked,comision_tipo:v('comision_tipo'),comision_valor:n('comision_valor'),comision_iva:n('comision_iva')};
 if(n('km')>0){o.km=n('km');o.precio_sug=S.sugP||null}
+parSync();{const pr=(S.PAR||[]).filter(p=>p.t||p.m);if(pr.length)o.paradas=pr;else if(S.form.id&&byId(S.form.id).paradas)o.paradas=null}
 let id=S.form.id,e;
 if(id){e=(await sb.from('servicios').update(o).eq('id',id)).error}
 else{const r=await sb.from('servicios').insert({...o,grupo_id:S.me.grupo_id,creado_por:S.me.id}).select('id').single();e=r.error;id=r.data&&r.data.id}
