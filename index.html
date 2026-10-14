@@ -108,6 +108,28 @@ if(!r.data.session)r=await sb.auth.signInWithPassword({email:mail(cel),password:
 }else r=await sb.auth.signInWithPassword({email:mail(cel),password:pin});
 if(r.error)return er('Celular o PIN incorrectos');
 await iniciar()}
+
+const VAPID_PUB='BDhaffAUIrm2tZj38DF7skNntyJUJjINRyZS1AmfuUQe9Y3u7vFXs3Mv15z63lilLYCtqdwP5BM_vCHFBWDljKU';
+const b64u=t=>{const p='='.repeat((4-t.length%4)%4),b=(t+p).replace(/-/g,'+').replace(/_/g,'/'),r=atob(b),o=new Uint8Array(r.length);for(let i=0;i<r.length;i++)o[i]=r.charCodeAt(i);return o};
+const ios=/iPhone|iPad|iPod/.test(navigator.userAgent),standalone=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;
+async function pushInit(){const el=$('pushbar');if(!el||!S.me||!S.me.activo)return;
+let h='';try{
+if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){h=ios&&!standalone?'<div class="c" style="margin:6px 0;background:#fff7e0">🔔 <b>Para recibir avisos con sonido en iPhone:</b> instala la app. Toca el botón Compartir y luego "Agregar a pantalla de inicio". Ábrela desde ahí y activa los avisos.</div>':''}
+else if(Notification.permission=='denied'){h='<div class="mu" style="margin:6px 0">🔕 Los avisos están bloqueados en este celular. Actívalos en los permisos del navegador para este sitio.</div>'}
+else{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();
+h=sub&&Notification.permission=='granted'?'<div class="mu" style="margin:6px 0">🔔 Avisos con sonido: <b>activados</b> en este celular <button class="s" onclick="pushQuitar()">Quitar</button></div>':'<div class="c" style="margin:6px 0;background:#fff7e0">🔔 <b>Activa los avisos</b> para que suene cuando suba un servicio. <button onclick="pushActivar()">Activar</button></div>'}}catch(e){h=''}
+if($('pushbar'))$('pushbar').innerHTML=h}
+async function pushActivar(){try{
+const p=await Notification.requestPermission();if(p!='granted')return toast('No diste permiso. Los avisos no se activaron.');
+const reg=await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();
+if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
+const j=sub.toJSON(),er=(await sb.from('push_subs').upsert({usuario_id:S.me.id,grupo_id:S.me.grupo_id,endpoint:sub.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth},{onConflict:'endpoint'})).error;
+if(er)return toast('No se pudo guardar: '+er.message);
+toast('Avisos activados ✅');try{reg.showNotification('Agenda Taxi',{body:'Listo, así te van a avisar cuando suba un servicio.',icon:'icon-192.png'})}catch(x){}
+pushInit()}catch(e){toast('No se pudo activar: '+String(e.message||e).slice(0,80))}}
+async function pushQuitar(){try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();
+if(sub){await sb.from('push_subs').delete().eq('endpoint',sub.endpoint);await sub.unsubscribe()}toast('Avisos quitados en este celular');pushInit()}catch(e){toast('No se pudo quitar')}}
+function pushNuevo(ids){try{if(!ids||!ids.length)return;const r=sb.functions.invoke('push',{body:{ids}});if(r&&r.catch)r.catch(()=>{})}catch(x){}}
 async function salir(){await sb.auth.signOut();S.me=null;S.ses=false;render()}
 function modo(m){S.modo=m;render()}
 
@@ -194,9 +216,9 @@ ${S.modo=='up'?'<label>Tu nombre</label><input id="nom"><label>Código del grupo
 if(!S.me){a.innerHTML=`<h1>🚕 Agenda Taxi</h1><div class="c">Tu cuenta no está ligada a ningún grupo. Avisa al administrador.</div><button class="s" onclick="salir()">Salir</button>`;return}
 if(!S.me.activo){a.innerHTML=`<h1>🚕 Hola, ${esc(S.me.nombre)}</h1><div class="c">Tu registro está pendiente. El administrador debe activarte para que puedas entrar.</div><div class="r"><button onclick="iniciar()">Ya me activaron</button><button class="s" onclick="salir()">Salir</button></div>`;return}
 const tabs=[['serv','Servicios']].concat(staff()?[['nuevo','+ Nuevo'],['var','📅 Varios']]:[]).concat(S.me.rol=='admin'?[['av','📢 Avisos'],['eq','Equipo'],['cli','Clientes'],['res','Resumen']]:[]);
-a.innerHTML=`<div class="r" style="justify-content:space-between"><b>🚕 ${esc(S.me.nombre)}</b><span class="mu">${S.me.rol}${S.me.rol=='taxista'?' · renta hasta '+(S.me.pagado_hasta||'—'):''}</span><button class="s" onclick="salir()">Salir</button></div>
+a.innerHTML=`<div class="r" style="justify-content:space-between"><b>🚕 ${esc(S.me.nombre)}</b><span class="mu">${S.me.rol}${S.me.rol=='taxista'?' · renta hasta '+(S.me.pagado_hasta||'—'):''}</span><button class="s" onclick="salir()">Salir</button></div><div id="pushbar"></div>
 <div class="r" style="margin:8px 0">${tabs.map(t=>`<button class="${S.tab==t[0]?'':'s'}" onclick="tab('${t[0]}')">${t[1]}</button>`).join('')}</div><div id="v"></div>`;
-({serv:vServ,nuevo:vForm,var:vVarios,av:vAv,eq:vEq,cli:vCli,res:vRes})[S.tab]()}
+({serv:vServ,nuevo:vForm,var:vVarios,av:vAv,eq:vEq,cli:vCli,res:vRes})[S.tab]();pushInit()}
 function tab(t){S.mis=false;S.bq='';S.BR=null;S.tab=t;S.edit=null;S.form=t=='nuevo'?{}:null;S.gdt=0;S.SEL=S.LO=S.LD=null;if(t=='serv')cargar();if(t=='cli'){S.CL=null;cargarCli()}if(t=='res')cargarRes();if(t=='av')cargarAv().then(()=>{if(S.tab=='av')render()});render()}
 function editarS(id){S.tab='nuevo';S.form={id};render()}
 
@@ -498,7 +520,7 @@ if(D.length){if(D.length==arr.length){toast('Todos estos servicios ya existen pa
 if(!confirm('⚠️ '+D.length+' de estos servicios ya existen (mismo cliente, día y hora).\n\nAceptar = crear solo los '+(arr.length-D.length)+' que faltan.\nCancelar = no crear nada.'))return;
 for(let i=arr.length-1;i>=0;i--)if(dup(arr[i]))arr.splice(i,1)}}
 const ins=await sb.from('servicios').insert(arr).select('id');
-if(ins.error)return toast('Error: '+ins.error.message);
+if(ins.error)return toast('Error: '+ins.error.message);pushNuevo(ins.data.map(x=>x.id));
 const cl=ins.data.map(x=>{const c={servicio_id:x.id,grupo_id:S.me.grupo_id,nombre:V.nom,celular:V.cel};if(V.factura)Object.assign(c,{rfc:(V.fx.rfc||'').toUpperCase(),regimen:V.fx.regimen,razon_social:V.fx.razon_social,correo:V.fx.correo,cp:V.fx.cp});return c});
 const ce=await sb.from('servicio_cliente').upsert(cl);
 if(ce.error)toast('Se crearon los servicios, pero falló guardar el cliente: '+ce.error.message);
@@ -544,7 +566,7 @@ if(n('km')>0){o.km=n('km');o.precio_sug=S.sugP||null}
 parSync();{const pr=(S.PAR||[]).filter(p=>p.t||p.m);if(pr.length)o.paradas=pr.map(x=>({t:x.t,m:x.m}));else if(S.form.id&&byId(S.form.id).paradas)o.paradas=null}
 let id=S.form.id,e;
 if(id){e=(await sb.from('servicios').update(o).eq('id',id)).error}
-else{const r=await sb.from('servicios').insert({...o,grupo_id:S.me.grupo_id,creado_por:S.me.id}).select('id').single();e=r.error;id=r.data&&r.data.id}
+else{const r=await sb.from('servicios').insert({...o,grupo_id:S.me.grupo_id,creado_por:S.me.id}).select('id').single();e=r.error;id=r.data&&r.data.id;if(!e&&id)pushNuevo([id])}
 if(e)return toast('Error: '+e.message);
 const c={servicio_id:id,grupo_id:S.me.grupo_id,nombre:v('c_nombre'),celular:v('c_cel')};
 if(o.factura)Object.assign(c,{rfc:v('rfc').toUpperCase(),regimen:v('regimen'),razon_social:v('razon_social'),correo:v('correo'),cp:v('cp')});
