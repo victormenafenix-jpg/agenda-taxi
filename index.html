@@ -88,6 +88,7 @@ const g=await sb.from('grupos').select('*').maybeSingle();S.g=g.data;
 const t=await sb.from('tarifas').select('*').order('nombre');S.T=t.data||[];
 if(staff()){await cargarE();await cargarD()}
 if(S.me.rol=='admin'){await cargarA();await cargarV();await cargarP()}
+await cargarAv();
 const sp=qs.get('serv');if(sp){const r=await sb.from('servicios').select('fecha').eq('id',sp).maybeSingle();if(r.data){S.fecha=r.data.fecha;S.hl=sp}}
 await cargar()}
 render()}
@@ -113,12 +114,38 @@ async function cargar(){
 const {data,error}=await sb.from('servicios').select('*').eq('fecha',S.fecha).order('hora');
 if(error){toast('Error: '+error.message);return}
 S.L=data||[];S.C={};
+await cargarAv();
 if(staff()&&S.L.length){const {data:C}=await sb.from('servicio_cliente').select('*').in('servicio_id',S.L.map(x=>x.id));(C||[]).forEach(c=>S.C[c.servicio_id]=c)}
 S.CN=S.CN||{};
 if(!staff()){await Promise.all(S.L.filter(x=>x.tomado_por==S.me.id&&S.CN[x.id]===undefined).map(async x=>{const r=await sb.rpc('mi_cliente',{p_id:x.id});S.CN[x.id]=r.error?'':(r.data||'')}))}
 if(S.mis&&S.tab=='serv'&&!S.form){misServ(1);return}
 if(S.bq&&S.tab=='serv'&&!S.form){buscar(S.bq,1);return}
 if(S.tab=='serv'&&!S.form&&!(document.activeElement&&document.activeElement.id=='bq'))render()}
+async function cargarAv(){
+try{const r=await sb.from('avisos').select('*').or('expira.is.null,expira.gt.'+new Date().toISOString()).order('creado',{ascending:false}).limit(30);
+if(r.error){S.AV=[];return}
+S.AV=r.data||[];S.AVL=new Set();S.AVA={};
+if(S.AV.length){const l=await sb.from('avisos_leidos').select('aviso_id,usuario_id').in('aviso_id',S.AV.map(a=>a.id));
+(l.data||[]).forEach(x=>{(S.AVA[x.aviso_id]=S.AVA[x.aviso_id]||[]).push(x.usuario_id);if(x.usuario_id==S.me.id)S.AVL.add(x.aviso_id)})}}catch(e){S.AV=[]}}
+function avBanners(){return (S.AV||[]).filter(a=>!(S.AVL&&S.AVL.has(a.id))&&(!a.para||a.para==S.me.id)).map(a=>`<div class="c" style="border:2px solid ${a.para?'#8e44ad':'#1f6feb'};margin:8px 0"><b>${a.para?'🔒 Aviso privado':'📢 Aviso para todos'}</b><div style="white-space:pre-wrap;margin:4px 0">${esc(a.texto)}</div><button style="width:100%" onclick="avLeido('${a.id}')">✅ Enterado</button></div>`).join('')}
+async function avLeido(id){const r=await sb.from('avisos_leidos').insert({aviso_id:id,usuario_id:S.me.id});if(r.error&&!/duplicate|unique/i.test(r.error.message))return toast('Error: '+r.error.message);S.AVL=S.AVL||new Set();S.AVL.add(id);vServ()}
+function vAv(){
+const act=S.E.filter(p=>p.activo),nom=id=>{const p=S.E.find(x=>x.id==id);return p?p.nombre:'?'};
+$('v').innerHTML=`<div class="c"><b>📢 Nuevo aviso</b>
+<label>Para</label><select id="av_p"><option value="">Todos los del grupo</option>${act.filter(p=>p.id!=S.me.id).map(p=>`<option value="${p.id}">🔒 Solo a ${esc(p.nombre)}${p.taxi?' · '+esc(p.taxi):''}</option>`).join('')}</select>
+<label>Aviso</label><textarea id="av_t" rows="4" placeholder="Escribe el aviso…"></textarea>
+<label>Se muestra por</label><select id="av_d"><option value="1">1 día</option><option value="3" selected>3 días</option><option value="7">7 días</option><option value="0">Hasta que lo borre</option></select>
+<div class="r" style="margin-top:8px"><button onclick="avPublicar()" style="flex:1">📢 Publicar en la app</button><button class="s" onclick="avCompartir()">📤 Al grupo</button></div></div>
+<b>Avisos publicados</b>${(S.AV||[]).map(a=>{const quien=a.para?[a.para]:act.map(p=>p.id),leyo=S.AVA&&S.AVA[a.id]||[],si=quien.filter(i=>leyo.includes(i)),no=quien.filter(i=>!leyo.includes(i));
+return `<div class="c" style="border-left:8px solid ${a.para?'#8e44ad':'#1f6feb'}"><div class="mu">${a.para?'🔒 Privado para '+esc(nom(a.para)):'📢 Para todos'} · ${new Date(a.creado).toLocaleString('es-MX',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})}${a.expira?' · vence '+new Date(a.expira).toLocaleDateString('es-MX',{day:'numeric',month:'short'}):''}</div><div style="white-space:pre-wrap;margin:4px 0">${esc(a.texto)}</div><div class="mu">✅ Leído (${si.length}): ${si.map(i=>esc(nom(i))).join(', ')||'—'}</div><div class="mu">⏳ Falta (${no.length}): ${no.map(i=>esc(nom(i))).join(', ')||'—'}</div><button class="s" style="margin-top:6px" onclick="avBorrar('${a.id}')">🗑️ Borrar</button></div>`}).join('')||'<p class="mu">Aún no hay avisos.</p>'}`}
+async function avPublicar(){const t=$('av_t').value.trim();if(!t)return toast('Escribe el aviso');
+const d=+$('av_d').value,exp=d?new Date(Date.now()+d*864e5).toISOString():null;
+const r=await sb.from('avisos').insert({grupo_id:S.me.grupo_id,para:$('av_p').value||null,texto:t,creado_por:S.me.id,expira:exp}).select('id').single();
+if(r.error)return toast('Error: '+r.error.message);
+await sb.from('avisos_leidos').insert({aviso_id:r.data.id,usuario_id:S.me.id});
+await cargarAv();render();toast('✅ Aviso publicado')}
+function avCompartir(){const t=$('av_t').value.trim();if(!t)return toast('Escribe el aviso');copiar('📢 *Aviso '+((S.g&&S.g.nombre)||'')+'*\n\n'+t)}
+async function avBorrar(id){if(!confirm('¿Borrar este aviso para todos?'))return;const r=await sb.from('avisos').delete().eq('id',id);if(r.error)return toast('Error: '+r.error.message);await cargarAv();render()}
 async function cargarE(){const {data}=await sb.from('perfiles').select('*').order('nombre');S.E=data||[]}
 async function rpc(fn,a){
 const {data,error}=await sb.rpc(fn,a);if(error){toast(error.message);return}
@@ -164,11 +191,11 @@ ${S.modo=='up'?'<label>Tu nombre</label><input id="nom"><label>Código del grupo
 <p id="err" style="color:var(--rd)"></p><button onclick="entrar()" style="width:100%">${S.modo=='in'?'Entrar':'Crear cuenta'}</button></div>`;return}
 if(!S.me){a.innerHTML=`<h1>🚕 Agenda Taxi</h1><div class="c">Tu cuenta no está ligada a ningún grupo. Avisa al administrador.</div><button class="s" onclick="salir()">Salir</button>`;return}
 if(!S.me.activo){a.innerHTML=`<h1>🚕 Hola, ${esc(S.me.nombre)}</h1><div class="c">Tu registro está pendiente. El administrador debe activarte para que puedas entrar.</div><div class="r"><button onclick="iniciar()">Ya me activaron</button><button class="s" onclick="salir()">Salir</button></div>`;return}
-const tabs=[['serv','Servicios']].concat(staff()?[['nuevo','+ Nuevo'],['var','📅 Varios']]:[]).concat(S.me.rol=='admin'?[['eq','Equipo'],['cli','Clientes'],['res','Resumen']]:[]);
+const tabs=[['serv','Servicios']].concat(staff()?[['nuevo','+ Nuevo'],['var','📅 Varios']]:[]).concat(S.me.rol=='admin'?[['av','📢 Avisos'],['eq','Equipo'],['cli','Clientes'],['res','Resumen']]:[]);
 a.innerHTML=`<div class="r" style="justify-content:space-between"><b>🚕 ${esc(S.me.nombre)}</b><span class="mu">${S.me.rol}${S.me.rol=='taxista'?' · renta hasta '+(S.me.pagado_hasta||'—'):''}</span><button class="s" onclick="salir()">Salir</button></div>
 <div class="r" style="margin:8px 0">${tabs.map(t=>`<button class="${S.tab==t[0]?'':'s'}" onclick="tab('${t[0]}')">${t[1]}</button>`).join('')}</div><div id="v"></div>`;
-({serv:vServ,nuevo:vForm,var:vVarios,eq:vEq,cli:vCli,res:vRes})[S.tab]()}
-function tab(t){S.mis=false;S.bq='';S.BR=null;S.tab=t;S.edit=null;S.form=t=='nuevo'?{}:null;S.gdt=0;S.SEL=S.LO=S.LD=null;if(t=='serv')cargar();if(t=='cli'){S.CL=null;cargarCli()}if(t=='res')cargarRes();render()}
+({serv:vServ,nuevo:vForm,var:vVarios,av:vAv,eq:vEq,cli:vCli,res:vRes})[S.tab]()}
+function tab(t){S.mis=false;S.bq='';S.BR=null;S.tab=t;S.edit=null;S.form=t=='nuevo'?{}:null;S.gdt=0;S.SEL=S.LO=S.LD=null;if(t=='serv')cargar();if(t=='cli'){S.CL=null;cargarCli()}if(t=='res')cargarRes();if(t=='av')cargarAv().then(()=>{if(S.tab=='av')render()});render()}
 function editarS(id){S.tab='nuevo';S.form={id};render()}
 
 const zona=t=>{const p=String(t||'').split(',').map(x=>x.trim().replace(/^\d{5}\s+/,'')).filter(x=>x&&!/^\d{5}$/.test(x));if(!p.length)return '—';let z=p[0];if((/^(calle|c\.|av\.?|avenida|and\.?|andador|prol|carretera|blvd|boulevard|circuito)/i.test(z)||/\d/.test(z))&&p[1])z=p[1];return z.length>26?z.slice(0,25)+'…':z};
@@ -255,7 +282,7 @@ function vServ(){
 const bqBox=`<div class="r" style="margin-bottom:6px;flex-wrap:nowrap"><input id="bq" type="search" placeholder="🔎 Buscar: cliente, celular, lugar, folio…" value="${esc(S.bq||'')}" onkeydown="if(event.key=='Enter')buscar(this.value)" style="flex:1;width:auto"><button class="s" onclick="buscar($('bq').value)">Buscar</button></div><div class="r" style="margin-bottom:6px"><button class="s" onclick="misServ()" style="flex:1">🙋 Mis servicios</button></div>`;
 if(S.mis&&S.BR){vMis();return}
 if(S.bq&&S.BR){$('v').innerHTML=bqBox+`<div class="r" style="justify-content:space-between"><p class="mu" style="margin:6px 0">🔎 ${S.BR.length} resultado(s) para “${esc(S.bq)}”${S.BR.length>=60?' (primeros 60)':''}</p><button class="s" onclick="cerrarBq()">✖ Cerrar búsqueda</button></div>${S.BR.map(x=>`<div class="mu" style="margin:8px 0 0;font-weight:700">📅 ${dia(x.fecha)} ${fo(x)}</div>`+card(x)).join('')||'<p class="mu">No encontré nada. Prueba con otra palabra.</p>'}`;return}
-$('v').innerHTML=bqBox+`<div class="r"><button class="s" onclick="dia_(0)">Hoy</button><button class="s" onclick="dia_(1)">Mañana</button><input type="date" value="${S.fecha}" style="flex:1;width:auto" onchange="S.fecha=this.value;cargar()"></div>
+$('v').innerHTML=avBanners()+bqBox+`<div class="r"><button class="s" onclick="dia_(0)">Hoy</button><button class="s" onclick="dia_(1)">Mañana</button><input type="date" value="${S.fecha}" style="flex:1;width:auto" onchange="S.fecha=this.value;cargar()"></div>
 ${(()=>{const fin=x=>x.estado=='terminado'||x.estado=='cancelado',A=S.L.filter(x=>!fin(x)),T=S.L.filter(fin);
 return `${staff()?avisos():''}<div class="r" style="justify-content:space-between"><p class="mu" style="margin:6px 0">${dia(S.fecha)} · ${A.length} pendiente(s)</p>${A.length>1?'<button class="s" onclick="abTodos()">↕️ Abrir/cerrar todos</button>':''}</div>${A.map(card).join('')||'<p class="mu">Sin servicios pendientes este día.</p>'}${T.length?`<button class="s" style="width:100%;margin-top:8px" onclick="S.vt=!S.vt;vServ()">${S.vt?'▲ Ocultar':'✅ Ver'} terminados (${T.length})</button>${S.vt?T.map(card).join(''):''}`:''}`})()}`}
 
@@ -513,7 +540,33 @@ const er=(await sb.from('clientes').upsert(d,{onConflict:'grupo_id,cel'})).error
 S.fecha=o.fecha;toast('Guardado');tab('serv')}
 
 function vEq(){
-$('v').innerHTML=panelAut()+S.E.map(p=>S.edit==p.id?eqForm(p):`<div class="c"><b>${esc(p.nombre)}</b><span class="t">${p.rol}</span>${p.activo?'':'<span class="t" style="background:var(--rd);color:#fff">PENDIENTE</span>'}<div class="mu">📱 ${esc(p.cel)} · Taxi ${esc(p.taxi)}${p.federal?' · ✈️ federal':''} · Renta hasta ${p.pagado_hasta||'—'}</div><button class="s" style="margin-top:6px" onclick="S.edit='${p.id}';render()">Editar</button></div>`).join('')}
+const cels=new Set(S.E.map(p=>String(p.cel))),por=(S.A||[]).filter(a=>!cels.has(String(a.cel)));
+const nA=S.E.filter(p=>p.activo).length,nS=S.E.filter(p=>!p.activo).length,F=S.eqf||'todos';
+const ch=(k,l)=>`<button class="${F==k?'':'s'}" onclick="S.eqf='${k}';vEq()" style="padding:8px 10px">${l}</button>`;
+$('v').innerHTML=`<div class="r" style="margin-bottom:6px">${ch('todos','Todos '+(S.E.length+por.length))}${ch('sin','🔴 Sin acceso '+nS)}${ch('por','🟡 Por registrarse '+por.length)}${ch('act','🟢 Activos '+nA)}</div>
+<input id="eqq" type="search" placeholder="🔎 Buscar por nombre, celular o taxi" value="${esc(S.eqq||'')}" oninput="S.eqq=this.value;eqLista()" style="margin-bottom:6px">
+<div id="eqlist"></div>
+<details class="c"><summary style="font-weight:700;cursor:pointer">⚙️ Autorizar celulares y código del grupo</summary>${panelAut()}</details>`;
+eqLista()}
+function eqLista(){
+const hoy=iso(new Date()),F=S.eqf||'todos',q=(S.eqq||'').toLowerCase().trim(),cels=new Set(S.E.map(p=>String(p.cel)));
+const hit=(...a)=>!q||a.join(' ').toLowerCase().includes(q);
+const per=S.E.filter(p=>(F=='todos'||(F=='sin'&&!p.activo)||(F=='act'&&p.activo))&&hit(p.nombre,p.cel,p.taxi)).sort((a,b)=>(a.activo-b.activo)||String(a.nombre).localeCompare(b.nombre));
+const por=(F=='todos'||F=='por')?(S.A||[]).filter(a=>!cels.has(String(a.cel))&&hit(a.nombre,a.cel)):[];
+const tg=(t,c)=>`<span class="t" style="background:${c};color:#fff">${t}</span>`;
+const pc=per.map(p=>{if(S.edit==p.id)return eqForm(p);
+const venc=p.rol=='taxista'&&p.pagado_hasta&&p.pagado_hasta<hoy,col=!p.activo?'#c0392b':(venc?'#e67e22':'#27ae60');
+return `<div class="c" style="border-left:8px solid ${col}"><div class="r" style="justify-content:space-between;flex-wrap:nowrap"><b>${esc(p.nombre)}</b><span>${!p.activo?tg('🔴 SIN ACCESO','#c0392b'):tg('🟢 ACTIVO','#27ae60')}</span></div>
+<div class="mu"><span class="t">${p.rol}</span>${p.taxi?' 🚕 '+esc(p.taxi):' · sin taxi'}${p.federal?' · ✈️':''} · 📱 ${esc(p.cel)}</div>
+<div class="mu">${venc?'<b style="color:#c0580a">🟠 Renta vencida</b> (hasta '+p.pagado_hasta+')':'Renta hasta '+(p.pagado_hasta||'—')}</div>
+<div class="r" style="margin-top:8px"><button class="s" onclick="S.edit='${p.id}';vEq()">✏️ Editar</button>${!p.activo?`<button onclick="eqActivo('${p.id}',true)">✅ Activar</button>`:(p.id!=S.me.id?`<button class="s" onclick="eqActivo('${p.id}',false)">⛔ Desactivar</button>`:'')}<a class="b s" target="_blank" href="https://wa.me/${tel(p.cel)}">💬</a></div></div>`}).join('');
+const ac=por.map(a=>`<div class="c" style="border-left:8px solid #f2b705"><div class="r" style="justify-content:space-between;flex-wrap:nowrap"><b>${esc(a.nombre||'Sin nombre')}</b>${tg('🟡 FALTA REGISTRARSE','#b8860b')}</div><div class="mu">📱 ${esc(a.cel)} · autorizado, todavía no crea su cuenta</div><div class="r" style="margin-top:8px"><button onclick="eqInvitar('${a.id}')">📩 Mandar invitación</button><button class="s" onclick="delAut('${a.id}')">🗑️ Quitar</button></div></div>`).join('');
+$('eqlist').innerHTML=(pc||ac)?pc+ac:'<p class="mu">No hay nadie con ese filtro.</p>'}
+async function eqActivo(id,v){if(!v&&!confirm('¿Quitarle el acceso a esta persona? No podrá entrar hasta que la actives.'))return;
+const {error}=await sb.from('perfiles').update({activo:v}).eq('id',id);if(error)return toast('Error: '+error.message);await cargarE();vEq();toast(v?'Activado':'Desactivado')}
+function eqInvitar(id){const a=S.A.find(x=>x.id==id);if(!a)return;
+const t='🚕 *Agenda Taxi – '+((S.g&&S.g.nombre)||'Taxicel')+'*\nHola '+(a.nombre||'')+', ya estás autorizado(a) para entrar a la agenda de servicios.\n\n1️⃣ Abre este link en *Chrome*:\n'+location.href.split('#')[0].split('?')[0]+'\n2️⃣ Toca los 3 puntos ⋮ → *Instalar aplicación*. Te queda el ícono en la pantalla.\n3️⃣ Abre el ícono → *Registrarme*.\n4️⃣ Pon tu nombre, tu celular ('+a.cel+'), el código del grupo (te lo mando por privado) y un PIN de 6 números.';
+window.open('https://wa.me/'+tel(a.cel)+'?text='+encodeURIComponent(t),'_blank')}
 function eqForm(p){
 const f=(id,l,v,t)=>`<label>${l}</label><input id="e_${id}" type="${t||'text'}" value="${esc(v)}">`,ck=(id,l,v)=>`<label><input type="checkbox" id="e_${id}"${v?' checked':''} style="width:auto"> ${l}</label>`;
 return `<div class="c"><b>${esc(p.nombre)}</b> · 📱 ${esc(p.cel)}
@@ -694,13 +747,14 @@ $('v').innerHTML=h+`<p class="mu">Del ${R.a} al ${R.b}</p>
 function avisos(){const now=new Date(),h=[];
 S.L.filter(x=>x.estado=='llego'&&!x.avisado).forEach(x=>{const c=S.C[x.id];h.push(`<div class="c" style="border:2px solid #27ae60;margin:8px 0"><b>🚖 YA LLEGÓ ${esc(x.tomado_taxi||'')} · ${fo(x)}</b><div class="mu">${esc(x.tomado_nombre||'')} ${c&&c.nombre?'· cliente '+esc(c.nombre):''}</div><button style="margin-top:6px;width:100%" onclick="llego('${x.id}')">📩 Avisar al cliente que ya llegó</button></div>`)});
 S.L.filter(x=>x.estado=='tomado').forEach(x=>{const sal=new Date(x.fecha+'T'+llegada(x)+':00'),m=(sal-now)/6e4;if(m<30&&m>-120)h.push(`<div class="c" style="border:2px solid #c0392b;margin:8px 0"><b>⚠️ ${esc(x.tomado_taxi||'')} · ${fo(x)} debe salir ${m>0?'en '+Math.round(m)+' min':'ya'}</b><div class="mu">${esc(x.tomado_nombre||'')} no ha marcado <b>En camino</b>.</div><button style="margin-top:6px;width:100%" onclick="recordarT('${x.id}')">🔔 Recordarle por WhatsApp</button></div>`)});
-S.L.filter(x=>x.expres&&sinCub(x)).forEach(x=>{const c=S.C[x.id],m=Math.max(0,Math.round((now-new Date(x.fecha+'T'+x.hora))/6e4));h.unshift(`<div class="c" style="border:3px solid #c0261b;margin:8px 0"><b>⏱️ NADIE TOMÓ EL EXPRÉS ${fo(x)} · hace ${m} min</b><div class="mu">${esc(zona(x.ubic))} → ${esc(zona(x.destino))}${c&&c.nombre?' · '+esc(c.nombre):''}</div><div class="r" style="margin-top:6px"><button onclick="sinUnidad('${x.id}')" style="flex:1">📩 Avisar: no hay unidad</button><button class="s" onclick="cancelarS('${x.id}')">❌ Cancelar</button></div></div>`)});
+S.L.filter(x=>x.expres&&sinCub(x)&&((S.SNZ||{})[x.id]||0)<Date.now()).forEach(x=>{const c=S.C[x.id],m=Math.max(0,Math.round((now-new Date(x.fecha+'T'+x.hora))/6e4));h.unshift(`<div class="c" style="border:3px solid #c0261b;margin:8px 0"><b>⏱️ NADIE TOMÓ EL EXPRÉS ${fo(x)} · hace ${m} min</b><div class="mu">${esc(zona(x.ubic))} → ${esc(zona(x.destino))}${c&&c.nombre?' · '+esc(c.nombre):''}</div>${S.SU==x.id?`<div class="mu" style="margin-top:6px"><b>Ya le avisaste al cliente. ¿Qué hacemos con el servicio?</b></div><div class="r" style="margin-top:6px"><button class="s" onclick="esperar('${x.id}')">⏳ Esperar 5 min más</button><button class="s" onclick="cancelarS('${x.id}')">❌ Cancelar ahora</button><button class="s" onclick="asg('${x.id}')">👤 Asignar</button></div>`:`<div class="r" style="margin-top:6px"><button onclick="sinUnidad('${x.id}')" style="flex:1">📩 Avisar: no hay unidad</button><button class="s" onclick="cancelarS('${x.id}')">❌ Cancelar</button></div>`}</div>`)});
 return h.join('')}
 function sinUnidad(id){const c=S.C[id];if(!c||!c.celular)return toast('No hay celular del cliente. Avísale por otro medio y cancela el servicio');
 const nm=c.nombre?' *'+c.nombre.trim().split(/\s+/)[0]+'*':'';
-const t='Buen día'+nm+' 🚖\nPor el momento *no tenemos unidad disponible* para su servicio. Le ofrecemos una disculpa. Si gusta, puede volver a solicitarlo en unos minutos. ¡Gracias!';
+const t='Buen día'+nm+' 🚖\nLamentamos informarle que por el momento *no contamos con unidad disponible*, estamos con alta demanda de servicios. Le ofrecemos una disculpa. Si gusta, puede volver a solicitarlo en unos minutos. ¡Gracias por su comprensión!';
 try{navigator.clipboard.writeText(t)}catch(e){}
-window.open('https://wa.me/'+tel(c.celular)+'?text='+encodeURIComponent(t),'_blank');toast('Ahora toca ❌ Cancelar para cerrarlo')}
+window.open('https://wa.me/'+tel(c.celular)+'?text='+encodeURIComponent(t),'_blank');S.SU=id;vServ()}
+function esperar(id){S.SNZ=S.SNZ||{};S.SNZ[id]=Date.now()+5*60000;S.SU=null;vServ();toast('Te vuelvo a avisar en 5 minutos')}
 function recordarT(id){const s=byId(id),p=S.E.find(x=>x.id==s.tomado_por);if(!p||!p.cel)return toast('El compañero no tiene celular registrado');
 const t='Recordatorio 🔔 '+p.nombre.split(' ')[0]+', tienes el servicio *'+fo(s)+'* a las *'+h12(s.hora)+'* (llegar '+h12(llegada(s))+').\n'+(s.ubic||'')+' → '+(s.destino||'')+'\nConfírmame si ya vas en camino.\nÁbrelo aquí: '+location.href.split('#')[0].split('?')[0]+'?serv='+s.id;
 window.open('https://wa.me/'+tel(p.cel)+'?text='+encodeURIComponent(t),'_blank')}
