@@ -124,6 +124,15 @@ let bor=null;
 async function borrarS(id){
 if(bor!=id){bor=id;toast('Toca 🗑️ otra vez para borrar de verdad (solo pruebas). Para servicios reales usa Cancelar');setTimeout(()=>bor=null,4000);return}
 await sb.from('servicios').delete().eq('id',id);bor=null;cargar()}
+function cobroTransf(id){
+const s=byId(id),c=S.C[id];
+if(!c||!c.celular)return toast('No hay celular del cliente');
+if(!s.tomado_taxi)return toast('Aún no tiene taxi asignado');
+const p=S.E.find(x=>x.id==s.tomado_por)||{};
+if(!p.cuenta_transferencia)return toast('Este taxista no tiene sus datos de transferencia. Agrégalos en Equipo → su perfil → Datos para transferirle');
+const t='Buen día'+(c.nombre?' *'+c.nombre+'*':'')+' 🚖\nPara pagar su servicio por transferencia:\n\n'+(+s.costo>0?'💵 Monto: *$'+s.costo+'*\n\n':'')+'🏦 Datos para su transferencia:\n'+p.cuenta_transferencia+'\n\n📸 Al transferir, por favor envíenos la captura del comprobante. ¡Gracias!';
+try{navigator.clipboard.writeText(t)}catch(e){}
+window.open('https://wa.me/'+tel(c.celular)+'?text='+encodeURIComponent(t),'_blank')}
 function llego(id,pre){
 const s=byId(id),c=S.C[id];
 if(!c||!c.celular)return toast('No hay celular del cliente');
@@ -132,7 +141,7 @@ const p=S.E.find(x=>x.id==s.tomado_por)||{};
 const L=[(p.linea?p.linea+' ':'')+s.tomado_taxi],tx='🚕 Taxi: *'+L[0]+'*\n👤 Operador(a): *'+s.tomado_nombre+'*'+(p.carro?'\n🚘 Unidad: *'+p.carro+'*':'')+(p.placas?'\n🔢 Placas: *'+p.placas+'*':'');
 const nm=c.nombre?' *'+c.nombre+'*':'';
 let t;
-if(pre){t='Buen día'+nm+' 🚖\n\nSu servicio'+(s.expres?'':' *programado*')+' está confirmado:\n\n📅 Día: *'+dia(s.fecha)+'*\n🕘 Hora: *'+h12(s.hora)+'*\n'+tx+(+s.costo>0?'\n💵 Costo del servicio: *$'+s.costo+'*'+(s.pago?' ('+s.pago+')':''):'')+(s.expres?'':'\n\n⏰ La unidad llegará con '+(s.min_antes||10)+' minutos de anticipación.')+(s.pago=='Transferencia'&&p.cuenta_transferencia?'\n\n🏦 Datos para su transferencia:\n'+p.cuenta_transferencia:'')+(s.token?'\n\n📍 Siga su taxi en tiempo real aquí:\n'+location.href.split('#')[0].split('?')[0]+'?s='+s.token:'')+'\n\n¡Gracias por su preferencia!'}
+if(pre){t='Buen día'+nm+' 🚖\n\nSu servicio'+(s.expres?'':' *programado*')+' está confirmado:\n\n📅 Día: *'+dia(s.fecha)+'*\n🕘 Hora: *'+h12(s.hora)+'*\n'+tx+(+s.costo>0?'\n💵 Costo del servicio: *$'+s.costo+'*'+(s.pago?' ('+s.pago+')':''):'')+(s.expres?'':'\n\n⏰ La unidad llegará con '+(s.min_antes||10)+' minutos de anticipación.')+(s.pago=='Transferencia'&&p.cuenta_transferencia?'\n\n🏦 Datos para su transferencia:\n'+p.cuenta_transferencia+'\n\n📸 Al transferir, por favor envíenos la captura del comprobante.':'')+(s.token?'\n\n📍 Siga su taxi en tiempo real aquí:\n'+location.href.split('#')[0].split('?')[0]+'?s='+s.token:'')+'\n\n¡Gracias por su preferencia!'}
 else{t='Buen día'+nm+' 🚖\nSu taxi *'+s.tomado_taxi+'* está en espera 📍'+(s.ubic?' *'+s.ubic+'*':'')+'.\nLo atiende *'+s.tomado_nombre+'*. Cuando esté listo, puede abordar.'}
 try{navigator.clipboard.writeText(t)}catch(e){}
 window.open('https://wa.me/'+tel(c.celular)+'?text='+encodeURIComponent(t),'_blank');
@@ -179,7 +188,7 @@ if(s.destino_maps)x+=`<a class="b s" target="_blank" href="${esc(s.destino_maps)
 x+=`<a class="b s" target="_blank" href="${ruta(s)}">🧭 Ruta</a>`;
 x+=`<button class="s" onclick="recordar('${s.id}')">⏰ Recordarme</button>`;
 if(staff()&&['tomado','en_camino','llego','abordo'].includes(s.estado))x+=`<button class="s" onclick="estado('${s.id}','terminado')">✅ Ya se cubrió</button>`;
-if(staff()){x+=`<button class="s" onclick="copiar(msg(byId('${s.id}'),true))">📋 Grupo</button><button class="s" onclick="llego('${s.id}',1)">📨 Datos del taxi</button>`;
+if(staff()){x+=`<button class="s" onclick="copiar(msg(byId('${s.id}'),true))">📋 Grupo</button><button class="s" onclick="llego('${s.id}',1)">📨 Datos del taxi</button>`+(s.pago=='Transferencia'?`<button class="s" onclick="cobroTransf('${s.id}')">🏦 Datos de transferencia</button>`:'');
 if(['disponible','tomado','en_camino','llego'].includes(s.estado))x+=`<button class="s" onclick="asg('${s.id}')">👤 ${s.estado=='disponible'?'Asignar':'Reasignar'}</button>`;
 if(['tomado','en_camino'].includes(s.estado))x+=`<button class="s" onclick="recordarT('${s.id}')">🔔 Recordarle</button>`;
 x+=`<button class="s" onclick="llego('${s.id}')">📩 Ya llegó</button><button class="s" onclick="editarS('${s.id}')">✏️</button>`;
