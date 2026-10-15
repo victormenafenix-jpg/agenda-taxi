@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f2b705">
+<meta name="theme-color" content="#5b2c83">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -10,8 +10,17 @@
 <meta name="apple-mobile-web-app-title" content="Agenda Taxi">
 <title>Agenda Taxi</title>
 <style>
-:root{--bg:#f6f5f0;--cd:#fff;--tx:#1d1d1b;--mu:#6b6b66;--ac:#f2b705;--bd:#e2e0d8;--rd:#c0392b;--bl:#1f6feb}
-@media(prefers-color-scheme:dark){:root{--bg:#161614;--cd:#222220;--tx:#f1f0ea;--mu:#9d9c94;--bd:#363632}}
+:root{--bg:#f6f5f0;--cd:#fff;--tx:#1d1d1b;--mu:#6b6b66;--ac:#f2b705;--bd:#e2e0d8;--rd:#c0392b;--bl:#1f6feb;--mo:#5b2c83;--mo2:#7d3cb5}
+@media(prefers-color-scheme:dark){:root{--bg:#141216;--cd:#201c25;--tx:#f1eef5;--mu:#a59cae;--bd:#3a3242}.tabs button:not(.s){background:var(--mo2);color:#fff}}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:8px;background:linear-gradient(90deg,var(--mo),var(--mo2));color:#fff;border-radius:14px;padding:10px 12px}
+.brand b{font-size:20px;letter-spacing:2px;font-weight:900}.brand .who{font-size:13px;opacity:.9;text-align:right;line-height:1.25}
+.brand button{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.35);padding:7px 10px}
+.chk{height:9px;margin:6px 0 8px;border-radius:3px;background:repeating-linear-gradient(90deg,var(--mo) 0 14px,var(--ac) 14px 28px)}
+@media(prefers-color-scheme:dark){.chk{background:repeating-linear-gradient(90deg,var(--ac) 0 14px,transparent 14px 28px)}}
+.logo{background:linear-gradient(180deg,var(--mo2),#4a1f70);border-radius:18px;padding:22px 10px 18px;text-align:center;margin:6px 0 10px}
+.logo .chk{width:70%;margin:0 auto 10px;background:repeating-linear-gradient(90deg,var(--ac) 0 14px,#1d1d1b 14px 28px)}
+.logo b{display:block;font-size:46px;font-weight:900;letter-spacing:3px;color:#fff;-webkit-text-stroke:2px #1d1d1b;text-shadow:0 1px 0 #f2b705,0 2px 0 #e0a800,0 3px 0 #c99400,0 4px 0 #a87b00,0 6px 8px rgba(0,0,0,.45)}
+.logo span{display:block;color:#f3e9ff;font-weight:700;margin-top:6px;font-size:15px}
 *{box-sizing:border-box}
 .mpfull{position:fixed!important;inset:0;z-index:40;background:var(--bg);margin:0!important;border-radius:0!important;display:flex;flex-direction:column;gap:8px;overflow:auto;padding:10px}.mpfull #mpmap{height:auto!important;flex:1;min-height:300px}
 body{margin:0 auto;background:var(--bg);color:var(--tx);font:16px system-ui,-apple-system,sans-serif;padding:12px;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:calc(60px + env(safe-area-inset-bottom));max-width:640px}
@@ -270,7 +279,7 @@ if(!pre&&!s.avisado){sb.from('servicios').update({avisado:true}).eq('id',id).the
 function render(){
 const a=$('app');
 if(!S.ses){
-a.innerHTML=`<h1>🚕 Agenda Taxi</h1><div class="c"><div class="r"><button class="${S.modo=='in'?'':'s'}" onclick="modo('in')">Entrar</button><button class="${S.modo=='up'?'':'s'}" onclick="modo('up')">Registrarme</button></div>
+a.innerHTML=`<div class="logo"><div class="chk"></div><b>TAXICEL</b><span>Agenda de servicios</span></div><div class="c"><div class="r"><button class="${S.modo=='in'?'':'s'}" onclick="modo('in')">Entrar</button><button class="${S.modo=='up'?'':'s'}" onclick="modo('up')">Registrarme</button></div>
 <label>Celular (10 dígitos)</label><input id="cel" type="tel" inputmode="numeric" autocomplete="username">
 ${S.modo=='up'?'<label>Tu nombre</label><input id="nom"><label>Código del grupo</label><input id="cod" autocapitalize="characters">':''}
 <label>PIN (6 números)</label><input id="pin" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password">
@@ -278,8 +287,8 @@ ${S.modo=='up'?'<label>Tu nombre</label><input id="nom"><label>Código del grupo
 if(!S.me){a.innerHTML=`<h1>🚕 Agenda Taxi</h1><div class="c">Tu cuenta no está ligada a ningún grupo. Avisa al administrador.</div><button class="s" onclick="salir()">Salir</button>`;return}
 if(!S.me.activo){a.innerHTML=`<h1>🚕 Hola, ${esc(S.me.nombre)}</h1><div class="c">Tu registro está pendiente. El administrador debe activarte para que puedas entrar.</div><div class="r"><button onclick="iniciar()">Ya me activaron</button><button class="s" onclick="salir()">Salir</button></div>`;return}
 const tabs=[['serv','Servicios']].concat(staff()?[['nuevo','+ Nuevo'],['var','📅 Varios']]:[]).concat(S.me.rol=='admin'?[['av','📢 Avisos'],['eq','Equipo'],['cli','Clientes'],['res','Resumen']]:[]);
-a.innerHTML=`<div class="r" style="justify-content:space-between"><b>🚕 ${esc(S.me.nombre)}</b><span class="mu">${S.me.rol}${S.me.rol=='taxista'?' · renta hasta '+(S.me.pagado_hasta||'—'):''}</span><button class="s" onclick="salir()">Salir</button></div><div id="pushbar"></div>
-<div class="r" style="margin:8px 0">${tabs.map(t=>`<button class="${S.tab==t[0]?'':'s'}" onclick="tab('${t[0]}')">${t[1]}</button>`).join('')}</div><div id="v"></div>`;
+a.innerHTML=`<div class="brand"><b>${esc(((S.g&&S.g.nombre)||'Taxicel').toUpperCase())}</b><span class="who">🚕 ${esc(S.me.nombre)}<br>${S.me.rol}${S.me.rol=='taxista'?' · renta hasta '+(S.me.pagado_hasta||'—'):''}</span><button onclick="salir()">Salir</button></div><div class="chk"></div><div id="pushbar"></div>
+<div class="r tabs" style="margin:8px 0">${tabs.map(t=>`<button class="${S.tab==t[0]?'':'s'}" onclick="tab('${t[0]}')">${t[1]}</button>`).join('')}</div><div id="v"></div>`;
 ({serv:vServ,nuevo:vForm,var:vVarios,av:vAv,eq:vEq,cli:vCli,res:vRes})[S.tab]();pushInit()}
 function tab(t){S.mis=false;S.bq='';S.BR=null;S.tab=t;S.edit=null;S.form=t=='nuevo'?{}:null;S.gdt=0;S.SEL=S.LO=S.LD=null;if(t=='serv')cargar();if(t=='cli'){S.CL=null;cargarCli()}if(t=='res')cargarRes();if(t=='av')cargarAv().then(()=>{if(S.tab=='av')render()});render()}
 function editarS(id){S.tab='nuevo';S.form={id};render()}
@@ -294,7 +303,7 @@ let x=`<div class="c" style="border-left:8px solid ${col};padding:8px 10px;margi
 <div onclick="ab('${s.id}')" style="cursor:pointer">
 <div class="r" style="justify-content:space-between;flex-wrap:nowrap"><span style="font-weight:800;font-size:17px;color:${s.expres?'#c0261b':'#1c4fa1'}">${s.expres?'⚡ EXPRÉS':'🕐 '+h12(s.hora)}</span><span style="font-weight:800;font-size:20px">$${r2(c)}</span></div>
 <div style="font-weight:700;margin:2px 0">${esc(zona(s.ubic))} → ${esc(zona(s.destino))}${(s.paradas||[]).length?' · 🛑'+s.paradas.length:''}${+s.km>0?' · '+s.km+' km':''}</div>
-<div class="mu"><span class="t" style="background:${col};color:${s.estado=='disponible'&&!sc?'#1d1d1b':'#fff'}">${sc?(s.expres?'⏱️ NADIE LO TOMÓ':'SIN CUBRIR'):ST_TXT[s.estado]||esc(s.estado)}</span>${s.pago!='Efectivo'?'<span class="t '+(s.pago=='Tarjeta crédito'?'pc':'pg')+'">'+esc(s.pago)+'</span>':''}${s.privado?'<span class="t" style="background:#5b2c83;color:#fff">🔒 PRIVADO</span>':''}${s.factura?'<span class="t">FACTURA</span>':''}${s.aeropuerto?'<span class="t ae">✈️ FEDERAL</span>':''}${s.tomado_nombre?' 🚕 Ya lo tiene '+esc(s.tomado_nombre):''}${qBadge(s)}</div></div>
+<div class="mu"><span class="t" style="background:${col};color:${s.estado=='disponible'&&!sc?'#1d1d1b':'#fff'}">${sc?(s.expres?'⏱️ NADIE LO TOMÓ':'SIN CUBRIR'):ST_TXT[s.estado]||esc(s.estado)}</span>${s.pago!='Efectivo'?'<span class="t '+(s.pago=='Tarjeta crédito'?'pc':'pg')+'">'+esc(s.pago)+'</span>':''}${s.privado?'<span class="t" style="background:#3d3d3a;color:#fff">🔒 PRIVADO</span>':''}${s.factura?'<span class="t">FACTURA</span>':''}${s.aeropuerto?'<span class="t ae">✈️ FEDERAL</span>':''}${s.tomado_nombre?' 🚕 Ya lo tiene '+esc(s.tomado_nombre):''}${qBadge(s)}</div></div>
 <div class="r" style="margin-top:6px">`;
 if(s.estado=='disponible')x+=btnTomar(s);
 if((mine||staff())&&n)x+=`<button onclick="estado('${s.id}','${n[0]}')">➡️ ${n[1]}</button>`;
@@ -305,7 +314,7 @@ let x=`<div class="c" style="border-left:8px solid ${col}${s.aeropuerto?';outlin
 <div class="r" style="justify-content:space-between">${s.expres?`<span class="hr" style="color:#c0261b">⚡ EXPRÉS <span class="mu" style="font-size:13px;font-weight:600">${fo(s)} · subido ${h12(s.hora)}</span></span><span class="mu">¡Ya!</span>`:`<span class="hr" style="color:#1c4fa1">🕐 PROGRAMADO ${h12(s.hora)} <span class="mu" style="font-size:13px;font-weight:600">${fo(s)}</span></span><span class="mu">Llegar ${h12(llegada(s))}</span>`}</div>
 ${(s.paradas||[]).length?`<div>📍 <b>Sale de:</b> ${esc(s.ubic)}</div>${s.paradas.map((p,i)=>`<div style="font-weight:700">🛑 ${i+1}º va a: ${esc(p.t)}</div>`).join('')}<div>🏁 <b>${s.paradas.length+1}º y último:</b> <b>${esc(s.destino)}</b></div>`:`<div>${esc(s.ubic)} → <b>${esc(s.destino)}</b></div>`}
 ${+s.km>0?`<div style="font-size:19px;font-weight:800;margin:4px 0">📏 ${s.km} km${+s.precio_sug>0?` · Mapa $${r2(+s.precio_sug)}${c>+s.precio_sug?` → Se cobra $${r2(c)} <span style="color:#0a7a3c">(+$${r2(c-s.precio_sug)})</span>`:c<+s.precio_sug?` → Se cobra $${r2(c)} <span style="color:#c0261b">(−$${r2(s.precio_sug-c)})</span>`:` · Se cobra $${r2(c)}`}`:''}</div>`:''}
-<div class="mu"><b style="font-size:18px;color:var(--tx,#1d1d1b)">$${r2(c)}</b><span class="t ${s.expres?'ex':'pr'}">${s.expres?'EXPRÉS':'PROGRAMADO'}</span><span class="t" style="background:${col};color:${s.estado=='disponible'&&!sc?'#1d1d1b':'#fff'}">${sc?(s.expres?'⏱️ NADIE LO TOMÓ':'SIN CUBRIR'):ST_TXT[s.estado]||esc(s.estado)}</span>${s.pago!='Efectivo'?'<span class="t '+(s.pago=='Tarjeta crédito'?'pc':'pg')+'">'+esc(s.pago)+'</span>':''}${s.privado?'<span class="t" style="background:#5b2c83;color:#fff">🔒 PRIVADO</span>':''}${s.factura?'<span class="t">FACTURA</span>':''}${s.especial?'<span class="t">ESPECIAL</span>':''}${s.aeropuerto?'<span class="t ae">✈️ AEROPUERTO · PLACAS FEDERALES</span>':''}</div>
+<div class="mu"><b style="font-size:18px;color:var(--tx,#1d1d1b)">$${r2(c)}</b><span class="t ${s.expres?'ex':'pr'}">${s.expres?'EXPRÉS':'PROGRAMADO'}</span><span class="t" style="background:${col};color:${s.estado=='disponible'&&!sc?'#1d1d1b':'#fff'}">${sc?(s.expres?'⏱️ NADIE LO TOMÓ':'SIN CUBRIR'):ST_TXT[s.estado]||esc(s.estado)}</span>${s.pago!='Efectivo'?'<span class="t '+(s.pago=='Tarjeta crédito'?'pc':'pg')+'">'+esc(s.pago)+'</span>':''}${s.privado?'<span class="t" style="background:#3d3d3a;color:#fff">🔒 PRIVADO</span>':''}${s.factura?'<span class="t">FACTURA</span>':''}${s.especial?'<span class="t">ESPECIAL</span>':''}${s.aeropuerto?'<span class="t ae">✈️ AEROPUERTO · PLACAS FEDERALES</span>':''}</div>
 ${s.estado=='cancelado'&&s.cancel_motivo?`<div class="mu">❌ Motivo: ${esc(s.cancel_motivo)}</div>`:''}
 ${s.nota?`<div class="mu">📝 ${esc(s.nota)}</div>`:''}
 <div class="mu">💳 Pago: <b>${esc(s.pago)}</b>${s.factura?' · 🧾 Requiere factura':''}</div>
@@ -381,7 +390,7 @@ $('v').innerHTML=`<div class="c"><b>${S.form.id?'Editar servicio':'Nuevo servici
 <div class="g"><div><label>Cliente</label><input id="c_nombre" value="${esc(c.nombre)}" oninput="buscarC()"></div><div><label>Celular</label><input id="c_cel" type="tel" placeholder="10 dígitos" value="${esc(c.celular)}" oninput="buscarC()"></div></div><div id="sgc"></div>
 <div class="g"><div>${f('fecha','Fecha',s.fecha,'date')}</div><div>${horaSel(s.hora)}</div></div>
 <label><input type="checkbox" id="expres"${s.expres?' checked':''} style="width:auto" onchange="exCambio()"> Exprés (sale ya, sin hora)</label>
-<label style="background:#efe6f7;color:#3d1d5c;border-radius:10px;padding:8px 10px;margin-top:6px"><input type="checkbox" id="privado"${s.privado?' checked':''} style="width:auto"> 🔒 <b>Privado</b>: es mío, solo yo lo veo y no le llega al grupo</label>
+<label style="background:#ecebe6;color:#2d2d2a;border-radius:10px;padding:8px 10px;margin-top:6px"><input type="checkbox" id="privado"${s.privado?' checked':''} style="width:auto"> 🔒 <b>Privado</b>: es mío, solo yo lo veo y no le llega al grupo</label>
 <label>Ubicación (texto) <span class="mu">· escribe y elige de la lista</span></label><input id="ubic" value="${esc(s.ubic)}" autocomplete="off" onfocus="mpElegir('ubic')" oninput="aerSync();tarVis();acBuscar('ubic')"><div id="ac_ubic"></div>
 <div class="r" style="margin-top:4px"><input id="ubic_maps" onpaste="pegaEv('ubic',event)" placeholder="🔗 Pegar link de Maps (opcional)" style="flex:1;width:auto" value="${esc(s.ubic_maps)}"><button class="s" onclick="gps('ubic_maps')" title="Mi ubicación actual">📍</button></div>
 <div id="mapbox" style="margin:8px 0"><button class="s" id="mptog" onclick="mapaToggle()" style="width:100%">🗺️ Ver mapa y ajustar los pines</button><div id="mpwrap" class="c" hidden style="margin:6px 0 0"><div class="r" style="justify-content:space-between"><b>🗺️ Pon el pin exacto</b><span class="r"><button class="s" id="mpbig" onclick="mapaGrande()">⤢ Agrandar</button><button class="s" onclick="mapaToggle()">▴ Ocultar</button></span></div><div class="r" id="mpsel" style="margin-top:6px"></div><div class="mu" id="mphint"></div><div id="mpmap" style="height:250px;border-radius:12px;overflow:hidden;background:#ddd;margin-top:6px"></div><div id="mpinfo" class="mu"></div></div></div>
@@ -563,7 +572,7 @@ $('v').innerHTML=`<div class="c"><b>📅 Programar varios días</b><div class="m
 <div id="vr_fx" ${V.factura?'':'hidden'}><label>Régimen fiscal</label><select id="vr_regimen"><option value="">Elegir…</option>${opts(REG,V.fx.regimen)}</select><label>RFC</label><input id="vr_rfc" value="${esc(V.fx.rfc)}"><label>Razón social</label><input id="vr_razon" value="${esc(V.fx.razon_social)}"><label>Correo</label><input id="vr_correo" value="${esc(V.fx.correo)}"><label>Código postal</label><input id="vr_cp" value="${esc(V.fx.cp)}"></div>
 <label>Minutos antes de llegar</label><input id="vr_ma" type="number" value="${V.ma}">
 ${S.me.taxi?`<label><input type="checkbox" id="vr_yo" style="width:auto"${V.yo?' checked':''}> 🙋 Asignármelos a mí (taxi ${esc(S.me.taxi)})</label>`:'<div class="mu">Para asignártelos, pon tu taxi en Equipo.</div>'}
-<label style="background:#efe6f7;color:#3d1d5c;border-radius:10px;padding:8px 10px;margin-top:6px"><input type="checkbox" id="vr_priv" style="width:auto"${V.priv?' checked':''}> 🔒 <b>Privados</b>: son míos, solo yo los veo y no le llegan al grupo</label></div>
+<label style="background:#ecebe6;color:#2d2d2a;border-radius:10px;padding:8px 10px;margin-top:6px"><input type="checkbox" id="vr_priv" style="width:auto"${V.priv?' checked':''}> 🔒 <b>Privados</b>: son míos, solo yo los veo y no le llegan al grupo</label></div>
 <div class="c" id="vr_prev"></div>
 <div class="r"><button onclick="vrCrear()" style="flex:1">✅ Crear servicios</button><button class="s" onclick="vrLimpiar()">Limpiar</button></div>`;
 vrPrev()}
