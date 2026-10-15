@@ -58,6 +58,7 @@ const llegada=s=>{let [h,m]=s.hora.split(':'),x=(+h)*60+(+m)-(+s.min_antes);if(x
 const dia=f=>{const t=new Date(f+'T12:00:00').toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}).replace(',','');return t[0].toUpperCase()+t.slice(1)};
 const com=s=>{const v=+s.comision_valor||0,c=s.comision_tipo=='fijo'?v:(+s.costo||0)*v/100,i=c*(+s.comision_iva||0)/100;return{c,i,t:c+i}};
 function pt(l,t){const m=(l||'').match(/(?:q=|@)(-?\d+\.\d+),(-?\d+\.\d+)/);return m?m[1]+','+m[2]:t}
+const APP='https://agenda-taxi.pages.dev/';
 const ruta=s=>'https://www.google.com/maps/dir/?api=1&travelmode=driving&origin='+encodeURIComponent(pt(s.ubic_maps,s.ubic))+'&destination='+encodeURIComponent(pt(s.destino_maps,s.destino))+(s.paradas&&s.paradas.length?'&waypoints='+encodeURIComponent(s.paradas.map(p=>pt(p.m,p.t)).join('|')):'');
 function msg(s,g){let t='';if(s.ubic_maps)t+=s.ubic_maps+'\n\n';
 t+='Servicio '+(s.expres?'Exprés':'Programado')+' *'+dia(s.fecha)+'*\nHora de llegada\n*'+h12(llegada(s))+'*\nHora programada\n*'+h12(s.hora)+'*\n';
@@ -73,7 +74,7 @@ if(s.pago!='Efectivo')t+='\n💳 '+s.pago;
 if(s.factura)t+='\n🧾 Requiere factura';
 t+='\n💰 Cobra $'+r2(c)+' · Deposita $'+r2(k.t)+' · Le queda $'+r2(c-k.t);
 if(S.g&&S.g.cuenta_deposito)t+='\n🏦 Depositar a:\n'+S.g.cuenta_deposito;
-t+='\n\n¿Quién lo toma? Tómalo aquí: '+location.href.split('#')[0].split('?')[0]+'\nO responde con tu # de taxi.'}
+t+='\n\n¿Quién lo toma? Tómalo aquí: '+APP+'\nO responde con tu # de taxi.'}
 return t.trim()}
 async function copiar(t){let ok=true;try{await navigator.clipboard.writeText(t)}catch(e){ok=false}
 if(navigator.share&&/Android|iPhone|iPad/i.test(navigator.userAgent)){try{await navigator.share({text:t});return}catch(e){if(e&&e.name=='AbortError')return}}
@@ -169,7 +170,9 @@ const d=+$('av_d').value,exp=d?new Date(Date.now()+d*864e5).toISOString():null;
 const r=await sb.from('avisos').insert({grupo_id:S.me.grupo_id,para:$('av_p').value||null,texto:t,creado_por:S.me.id,expira:exp}).select('id').single();
 if(r.error)return toast('Error: '+r.error.message);
 await sb.from('avisos_leidos').insert({aviso_id:r.data.id,usuario_id:S.me.id});
+pushAviso(r.data.id);
 await cargarAv();render();toast('✅ Aviso publicado')}
+async function pushAviso(aid){try{let yo=null;try{const reg=await Promise.race([navigator.serviceWorker.ready,new Promise((_,no)=>setTimeout(no,1500))]),sub=await reg.pushManager.getSubscription();yo=sub&&sub.endpoint||null}catch(x){}const r=await sb.functions.invoke('push',{body:{ids:[aid],tipo:'aviso',yo}});if(r&&r.error){let d='';try{const b=await r.error.context.json();d=(b.error||'')+(b.detalle?': '+b.detalle:'')}catch(x){d=String(r.error.message||'').slice(0,80)}toast('Aviso publicado, pero no sonó en los celulares: '+d)}}catch(x){}}
 function avCompartir(){const t=$('av_t').value.trim();if(!t)return toast('Escribe el aviso');copiar('📢 *Aviso '+((S.g&&S.g.nombre)||'')+'*\n\n'+t)}
 async function avBorrar(id){if(!confirm('¿Borrar este aviso para todos?'))return;const r=await sb.from('avisos').delete().eq('id',id);if(r.error)return toast('Error: '+r.error.message);await cargarAv();render()}
 
@@ -257,7 +260,7 @@ const p=S.E.find(x=>x.id==s.tomado_por)||{};
 const L=[(p.linea?p.linea+' ':'')+s.tomado_taxi],tx='🚕 Taxi: *'+L[0]+'*\n👤 Operador(a): *'+s.tomado_nombre+'*'+(p.carro?'\n🚘 Unidad: *'+p.carro+'*':'')+(p.placas?'\n🔢 Placas: *'+p.placas+'*':'');
 const nm=c.nombre?' *'+c.nombre+'*':'';
 let t;
-if(pre){t='Buen día'+nm+' 🚖\n\nSu servicio'+(s.expres?'':' *programado*')+' está confirmado:\n\n📅 Día: *'+dia(s.fecha)+'*\n🕘 Hora: *'+h12(s.hora)+'*\n'+tx+(+s.costo>0?'\n💵 Costo del servicio: *$'+s.costo+'*'+(s.pago?' ('+s.pago+')':''):'')+(s.expres?'':'\n\n⏰ La unidad llegará con '+(s.min_antes||10)+' minutos de anticipación.')+(s.pago=='Transferencia'&&p.cuenta_transferencia?'\n\n🏦 Datos para su transferencia:\n'+p.cuenta_transferencia+'\n\n📸 Al transferir, por favor envíenos la captura del comprobante.':'')+(s.token?'\n\n📍 Siga su taxi en tiempo real aquí:\n'+location.href.split('#')[0].split('?')[0]+'?s='+s.token:'')+'\n\n¡Gracias por su preferencia!'}
+if(pre){t='Buen día'+nm+' 🚖\n\nSu servicio'+(s.expres?'':' *programado*')+' está confirmado:\n\n📅 Día: *'+dia(s.fecha)+'*\n🕘 Hora: *'+h12(s.hora)+'*\n'+tx+(+s.costo>0?'\n💵 Costo del servicio: *$'+s.costo+'*'+(s.pago?' ('+s.pago+')':''):'')+(s.expres?'':'\n\n⏰ La unidad llegará con '+(s.min_antes||10)+' minutos de anticipación.')+(s.pago=='Transferencia'&&p.cuenta_transferencia?'\n\n🏦 Datos para su transferencia:\n'+p.cuenta_transferencia+'\n\n📸 Al transferir, por favor envíenos la captura del comprobante.':'')+(s.token?'\n\n📍 Siga su taxi en tiempo real aquí:\n'+APP+'?s='+s.token:'')+'\n\n¡Gracias por su preferencia!'}
 else{t='Buen día'+nm+' 🚖\nSu taxi *'+s.tomado_taxi+'* está en espera 📍'+(s.ubic?' *'+s.ubic+'*':'')+'.\nLo atiende *'+s.tomado_nombre+'*. Cuando esté listo, puede abordar.'}
 try{navigator.clipboard.writeText(t)}catch(e){}
 window.open('https://wa.me/'+tel(c.celular)+'?text='+encodeURIComponent(t),'_blank');
@@ -676,7 +679,7 @@ $('eqlist').innerHTML=(pc||ac)?pc+ac:'<p class="mu">No hay nadie con ese filtro.
 async function eqActivo(id,v){if(!v&&!confirm('¿Quitarle el acceso a esta persona? No podrá entrar hasta que la actives.'))return;
 const {error}=await sb.from('perfiles').update({activo:v}).eq('id',id);if(error)return toast('Error: '+error.message);await cargarE();vEq();toast(v?'Activado':'Desactivado')}
 function eqInvitar(id){const a=S.A.find(x=>x.id==id);if(!a)return;
-const t='🚕 *Agenda Taxi – '+((S.g&&S.g.nombre)||'Taxicel')+'*\nHola '+(a.nombre||'')+', ya estás autorizado(a) para entrar a la agenda de servicios.\n\n1️⃣ Abre este link en *Chrome*:\n'+location.href.split('#')[0].split('?')[0]+'\n2️⃣ Toca los 3 puntos ⋮ → *Instalar aplicación*. Te queda el ícono en la pantalla.\n3️⃣ Abre el ícono → *Registrarme*.\n4️⃣ Pon tu nombre, tu celular ('+a.cel+'), el código del grupo (te lo mando por privado) y un PIN de 6 números.';
+const t='🚕 *Agenda Taxi – '+((S.g&&S.g.nombre)||'Taxicel')+'*\nHola '+(a.nombre||'')+', ya estás autorizado(a) para entrar a la agenda de servicios.\n\n1️⃣ Toca esta liga (se abre en *Chrome*):\n'+APP+'\n2️⃣ Toca *Instalar* y otra vez *Instalar*. Te queda el ícono amarillo de TAXI.\n3️⃣ Toca *Registrarme* y pon tu nombre, tu celular ('+a.cel+'), el código del grupo (te lo mando por privado) y un PIN de 6 números.\n4️⃣ Toca *Activar* y luego *Permitir*, para que te suene cuando haya servicio.\n\n📺 Mira el video de cómo se hace:\n'+APP+'guia';
 window.open('https://wa.me/'+tel(a.cel)+'?text='+encodeURIComponent(t),'_blank')}
 function eqForm(p){
 const f=(id,l,v,t)=>`<label>${l}</label><input id="e_${id}" type="${t||'text'}" value="${esc(v)}">`,ck=(id,l,v)=>`<label><input type="checkbox" id="e_${id}"${v?' checked':''} style="width:auto"> ${l}</label>`;
@@ -821,7 +824,7 @@ if(s.pago!='Efectivo')t+='\n💳 '+s.pago;
 if(s.factura)t+='\n🧾 Requiere factura';
 t+='\n💰 Cobra $'+r2(c)+' · Deposita $'+r2(k.t)+' · Le queda $'+r2(c-k.t);
 if(S.g&&S.g.cuenta_deposito&&k.t>0)t+='\n🏦 Depositar a:\n'+S.g.cuenta_deposito;
-return t+'\n\nConfírmame que lo recibiste. Detalle aquí: '+location.href.split('#')[0].split('?')[0]}
+return t+'\n\nConfírmame que lo recibiste. Detalle aquí: '+APP}
 function envPanel(s){const p=S.E.find(x=>x.id==S.env.pid);if(!p)return'';
 return `<div class="c" style="margin:8px 0 0"><b>✅ Asignado a ${esc(p.taxi)} · ${esc(p.nombre)}</b><div class="mu">¿Cómo le avisas?</div><div class="r" style="margin-top:6px">${p.cel?`<button onclick="envPriv('${s.id}')">📲 Enviar privado</button>`:''}<button class="s" onclick="envGrupo('${s.id}')">📋 Copiar para el grupo</button><button class="s" onclick="S.env=null;render()">Listo</button></div></div>`}
 function envPriv(id){const p=S.E.find(x=>x.id==S.env.pid),s=byId(id);window.open('https://wa.me/'+tel(p.cel)+'?text='+encodeURIComponent(msgAsig(s,p,false)),'_blank')}
@@ -889,7 +892,7 @@ try{navigator.clipboard.writeText(t)}catch(e){}
 window.open('https://wa.me/'+tel(c.celular)+'?text='+encodeURIComponent(t),'_blank');S.SU=id;vServ()}
 function esperar(id){S.SNZ=S.SNZ||{};S.SNZ[id]=Date.now()+5*60000;S.SU=null;vServ();toast('Te vuelvo a avisar en 5 minutos')}
 function recordarT(id){const s=byId(id),p=S.E.find(x=>x.id==s.tomado_por);if(!p||!p.cel)return toast('El compañero no tiene celular registrado');
-const t='Recordatorio 🔔 '+p.nombre.split(' ')[0]+', tienes el servicio *'+fo(s)+'* a las *'+h12(s.hora)+'* (llegar '+h12(llegada(s))+').\n'+(s.ubic||'')+' → '+(s.destino||'')+'\nConfírmame si ya vas en camino.\nÁbrelo aquí: '+location.href.split('#')[0].split('?')[0]+'?serv='+s.id;
+const t='Recordatorio 🔔 '+p.nombre.split(' ')[0]+', tienes el servicio *'+fo(s)+'* a las *'+h12(s.hora)+'* (llegar '+h12(llegada(s))+').\n'+(s.ubic||'')+' → '+(s.destino||'')+'\nConfírmame si ya vas en camino.\nÁbrelo aquí: '+APP+'?serv='+s.id;
 window.open('https://wa.me/'+tel(p.cel)+'?text='+encodeURIComponent(t),'_blank')}
 async function seg(t){
 const a=$('app'),E=['tomado','en_camino','llego','abordo','terminado'],N={tomado:'Taxi asignado',en_camino:'En camino',llego:'Su taxi ya llegó',abordo:'A bordo',terminado:'Servicio terminado'};
