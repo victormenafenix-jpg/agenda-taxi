@@ -114,10 +114,10 @@ const b64u=t=>{const p='='.repeat((4-t.length%4)%4),b=(t+p).replace(/-/g,'+').re
 const ios=/iPhone|iPad|iPod/.test(navigator.userAgent),standalone=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;
 async function pushInit(){const el=$('pushbar');if(!el||!S.me||!S.me.activo)return;
 let h='';try{
-if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){h=ios&&!standalone?'<div class="c" style="margin:6px 0;background:#fff7e0">🔔 <b>Para recibir avisos con sonido en iPhone:</b> instala la app. Toca el botón Compartir y luego "Agregar a pantalla de inicio". Ábrela desde ahí y activa los avisos.</div>':''}
+if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){h=ios&&!standalone?'<div class="c" style="margin:6px 0;background:#fff7e0;color:#1d1d1b">🔔 <b>Para recibir avisos con sonido en iPhone:</b> instala la app. Toca el botón Compartir y luego "Agregar a pantalla de inicio". Ábrela desde ahí y activa los avisos.</div>':''}
 else if(Notification.permission=='denied'){h='<div class="mu" style="margin:6px 0">🔕 Los avisos están bloqueados en este celular. Actívalos en los permisos del navegador para este sitio.</div>'}
 else{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();
-h=sub&&Notification.permission=='granted'?'<div class="mu" style="margin:6px 0">🔔 Avisos con sonido: <b>activados</b> en este celular <button class="s" onclick="pushQuitar()">Quitar</button></div>':'<div class="c" style="margin:6px 0;background:#fff7e0">🔔 <b>Activa los avisos</b> para que suene cuando suba un servicio. <button onclick="pushActivar()">Activar</button></div>'}}catch(e){h=''}
+h=sub&&Notification.permission=='granted'?'<div class="mu" style="margin:6px 0">🔔 Avisos con sonido: <b>activados</b> en este celular <button class="s" onclick="pushQuitar()">Quitar</button></div>':'<div class="c" style="margin:6px 0;background:#fff7e0;color:#1d1d1b">🔔 <b>Activa los avisos</b> para que suene cuando suba un servicio. <button onclick="pushActivar()">Activar</button></div>'}}catch(e){h=''}
 if($('pushbar'))$('pushbar').innerHTML=h}
 async function pushActivar(){try{
 const p=await Notification.requestPermission();if(p!='granted')return toast('No diste permiso. Los avisos no se activaron.');
@@ -291,7 +291,7 @@ let x=`<div class="c" style="border-left:8px solid ${col};padding:8px 10px;margi
 <div onclick="ab('${s.id}')" style="cursor:pointer">
 <div class="r" style="justify-content:space-between;flex-wrap:nowrap"><span style="font-weight:800;font-size:17px;color:${s.expres?'#c0261b':'#1c4fa1'}">${s.expres?'⚡ EXPRÉS':'🕐 '+h12(s.hora)}</span><span style="font-weight:800;font-size:20px">$${r2(c)}</span></div>
 <div style="font-weight:700;margin:2px 0">${esc(zona(s.ubic))} → ${esc(zona(s.destino))}${(s.paradas||[]).length?' · 🛑'+s.paradas.length:''}${+s.km>0?' · '+s.km+' km':''}</div>
-<div class="mu"><span class="t" style="background:${col};color:${s.estado=='disponible'&&!sc?'#1d1d1b':'#fff'}">${sc?(s.expres?'⏱️ NADIE LO TOMÓ':'SIN CUBRIR'):ST_TXT[s.estado]||esc(s.estado)}</span>${s.pago!='Efectivo'?'<span class="t '+(s.pago=='Tarjeta crédito'?'pc':'pg')+'">'+esc(s.pago)+'</span>':''}${s.factura?'<span class="t">FACTURA</span>':''}${s.aeropuerto?'<span class="t ae">✈️ FEDERAL</span>':''}${s.tomado_nombre?' 🚕 Ya lo tiene '+esc(s.tomado_nombre):''}${qBadge(s)}</div></div>
+<div class="mu"><span class="t" style="background:${col};color:${s.estado=='disponible'&&!sc?'#1d1d1b':'#fff'}">${sc?(s.expres?'⏱️ NADIE LO TOMÓ':'SIN CUBRIR'):ST_TXT[s.estado]||esc(s.estado)}</span>${s.pago!='Efectivo'?'<span class="t '+(s.pago=='Tarjeta crédito'?'pc':'pg')+'">'+esc(s.pago)+'</span>':''}${s.privado?'<span class="t" style="background:#5b2c83;color:#fff">🔒 PRIVADO</span>':''}${s.factura?'<span class="t">FACTURA</span>':''}${s.aeropuerto?'<span class="t ae">✈️ FEDERAL</span>':''}${s.tomado_nombre?' 🚕 Ya lo tiene '+esc(s.tomado_nombre):''}${qBadge(s)}</div></div>
 <div class="r" style="margin-top:6px">`;
 if(s.estado=='disponible')x+=btnTomar(s);
 if((mine||staff())&&n)x+=`<button onclick="estado('${s.id}','${n[0]}')">➡️ ${n[1]}</button>`;
@@ -302,7 +302,7 @@ let x=`<div class="c" style="border-left:8px solid ${col}${s.aeropuerto?';outlin
 <div class="r" style="justify-content:space-between">${s.expres?`<span class="hr" style="color:#c0261b">⚡ EXPRÉS <span class="mu" style="font-size:13px;font-weight:600">${fo(s)} · subido ${h12(s.hora)}</span></span><span class="mu">¡Ya!</span>`:`<span class="hr" style="color:#1c4fa1">🕐 PROGRAMADO ${h12(s.hora)} <span class="mu" style="font-size:13px;font-weight:600">${fo(s)}</span></span><span class="mu">Llegar ${h12(llegada(s))}</span>`}</div>
 ${(s.paradas||[]).length?`<div>📍 <b>Sale de:</b> ${esc(s.ubic)}</div>${s.paradas.map((p,i)=>`<div style="font-weight:700">🛑 ${i+1}º va a: ${esc(p.t)}</div>`).join('')}<div>🏁 <b>${s.paradas.length+1}º y último:</b> <b>${esc(s.destino)}</b></div>`:`<div>${esc(s.ubic)} → <b>${esc(s.destino)}</b></div>`}
 ${+s.km>0?`<div style="font-size:19px;font-weight:800;margin:4px 0">📏 ${s.km} km${+s.precio_sug>0?` · Mapa $${r2(+s.precio_sug)}${c>+s.precio_sug?` → Se cobra $${r2(c)} <span style="color:#0a7a3c">(+$${r2(c-s.precio_sug)})</span>`:c<+s.precio_sug?` → Se cobra $${r2(c)} <span style="color:#c0261b">(−$${r2(s.precio_sug-c)})</span>`:` · Se cobra $${r2(c)}`}`:''}</div>`:''}
-<div class="mu"><b style="font-size:18px;color:var(--tx,#1d1d1b)">$${r2(c)}</b><span class="t ${s.expres?'ex':'pr'}">${s.expres?'EXPRÉS':'PROGRAMADO'}</span><span class="t" style="background:${col};color:${s.estado=='disponible'&&!sc?'#1d1d1b':'#fff'}">${sc?(s.expres?'⏱️ NADIE LO TOMÓ':'SIN CUBRIR'):ST_TXT[s.estado]||esc(s.estado)}</span>${s.pago!='Efectivo'?'<span class="t '+(s.pago=='Tarjeta crédito'?'pc':'pg')+'">'+esc(s.pago)+'</span>':''}${s.factura?'<span class="t">FACTURA</span>':''}${s.especial?'<span class="t">ESPECIAL</span>':''}${s.aeropuerto?'<span class="t ae">✈️ AEROPUERTO · PLACAS FEDERALES</span>':''}</div>
+<div class="mu"><b style="font-size:18px;color:var(--tx,#1d1d1b)">$${r2(c)}</b><span class="t ${s.expres?'ex':'pr'}">${s.expres?'EXPRÉS':'PROGRAMADO'}</span><span class="t" style="background:${col};color:${s.estado=='disponible'&&!sc?'#1d1d1b':'#fff'}">${sc?(s.expres?'⏱️ NADIE LO TOMÓ':'SIN CUBRIR'):ST_TXT[s.estado]||esc(s.estado)}</span>${s.pago!='Efectivo'?'<span class="t '+(s.pago=='Tarjeta crédito'?'pc':'pg')+'">'+esc(s.pago)+'</span>':''}${s.privado?'<span class="t" style="background:#5b2c83;color:#fff">🔒 PRIVADO</span>':''}${s.factura?'<span class="t">FACTURA</span>':''}${s.especial?'<span class="t">ESPECIAL</span>':''}${s.aeropuerto?'<span class="t ae">✈️ AEROPUERTO · PLACAS FEDERALES</span>':''}</div>
 ${s.estado=='cancelado'&&s.cancel_motivo?`<div class="mu">❌ Motivo: ${esc(s.cancel_motivo)}</div>`:''}
 ${s.nota?`<div class="mu">📝 ${esc(s.nota)}</div>`:''}
 <div class="mu">💳 Pago: <b>${esc(s.pago)}</b>${s.factura?' · 🧾 Requiere factura':''}</div>
@@ -320,6 +320,7 @@ x+=`<a class="b s" target="_blank" href="${ruta(s)}">🧭 Ruta</a>`;
 x+=`<button class="s" onclick="recordar('${s.id}')">⏰ Recordarme</button>`;
 if(staff()&&['tomado','en_camino','llego','abordo'].includes(s.estado))x+=`<button class="s" onclick="estado('${s.id}','terminado')">✅ Ya se cubrió</button>`;
 if(staff()){x+=`<button class="s" onclick="copiar(msg(byId('${s.id}'),true))">📤 Al grupo</button><button class="s" onclick="llego('${s.id}',1)">📨 Datos del taxi</button>`+(s.pago=='Transferencia'?`<button class="s" onclick="cobroTransf('${s.id}')">🏦 Datos de transferencia</button>`:'');
+if(s.privado&&['disponible','tomado'].includes(s.estado))x+=`<button class="s" onclick="pasarGrupo('${s.id}')">📢 Pasar al grupo</button>`;
 if(['disponible','tomado','en_camino','llego'].includes(s.estado))x+=`<button class="s" onclick="asg('${s.id}')">👤 ${s.estado=='disponible'?'Asignar':'Reasignar'}</button>`;
 if(['tomado','en_camino'].includes(s.estado))x+=`<button class="s" onclick="recordarT('${s.id}')">🔔 Recordarle</button>`;
 x+=`<button class="s" onclick="llego('${s.id}')">📩 Ya llegó</button><button class="s" onclick="editarS('${s.id}')">✏️</button>`;
@@ -377,6 +378,7 @@ $('v').innerHTML=`<div class="c"><b>${S.form.id?'Editar servicio':'Nuevo servici
 <div class="g"><div><label>Cliente</label><input id="c_nombre" value="${esc(c.nombre)}" oninput="buscarC()"></div><div><label>Celular</label><input id="c_cel" type="tel" placeholder="10 dígitos" value="${esc(c.celular)}" oninput="buscarC()"></div></div><div id="sgc"></div>
 <div class="g"><div>${f('fecha','Fecha',s.fecha,'date')}</div><div>${horaSel(s.hora)}</div></div>
 <label><input type="checkbox" id="expres"${s.expres?' checked':''} style="width:auto" onchange="exCambio()"> Exprés (sale ya, sin hora)</label>
+<label style="background:#efe6f7;color:#3d1d5c;border-radius:10px;padding:8px 10px;margin-top:6px"><input type="checkbox" id="privado"${s.privado?' checked':''} style="width:auto"> 🔒 <b>Privado</b>: es mío, solo yo lo veo y no le llega al grupo</label>
 <label>Ubicación (texto) <span class="mu">· escribe y elige de la lista</span></label><input id="ubic" value="${esc(s.ubic)}" autocomplete="off" onfocus="mpElegir('ubic')" oninput="aerSync();tarVis();acBuscar('ubic')"><div id="ac_ubic"></div>
 <div class="r" style="margin-top:4px"><input id="ubic_maps" onpaste="pegaEv('ubic',event)" placeholder="🔗 Pegar link de Maps (opcional)" style="flex:1;width:auto" value="${esc(s.ubic_maps)}"><button class="s" onclick="gps('ubic_maps')" title="Mi ubicación actual">📍</button></div>
 <div id="mapbox" style="margin:8px 0"><button class="s" id="mptog" onclick="mapaToggle()" style="width:100%">🗺️ Ver mapa y ajustar los pines</button><div id="mpwrap" class="c" hidden style="margin:6px 0 0"><div class="r" style="justify-content:space-between"><b>🗺️ Pon el pin exacto</b><span class="r"><button class="s" id="mpbig" onclick="mapaGrande()">⤢ Agrandar</button><button class="s" onclick="mapaToggle()">▴ Ocultar</button></span></div><div class="r" id="mpsel" style="margin-top:6px"></div><div class="mu" id="mphint"></div><div id="mpmap" style="height:250px;border-radius:12px;overflow:hidden;background:#ddd;margin-top:6px"></div><div id="mpinfo" class="mu"></div></div></div>
@@ -513,8 +515,8 @@ function parCambio(){parRender();mpBotones();mapaPines(false)}
 const DSEM=[['1','Lun'],['2','Mar'],['3','Mié'],['4','Jue'],['5','Vie'],['6','Sáb'],['0','Dom']];
 const vrRow=()=>({h:'',m:'00',p:'AM',o:'',om:'',d:'',dm:'',c:''});
 function vrFechaIso(d){return d.toLocaleDateString('en-CA')}
-function vrIni(){const hoy=new Date(),d=new Date(hoy.getTime()+86400000);return {rows:[vrRow()],dias:['1','2','3','4','5'],desde:vrFechaIso(d),hasta:vrFechaIso(new Date(d.getTime()+13*86400000)),pago:'Efectivo',factura:false,fx:{},nom:'',cel:'',ma:10,yo:false}}
-function vrSync(){const V=S.VR;if(!V||!$('vr_nom'))return;V.nom=$('vr_nom').value.trim();V.cel=$('vr_cel').value.trim();V.desde=$('vr_desde').value;V.hasta=$('vr_hasta').value;V.pago=$('vr_pago').value;V.factura=$('vr_fac').checked;V.ma=+$('vr_ma').value||10;V.yo=$('vr_yo')?$('vr_yo').checked:false;
+function vrIni(){const hoy=new Date(),d=new Date(hoy.getTime()+86400000);return {rows:[vrRow()],dias:['1','2','3','4','5'],desde:vrFechaIso(d),hasta:vrFechaIso(new Date(d.getTime()+13*86400000)),pago:'Efectivo',factura:false,fx:{},nom:'',cel:'',ma:10,yo:false,priv:false}}
+function vrSync(){const V=S.VR;if(!V||!$('vr_nom'))return;V.nom=$('vr_nom').value.trim();V.cel=$('vr_cel').value.trim();V.desde=$('vr_desde').value;V.hasta=$('vr_hasta').value;V.pago=$('vr_pago').value;V.factura=$('vr_fac').checked;V.ma=+$('vr_ma').value||10;V.yo=$('vr_yo')?$('vr_yo').checked:false;V.priv=$('vr_priv')?$('vr_priv').checked:false;
 V.dias=DSEM.filter(x=>$('vr_dia_'+x[0]).checked).map(x=>x[0]);V.fx={regimen:$('vr_regimen').value,rfc:$('vr_rfc').value.trim(),razon_social:$('vr_razon').value.trim(),correo:$('vr_correo').value.trim(),cp:$('vr_cp').value.trim()};
 const L=(V.SELL||[]);V.rows=V.rows.map((r,i)=>{const g=id=>$(id+i)?$(id+i).value.trim():'';let o=g('vr_o_'),om=g('vr_o_'+'')||'';om=$('vr_o_'+i+'_maps')?$('vr_o_'+i+'_maps').value:r.om;let d=g('vr_d_'),dm=$('vr_d_'+i+'_maps')?$('vr_d_'+i+'_maps').value:r.dm;
 if(!om){const q=L.find(x=>x.t==o);if(q&&q.m)om=q.m}if(!dm){const q=L.find(x=>x.t==d);if(q&&q.m)dm=q.m}
@@ -557,7 +559,8 @@ $('v').innerHTML=`<div class="c"><b>📅 Programar varios días</b><div class="m
 <label><input type="checkbox" id="vr_fac" style="width:auto"${V.factura?' checked':''} onchange="$('vr_fx').hidden=!this.checked"> Requiere factura</label>
 <div id="vr_fx" ${V.factura?'':'hidden'}><label>Régimen fiscal</label><select id="vr_regimen"><option value="">Elegir…</option>${opts(REG,V.fx.regimen)}</select><label>RFC</label><input id="vr_rfc" value="${esc(V.fx.rfc)}"><label>Razón social</label><input id="vr_razon" value="${esc(V.fx.razon_social)}"><label>Correo</label><input id="vr_correo" value="${esc(V.fx.correo)}"><label>Código postal</label><input id="vr_cp" value="${esc(V.fx.cp)}"></div>
 <label>Minutos antes de llegar</label><input id="vr_ma" type="number" value="${V.ma}">
-${S.me.taxi?`<label><input type="checkbox" id="vr_yo" style="width:auto"${V.yo?' checked':''}> 🙋 Asignármelos a mí (taxi ${esc(S.me.taxi)})</label>`:'<div class="mu">Para asignártelos, pon tu taxi en Equipo.</div>'}</div>
+${S.me.taxi?`<label><input type="checkbox" id="vr_yo" style="width:auto"${V.yo?' checked':''}> 🙋 Asignármelos a mí (taxi ${esc(S.me.taxi)})</label>`:'<div class="mu">Para asignártelos, pon tu taxi en Equipo.</div>'}
+<label style="background:#efe6f7;color:#3d1d5c;border-radius:10px;padding:8px 10px;margin-top:6px"><input type="checkbox" id="vr_priv" style="width:auto"${V.priv?' checked':''}> 🔒 <b>Privados</b>: son míos, solo yo los veo y no le llegan al grupo</label></div>
 <div class="c" id="vr_prev"></div>
 <div class="r"><button onclick="vrCrear()" style="flex:1">✅ Crear servicios</button><button class="s" onclick="vrLimpiar()">Limpiar</button></div>`;
 vrPrev()}
@@ -568,9 +571,9 @@ if(R.some(r=>!r.o||!r.d))return toast('Cada viaje necesita origen y destino');
 const N=F.length*R.length;
 if(R.some(r=>!(+r.c>0))&&!confirm('Hay viajes con costo en $0. ¿Crear así?'))return;
 if(!confirm('Se van a crear '+N+' servicios. ¿Continuar?'))return;
-const g=S.g||{},tomo=V.yo&&S.me.taxi,ahora=new Date().toISOString();
+const g=S.g||{},priv=!!V.priv,tomo=priv||(V.yo&&S.me.taxi),ahora=new Date().toISOString();
 const arr=[];F.forEach(f=>R.forEach(r=>{const o={grupo_id:S.me.grupo_id,creado_por:S.me.id,fecha:f,hora:vrHora(r),min_antes:V.ma,ubic:r.o,ubic_maps:r.om||null,destino:r.d,destino_maps:r.dm||null,costo:+r.c||0,nota:'',pago:V.pago,factura:V.factura,expres:false,especial:false,aeropuerto:/aeropuerto/i.test(r.o+' '+r.d),comision_tipo:'porcentaje',comision_valor:+g.comision_default||10,comision_iva:0};
-if(tomo)Object.assign(o,{estado:'tomado',tomado_por:S.me.id,tomado_nombre:S.me.nombre,tomado_taxi:S.me.taxi,tomado_en:ahora});arr.push(o)}));
+if(tomo)Object.assign(o,{estado:'tomado',tomado_por:S.me.id,tomado_nombre:S.me.nombre,tomado_taxi:S.me.taxi||null,tomado_en:ahora});if(priv)o.privado=true;arr.push(o)}));
 {const ex=await sb.from('servicios').select('id,fecha,hora').in('fecha',F).neq('estado','cancelado').limit(1000);const E=ex.data||[],k=nrm(V.cel);let ids=new Set();
 if(k.length>=10&&E.length){const {data:C}=await sb.from('servicio_cliente').select('servicio_id,celular').in('servicio_id',E.map(x=>x.id));ids=new Set((C||[]).filter(c=>nrm(c.celular)==k).map(c=>c.servicio_id))}
 const dup=o=>E.some(x=>ids.has(x.id)&&x.fecha==o.fecha&&hm(x.hora)==hm(o.hora));
@@ -579,7 +582,7 @@ if(D.length){if(D.length==arr.length){toast('Todos estos servicios ya existen pa
 if(!confirm('⚠️ '+D.length+' de estos servicios ya existen (mismo cliente, día y hora).\n\nAceptar = crear solo los '+(arr.length-D.length)+' que faltan.\nCancelar = no crear nada.'))return;
 for(let i=arr.length-1;i>=0;i--)if(dup(arr[i]))arr.splice(i,1)}}
 const ins=await sb.from('servicios').insert(arr).select('id');
-if(ins.error)return toast('Error: '+ins.error.message);pushNuevo(ins.data.map(x=>x.id));
+if(ins.error)return toast('Error: '+ins.error.message);if(!priv)pushNuevo(ins.data.map(x=>x.id));
 const cl=ins.data.map(x=>{const c={servicio_id:x.id,grupo_id:S.me.grupo_id,nombre:V.nom,celular:V.cel};if(V.factura)Object.assign(c,{rfc:(V.fx.rfc||'').toUpperCase(),regimen:V.fx.regimen,razon_social:V.fx.razon_social,correo:V.fx.correo,cp:V.fx.cp});return c});
 const ce=await sb.from('servicio_cliente').upsert(cl);
 if(ce.error)toast('Se crearon los servicios, pero falló guardar el cliente: '+ce.error.message);
@@ -620,12 +623,13 @@ if(!(S.PAR||[]).length){const a=v('ubic_maps'),b=v('destino_maps'),t1=v('ubic').
 if(!(n('costo')>0)&&!confirm('El costo está en $0. ¿Guardar así?'))return;
 const hayHora=!!hh();
 if(!S.form.id){const dp=await hayDup(v('fecha'),hora,v('c_cel'),v('ubic'));if(dp&&!confirm('⚠️ Ya hay un servicio parecido ese día:\n'+fo(dp)+' · '+h12(hm(dp.hora))+' · '+(dp.ubic||'')+' → '+(dp.destino||'')+'\n\n¿Guardar este de todos modos?'))return}
-const o={fecha:v('fecha'),hora:hora,min_antes:ma,ubic:v('ubic'),ubic_maps:v('ubic_maps'),destino:v('destino'),destino_maps:v('destino_maps'),costo:n('costo'),nota:v('nota'),pago:v('pago'),factura:$('factura').checked,expres:hayHora?false:$('expres').checked,especial:$('especial').checked,aeropuerto:$('aeropuerto').checked,comision_tipo:v('comision_tipo'),comision_valor:n('comision_valor'),comision_iva:n('comision_iva')};
+const o={fecha:v('fecha'),hora:hora,min_antes:ma,ubic:v('ubic'),ubic_maps:v('ubic_maps'),destino:v('destino'),destino_maps:v('destino_maps'),costo:n('costo'),nota:v('nota'),pago:v('pago'),factura:$('factura').checked,expres:hayHora?false:$('expres').checked,especial:$('especial').checked,aeropuerto:$('aeropuerto').checked,comision_tipo:v('comision_tipo'),comision_valor:n('comision_valor'),comision_iva:n('comision_iva'),privado:$('privado').checked};
+{const ant=S.form.id&&byId(S.form.id);if(o.privado&&(!ant||ant.estado=='disponible'))Object.assign(o,{estado:'tomado',tomado_por:S.me.id,tomado_nombre:S.me.nombre,tomado_taxi:S.me.taxi||null,tomado_en:new Date().toISOString()})}
 if(n('km')>0){o.km=n('km');o.precio_sug=S.sugP||null}
 parSync();{const pr=(S.PAR||[]).filter(p=>p.t||p.m);if(pr.length)o.paradas=pr.map(x=>({t:x.t,m:x.m}));else if(S.form.id&&byId(S.form.id).paradas)o.paradas=null}
 let id=S.form.id,e;
 if(id){e=(await sb.from('servicios').update(o).eq('id',id)).error}
-else{const r=await sb.from('servicios').insert({...o,grupo_id:S.me.grupo_id,creado_por:S.me.id}).select('id').single();e=r.error;id=r.data&&r.data.id;if(!e&&id)pushNuevo([id])}
+else{const r=await sb.from('servicios').insert({...o,grupo_id:S.me.grupo_id,creado_por:S.me.id}).select('id').single();e=r.error;id=r.data&&r.data.id;if(!e&&id&&!o.privado)pushNuevo([id])}
 if(e)return toast('Error: '+e.message);
 const c={servicio_id:id,grupo_id:S.me.grupo_id,nombre:v('c_nombre'),celular:v('c_cel')};
 if(o.factura)Object.assign(c,{rfc:v('rfc').toUpperCase(),regimen:v('regimen'),razon_social:v('razon_social'),correo:v('correo'),cp:v('cp')});
@@ -677,6 +681,7 @@ window.open('https://wa.me/'+tel(a.cel)+'?text='+encodeURIComponent(t),'_blank')
 function eqForm(p){
 const f=(id,l,v,t)=>`<label>${l}</label><input id="e_${id}" type="${t||'text'}" value="${esc(v)}">`,ck=(id,l,v)=>`<label><input type="checkbox" id="e_${id}"${v?' checked':''} style="width:auto"> ${l}</label>`;
 return `<div class="c"><b>${esc(p.nombre)}</b> · 📱 ${esc(p.cel)}
+${f('nombre','Nombre',p.nombre)}
 ${ck('activo','Activo (puede entrar)',p.activo)}
 <label>Rol</label><select id="e_rol">${opts(['taxista','despachador','admin'],p.rol)}</select>
 ${f('taxi','Número de taxi',p.taxi)}${f('linea','Línea',p.linea)}${f('carro','Tipo de carro',p.carro)}${f('placas','Placas',p.placas)}${f('cobra_con','Cobra con (efectivo, tarjeta, transferencia)',p.cobra_con)}<label>Datos para transferirle (nombre, CLABE, banco)</label><textarea id="e_cuenta_transferencia" rows="4">${esc(p.cuenta_transferencia)}</textarea>
@@ -687,11 +692,15 @@ ${eqPagos(p)}
 function mas7(){const h=iso(new Date()),c=$('e_pagado_hasta').value,b=c&&c>h?c:h,d=new Date(b+'T12:00:00');d.setDate(d.getDate()+7);$('e_pagado_hasta').value=iso(d)}
 async function guardarE(id){
 const v=i=>$('e_'+i).value.trim()||null,k=i=>$('e_'+i).checked;
-const o={activo:k('activo'),rol:$('e_rol').value,taxi:v('taxi'),linea:v('linea'),carro:v('carro'),placas:v('placas'),cobra_con:v('cobra_con'),cuenta_transferencia:v('cuenta_transferencia'),terminal:k('terminal'),transferencia:k('transferencia'),factura:k('factura'),unidad_ok:k('unidad_ok'),federal:k('federal'),pagado_hasta:v('pagado_hasta')};
+if(!v('nombre'))return toast('Falta el nombre');
+const o={nombre:v('nombre'),activo:k('activo'),rol:$('e_rol').value,taxi:v('taxi'),linea:v('linea'),carro:v('carro'),placas:v('placas'),cobra_con:v('cobra_con'),cuenta_transferencia:v('cuenta_transferencia'),terminal:k('terminal'),transferencia:k('transferencia'),factura:k('factura'),unidad_ok:k('unidad_ok'),federal:k('federal'),pagado_hasta:v('pagado_hasta')};
 const {error}=await sb.from('perfiles').update(o).eq('id',id);
 if(error)return toast('Error: '+error.message);
 S.edit=null;await cargarE();render();toast('Guardado')}
 
+async function pasarGrupo(id){if(!confirm('¿Pasar este servicio al grupo?\nDeja de ser privado, queda DISPONIBLE y le llega el aviso a todos.'))return;
+const {error}=await sb.from('servicios').update({privado:false,estado:'disponible',tomado_por:null,tomado_nombre:null,tomado_taxi:null,tomado_en:null}).eq('id',id).in('estado',['disponible','tomado']);
+if(error)return toast('Error: '+error.message);pushNuevo([id]);toast('Pasado al grupo');cargar()}
 function asg(id){S.asg=S.asg==id?null:id;render()}
 function asgPanel(s){const L=S.E.filter(p=>p.activo&&p.taxi);return `<div class="c" style="margin:8px 0 0"><b>${s.estado=='disponible'?'Asignar':'Reasignar'} a:</b>${s.aeropuerto?'<div class="mu">✈️ Servicio del aeropuerto: los taxis con ✈️ tienen placas federales.</div>':''}<div class="r" style="margin-top:6px">${L.map(p=>`<button class="s" onclick="asignarA('${s.id}','${p.id}')">${p.federal?'✈️ ':''}${esc(p.taxi)} · ${esc(p.nombre)}</button>`).join('')||'<span class="mu">Aún no hay compañeros activos con taxi. Actívalos en Equipo.</span>'}</div></div>`}
 async function asignarA(id,pid){const p=S.E.find(x=>x.id==pid),sv=byId(id);
