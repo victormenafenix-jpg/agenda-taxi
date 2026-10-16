@@ -115,7 +115,7 @@ const g=await sb.from('grupos').select('*').maybeSingle();S.g=g.data;
 const t=await sb.from('tarifas').select('*').order('nombre');S.T=t.data||[];
 if(staff()){await cargarE();await cargarD()}
 if(S.me.rol=='admin'){await cargarA();await cargarV();await cargarP()}
-await cargarAv();
+await cargarAv();if(conCuenta())await cargarMS();
 const sp=qs.get('serv');if(sp){const r=await sb.from('servicios').select('fecha').eq('id',sp).maybeSingle();if(r.data){S.fecha=r.data.fecha;S.hl=sp}}
 await cargar();
 if(qs.get('do')&&qs.get('sid'))await estado(qs.get('sid'),qs.get('do'));
@@ -174,11 +174,92 @@ async function pushAsignado(sid,uid,otros){try{const r=await sb.functions.invoke
 async function salir(){guardaTok(null);notifCurso(null);await sb.auth.signOut();S.me=null;S.ses=false;render()}
 function modo(m){S.modo=m;render()}
 
+/* ---------- paquete 21: cuentas, saldo, recargas, wallet ---------- */
+const $m=n=>(n<0?'-$':'$')+r2(Math.abs(+n||0));
+const fcorta=d=>new Date(d).toLocaleDateString('es-MX',{day:'numeric',month:'short'})+' '+new Date(d).toLocaleTimeString('es-MX',{hour:'numeric',minute:'2-digit'});
+const MVI={bienvenida:'🎁',comision:'🧾',recarga:'💵',ganancia:'📋',ajuste:'✏️',vence:'⌛',pago:'💸'};
+const conCuenta=()=>S.me&&['taxista','programador'].includes(S.me.rol);
+async function cargarMS(){try{const {data,error}=await sb.rpc('mi_saldo');if(!error)S.MS=data||null}catch(e){}}
+function saldoTxt(){const M=S.MS;if(!M||M.modo!='comision'||!conCuenta())return '';return ' · saldo '+$m(M.saldo)}
+function saldoBanner(){const M=S.MS;if(!M||M.modo!='comision'||!conCuenta())return '';const s=+M.saldo,cr=+M.credito||100,av=+M.aviso||30;
+if(s< -cr)return `<div class="c" style="border:3px solid #c0392b;margin:6px 0"><b>🔒 No puedes tomar servicios</b><div>Debes ${$m(-s)} y el crédito es de ${$m(cr)}. Recarga para seguir trabajando.</div><button style="margin-top:6px;width:100%" onclick="tab('cta')">💰 Recargar saldo</button></div>`;
+if(s<0)return `<div class="c" style="border:2px solid #c0392b;margin:6px 0">🔴 <b>Debes ${$m(-s)}</b> de comisiones. Puedes seguir hasta -${$m(cr)}. <a href="#" onclick="tab('cta');return false">Recargar</a></div>`;
+if(s<=av)return `<div class="c" style="border:2px solid #e67e22;margin:6px 0">🟡 <b>Te quedan ${$m(s)}</b> de saldo. <a href="#" onclick="tab('cta');return false">Recargar</a></div>`;
+return ''}
+/* ----- Mi cuenta (taxista / programador) ----- */
+async function cargarCta(){await cargarMS();const [m,r]=await Promise.all([sb.from('movimientos').select('*').eq('perfil_id',S.me.id).order('creado',{ascending:false}).limit(150),sb.from('recargas').select('*').eq('perfil_id',S.me.id).order('creado',{ascending:false}).limit(20)]);S.MV=m.data||[];S.RCM=r.data||[];if(S.tab=='cta')render()}
+function vCta(){const M=S.MS;if(!M){$('v').innerHTML='<p class="mu">Cargando…</p>';return}
+if(M.modo=='renta'){$('v').innerHTML=`<div class="c"><b>💰 Mi cuenta</b><div>Tu forma de pago es <b>renta semanal</b>.</div><div class="mu">Renta pagada hasta: <b>${esc(S.me.pagado_hasta||'—')}</b>. Con renta no se te cobra comisión.</div></div>`;return}
+const s=+M.saldo,b=+M.bono,cr=+M.credito||100,av=+M.aviso||30,col=s< -cr?'#c0392b':s<0?'#c0392b':s<=av?'#e67e22':'#27ae60',ve=M.vence?new Date(M.vence+'T12:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long'}):'';
+const lun=new Date();lun.setHours(0,0,0,0);lun.setDate(lun.getDate()-((lun.getDay()+6)%7));
+const gan=(S.MV||[]).filter(x=>x.tipo=='ganancia'),ganS=gan.filter(x=>new Date(x.creado)>=lun).reduce((a,x)=>a+(+x.monto||0),0),ganT=gan.reduce((a,x)=>a+(+x.monto||0),0);
+let h=`<div class="c" style="text-align:center;border:3px solid ${col}"><div class="mu" style="font-weight:700">💰 Mi saldo</div><div style="font-size:42px;font-weight:900;color:${col}">${$m(s)}</div>
+${b>0?`<div>🎁 De bienvenida (regalo): <b>${$m(b)}</b>${ve?' · vence el '+ve:''}</div><div class="mu">Se usa primero para pagar tus comisiones.</div>`:''}
+${s< -cr?`<div style="color:#c0392b;font-weight:800;margin-top:6px">🔒 Pasaste el crédito de -${$m(cr)}. Recarga para volver a tomar servicios.</div>`:s<0?`<div style="color:#c0392b;font-weight:700;margin-top:6px">Debes ${$m(-s)}. Puedes trabajar hasta -${$m(cr)}.</div>`:s<=av?`<div style="color:#e67e22;font-weight:700;margin-top:6px">Te queda poco saldo. Recarga pronto.</div>`:''}</div>`;
+if(S.me.rol=='programador')h+=`<div class="c" style="border:2px solid var(--mo2)"><b>📋 Mi wallet de programador</b><div>Ganas el <b>${+M.pct||50}%</b> de la comisión de cada servicio que subes y que cubre otro taxi.</div><div style="font-size:22px;font-weight:900;margin:4px 0">Esta semana: ${$m(ganS)}</div><div class="mu">Total ganado: ${$m(ganT)} · Se suma a tu saldo. Lo que te quede a favor te lo paga el administrador en el corte del domingo.</div><div class="mu">Si cobras abajo de la tarifa, la diferencia sale de tu ganancia. Lo pagado con saldo de bienvenida no cuenta como ganancia.</div></div>`;
+h+=`<div class="c" style="border:2px solid var(--ac)"><b>💵 Recargar saldo</b><div class="mu">1. Transfiere o deposita a esta cuenta:</div><div style="white-space:pre-line;font-weight:700;margin:4px 0">${esc(M.cuenta||'Pídele la cuenta al administrador')}</div>
+<div class="mu">2. Pon cuánto depositaste y sube la foto del comprobante. El administrador lo revisa y se te abona.</div>
+<label>Monto ($)</label><input id="rc_m" type="number" inputmode="decimal" placeholder="Ej. 200"><label>📸 Foto del comprobante</label><input id="rc_f" type="file" accept="image/*">
+<button id="rc_b" style="width:100%;margin-top:8px;font-size:17px" onclick="subirRecarga()">📤 Enviar comprobante</button></div>`;
+const RC=S.RCM||[];if(RC.length)h+=`<div class="c"><b>Mis recargas</b>${RC.map(x=>`<div class="r" style="justify-content:space-between;margin-top:4px"><span>${fcorta(x.creado)} · <b>${$m(x.monto)}</b></span><span class="t" style="background:${x.estado=='ok'?'#27ae60':x.estado=='rechazada'?'#c0392b':'#e67e22'};color:#fff">${x.estado=='ok'?'✅ Abonada':x.estado=='rechazada'?'❌ Rechazada':'⏳ Por revisar'}</span></div>${x.nota?`<div class="mu">${esc(x.nota)}</div>`:''}`).join('')}</div>`;
+const MV=S.MV||[];h+=`<div class="c"><b>Movimientos</b>${MV.length?MV.map(x=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid var(--bd)"><span>${MVI[x.tipo]||'•'} ${esc(x.nota||x.tipo)}<br><span class="mu">${fcorta(x.creado)}</span></span><b style="color:${+x.monto<0?'#c0392b':'#27ae60'};white-space:nowrap">${+x.monto>0?'+':''}${$m(x.monto)}</b></div>`).join(''):'<div class="mu">Todavía no hay movimientos.</div>'}</div>`;
+$('v').innerHTML=h}
+async function subirRecarga(){const m=+$('rc_m').value,f=$('rc_f').files&&$('rc_f').files[0];if(!(m>0))return toast('Pon el monto que depositaste');if(!f)return toast('Sube la foto del comprobante');
+const bt=$('rc_b');bt.disabled=true;bt.textContent='Subiendo…';try{const bl=await achica(f),p=S.me.grupo_id+'/'+S.me.id+'/recarga-'+Date.now()+'.jpg';
+const up=await sb.storage.from('docs').upload(p,bl,{contentType:'image/jpeg'});if(up.error)throw up.error;
+const {error}=await sb.from('recargas').insert({grupo_id:S.me.grupo_id,perfil_id:S.me.id,monto:m,foto:p});if(error)throw error;
+toast('✅ Enviado. Te avisamos cuando se abone.');await cargarCta()}catch(e){toast('Error: '+(e.message||e));bt.disabled=false;bt.textContent='📤 Enviar comprobante'}}
+/* ----- Cuentas (administrador) ----- */
+async function cargarCue(){const ini=new Date();ini.setDate(1);ini.setHours(0,0,0,0);const lun=new Date();lun.setHours(0,0,0,0);lun.setDate(lun.getDate()-((lun.getDay()+6)%7));
+const [s,r,m]=await Promise.all([sb.rpc('saldos'),sb.from('recargas').select('*').order('creado',{ascending:false}).limit(300),sb.from('movimientos').select('perfil_id,tipo,monto,bono,creado').gte('creado',(lun<ini?lun:ini).toISOString())]);
+S.CU={sal:s.data||[],rec:r.data||[],mov:m.data||[],ini,lun};if(S.tab=='cue')render()}
+function vCue(){const C=S.CU;if(!C){$('v').innerHTML='<p class="mu">Cargando…</p>';return}const g=S.g||{},per=id=>S.E.find(x=>x.id==id)||{},nom=id=>{const p=per(id);return (p.taxi?p.taxi+' · ':'')+(p.nombre||'')};
+const okMes=C.rec.filter(x=>x.estado=='ok'&&new Date(x.revisado||x.creado)>=C.ini).length,um=+g.mp_umbral||30;
+let h=`<div class="c" style="${okMes>um?'border:3px solid #f2b705;background:#fff8dc;color:#1d1d1b':''}"><b>📌 Por analizar: cobro automático con Mercado Pago</b><div class="mu" style="${okMes>um?'color:#5a4500':''}">${okMes>um?'⚠️ <b>Ya vale la pena analizarlo:</b> ':''}Este mes aprobaste <b>${okMes}</b> recargas a mano${okMes>um?'':' (te aviso al pasar de '+um+')'}. Con Mercado Pago se abonan solas, cobran aprox. 3–4% por pago.</div></div>`;
+const pend=C.rec.filter(x=>x.estado=='pendiente');
+h+=`<div class="c" style="border:2px solid var(--ac)"><b>💵 Recargas por revisar (${pend.length})</b>${pend.length?pend.map(x=>`<div class="c" style="margin:6px 0"><b>${esc(nom(x.perfil_id))}</b> · <b style="font-size:18px">${$m(x.monto)}</b><div class="mu">${fcorta(x.creado)} · revisa que llegó a tu banco</div><div id="rcf_${x.id}"></div><div class="r" style="margin-top:6px">${x.foto?`<button class="s" onclick="verComp('${x.id}','${esc(x.foto)}')">🧾 Ver comprobante</button>`:''}<button onclick="revRec('${x.id}',true,${+x.monto})">✅ Aprobar</button><button class="s" onclick="revRec('${x.id}',false)">❌ Rechazar</button></div></div>`).join(''):'<div class="mu">No hay recargas pendientes.</div>'}</div>`;
+const sm={};C.sal.forEach(x=>sm[x.perfil_id]=x);
+const L=S.E.filter(p=>['taxista','programador'].includes(p.rol)&&p.activo&&(p.modo||'comision')=='comision').map(p=>({p,s:+((sm[p.id]||{}).saldo||0),b:+((sm[p.id]||{}).bono||0)})).sort((a,b)=>a.s-b.s);
+const cr=+g.credito_max||100,av=+g.aviso_saldo||30;
+h+=`<div class="c"><b>👥 Saldos (${L.length})</b><div class="mu">🔒 bloqueado (pasó -${$m(cr)}) · 🔴 debe · 🟡 poco saldo · 🟢 bien</div>${L.map(x=>{const st=x.s< -cr?'🔒':x.s<0?'🔴':x.s<=av?'🟡':'🟢',real=x.s-x.b;
+return `<div style="padding:6px 0;border-bottom:1px solid var(--bd)"><div class="r" style="justify-content:space-between;flex-wrap:nowrap"><span>${st} <b>${esc(nom(x.p.id))}</b>${x.p.rol=='programador'?' <span class="t">📋 programador</span>':''}</span><b style="color:${x.s<0?'#c0392b':'#27ae60'};white-space:nowrap">${$m(x.s)}</b></div>${x.b>0?`<div class="mu">🎁 ${$m(x.b)} de bienvenida</div>`:''}<div class="r" style="margin-top:4px"><button class="s" onclick="ajSaldo('${x.p.id}')">✏️ Abonar / descontar</button>${x.p.rol=='programador'&&real>0?`<button onclick="pagarProg('${x.p.id}',${real})">💸 Le pagué ${$m(real)}</button>`:''}${x.s<0?`<a class="b s" target="_blank" href="https://wa.me/${tel(x.p.cel)}?text=${encodeURIComponent('Hola '+(x.p.nombre||'')+', tienes un saldo pendiente de '+$m(-x.s)+' en la Agenda. Recarga en 💰 Mi cuenta para seguir tomando servicios. Gracias.')}">💬 Recordarle</a>`:''}</div></div>`}).join('')||'<div class="mu">Nadie con cuenta de comisión todavía.</div>'}</div>`;
+const sem=C.mov.filter(x=>new Date(x.creado)>=C.lun),sum=(f)=>sem.filter(f).reduce((a,x)=>a+(+x.monto||0),0);
+const comT=-sum(x=>x.tipo=='comision'),comB=-sem.filter(x=>x.tipo=='comision').reduce((a,x)=>a+(+x.bono||0),0),gan=sum(x=>x.tipo=='ganancia'),rec=sum(x=>x.tipo=='recarga'),pag=-sum(x=>x.tipo=='pago');
+h+=`<div class="c"><b>📅 Corte de esta semana</b> <span class="mu">(desde el lunes · corte el domingo 12:00)</span>
+<div>🧾 Comisiones: <b>${$m(comT)}</b> <span class="mu">(${$m(comB)} con saldo de bienvenida, no es dinero real)</span></div>
+<div>📋 Ganancia de programadores: <b>${$m(gan)}</b> · 💸 ya pagado: ${$m(pag)}</div>
+<div>💵 Recargas abonadas: <b>${$m(rec)}</b></div>
+<div style="font-weight:800;margin-top:4px">Para ti (comisión real − programadores): ${$m(comT-comB-gan)}</div></div>`;
+h+=`<details class="c"><summary style="font-weight:700;cursor:pointer">⚙️ Ajustes de cuentas</summary>
+<div class="g"><div><label>🎁 Bienvenida ($)</label><input id="cg_bb" type="number" value="${+g.bono_bienvenida||0}"></div><div><label>Vence el</label><input id="cg_bv" type="date" value="${esc(g.bono_vence||'')}"></div></div>
+<div class="g"><div><label>🔒 Crédito máximo ($)</label><input id="cg_cm" type="number" value="${+g.credito_max||100}"></div><div><label>🟡 Avisar con saldo de ($)</label><input id="cg_as" type="number" value="${+g.aviso_saldo||30}"></div></div>
+<div class="g"><div><label>📋 % para el programador</label><input id="cg_pp" type="number" value="${+g.prog_pct||50}"></div><div><label>⏱️ Ventaja programador (min, 0 = apagado)</label><input id="cg_vp" type="number" value="${g.ventaja_prog==null?2:+g.ventaja_prog}"></div></div>
+<label>📌 Avisarme de Mercado Pago al pasar de (recargas al mes)</label><input id="cg_mp" type="number" value="${+g.mp_umbral||30}">
+<button style="margin-top:8px;width:100%" onclick="guardarCG()">💾 Guardar ajustes</button><div class="mu">El % de cada programador también se puede cambiar en Equipo.</div></details>`;
+$('v').innerHTML=h}
+async function verComp(id,p){const b=$('rcf_'+id);if(!b)return;if(b.innerHTML){b.innerHTML='';return}const {data}=await sb.storage.from('docs').createSignedUrl(p,600);if(data&&data.signedUrl)b.innerHTML=`<a href="${data.signedUrl}" target="_blank"><img src="${data.signedUrl}" style="max-width:100%;max-height:420px;border-radius:10px;margin-top:6px"></a>`;else toast('No pude abrir el comprobante')}
+async function revRec(id,ok,m){let monto=null,nota=null;if(ok){const v=prompt('¿Cuánto llegó a tu banco? (se abona esto)',m);if(v===null)return;monto=+v;if(!(monto>0))return toast('Monto inválido')}else{nota=prompt('¿Por qué la rechazas? (le llega al taxista)','No llegó el depósito');if(nota===null)return}
+const {data,error}=await sb.rpc('revisar_recarga',{p_id:id,p_ok:ok,p_monto:monto,p_nota:nota});if(error)return toast('Error: '+error.message);if(data!='ok')return toast(data=='ya_revisada'?'Ya estaba revisada':'No permitido');
+sb.functions.invoke('push',{body:{tipo:'recarga_rev',ids:[id]}}).catch(()=>{});
+toast(ok?'✅ Abonado':'Rechazada');cargarCue()}
+async function ajSaldo(id){const p=S.E.find(x=>x.id==id);const v=prompt('¿Cuánto? Pon positivo para ABONAR (ej. 200) o negativo para DESCONTAR (ej. -50)\n'+(p?p.nombre:''),'');if(v===null||v.trim()==='')return;const m=+v;if(!m)return toast('Monto inválido');
+const n=prompt('Nota (por qué)',m>0?'Pago en efectivo':'Descuento');if(n===null)return;
+const {error}=await sb.from('movimientos').insert({grupo_id:S.me.grupo_id,perfil_id:id,tipo:m>0?'recarga':'ajuste',monto:m,nota:n.trim()||null});if(error)return toast('Error: '+error.message);toast('Guardado');cargarCue()}
+async function pagarProg(id,real){const v=prompt('¿Cuánto le pagaste? (se descuenta de su wallet)',r2(real));if(v===null)return;const m=+v;if(!(m>0))return toast('Monto inválido');
+const {error}=await sb.from('movimientos').insert({grupo_id:S.me.grupo_id,perfil_id:id,tipo:'pago',monto:-m,nota:'Pago de ganancias (corte)'});if(error)return toast('Error: '+error.message);toast('💸 Pago registrado');cargarCue()}
+async function guardarCG(){const n=i=>+$(i).value,o={bono_bienvenida:n('cg_bb'),credito_max:n('cg_cm'),aviso_saldo:n('cg_as'),prog_pct:Math.min(100,Math.max(0,n('cg_pp'))),ventaja_prog:Math.max(0,Math.round(n('cg_vp'))),mp_umbral:Math.max(1,Math.round(n('cg_mp')))};if($('cg_bv').value)o.bono_vence=$('cg_bv').value;
+const {error}=await sb.from('grupos').update(o).eq('id',S.g.id);if(error)return toast('Error: '+error.message);Object.assign(S.g,o);toast('Ajustes guardados');render()}
+/* ----- aviso al programador: precio abajo de la tarifa ----- */
+function progAviso(){if(!S.me||S.me.rol!='programador'||!$('costo'))return '';const c=+$('costo').value||0,t=+S.sugP||0;if(!c||!t)return '';
+const tp=$('comision_tipo')?$('comision_tipo').value:'porcentaje',v=+($('comision_valor')?$('comision_valor').value:10)||0,cm=x=>tp=='fijo'?v:x*v/100,pct=+((S.MS&&S.MS.pct)||(S.g&&S.g.prog_pct)||50);
+const A=cm(t)*pct/100,dif=Math.max(0,t-c),B=Math.max(0,cm(c)*pct/100-dif);
+return dif>0?`<br><span style="color:#c0392b;font-weight:800">⚠️ Está ${$m(dif)} abajo de la tarifa (${$m(t)}). Tu ganancia baja de ${$m(A)} a ${$m(B)}.</span>`:`<br><span style="color:#27ae60;font-weight:700">📋 Si lo cubre otro taxi, ganas ${$m(cm(c)*pct/100)}.</span>`}
+
 /* ---------- datos ---------- */
 async function cargar(){
 const {data,error}=await sb.from('servicios').select('*').eq('fecha',S.fecha).order('hora');
 if(error){toast('Error: '+error.message);return}
-S.L=data||[];S.C={};vozCheck();
+S.L=data||[];S.C={};vozCheck();if(conCuenta())cargarMS();
 await cargarQ();
 await cargarAv();
 if(staff()&&S.L.length){const {data:C}=await sb.from('servicio_cliente').select('*').in('servicio_id',S.L.map(x=>x.id));(C||[]).forEach(c=>S.C[c.servicio_id]=c)}
@@ -282,7 +363,7 @@ async function cargarE(){const {data}=await sb.from('perfiles').select('*').orde
 async function rpc(fn,a,okMsg){
 const {data,error}=await sb.rpc(fn,a);if(error){toast(error.message);return}
 if(typeof data=='string'&&data.startsWith('req:')){reqInfo(data.slice(4));return data}
-const m={ok:'Listo',ya_tomado:'Otro compañero ya lo tomó',renta_vencida:'Tu renta semanal está vencida',sin_taxi:'Te falta número de taxi. Avisa al administrador',sin_federal:'Este servicio es del aeropuerto y solo lo pueden tomar taxis con placas federales',sin_acceso:'Sin acceso',no_permitido:'No permitido',ocupado:'Primero termina tu servicio actual. Cuando el pasajero ya vaya a bordo, ya puedes pedir el siguiente exprés.',ya_en_fila:'Ya tienes un exprés esperando. Termínalo antes de tomar otro.',sin_paradas:'Ya llegaste a todos los destinos. Ahora aprieta Terminado.'};
+const m={ok:'Listo',ya_tomado:'Otro compañero ya lo tomó',renta_vencida:'Tu renta semanal está vencida',sin_taxi:'Te falta número de taxi. Avisa al administrador',sin_federal:'Este servicio es del aeropuerto y solo lo pueden tomar taxis con placas federales',sin_acceso:'Sin acceso',no_permitido:'No permitido',ocupado:'Primero termina tu servicio actual. Cuando el pasajero ya vaya a bordo, ya puedes pedir el siguiente exprés.',ya_en_fila:'Ya tienes un exprés esperando. Termínalo antes de tomar otro.',saldo:'🔒 Pasaste tu crédito. Recarga en 💰 Mi cuenta para seguir tomando servicios.',sin_paradas:'Ya llegaste a todos los destinos. Ahora aprieta Terminado.'};
 if(okMsg)m.ok=okMsg;toast(m[data]||data);cargar();return data}
 const tomar=async id=>{const sv=byId(id),r=await rpc('tomar_servicio',{p_id:id});if(r=='ok'&&sv&&!sv.expres&&confirm('¿Quieres poner una alarma en tu calendario para este servicio?'))recordar(id)},soltar=id=>rpc('soltar_servicio',{p_id:id}),liberar=async id=>{if(!confirm('¿Liberar este servicio?\nQueda DISPONIBLE y les suena a todos para que alguien más lo tome.'))return;const r=await rpc('soltar_servicio',{p_id:id},'🔓 Liberado. Ya le avisamos al grupo.');if(r=='ok')pushNuevo([id])},estado=async(id,e)=>{const sv=byId(id),r=await rpc('cambiar_estado',{p_id:id,p_estado:e});if(r=='ok'&&(!sv||sv.tomado_por==S.me.id)){await cargarMJ();if(e=='en_camino'&&S.tab!='manejo')manejo();else notifCurso(mjCur(S.MJ))}return r};
 /* ---------- modo manejo y aviso con botón ---------- */
@@ -360,12 +441,12 @@ ${S.modo=='up'?'<label>Tu nombre</label><input id="nom"><label>Código del grupo
 if(!S.me){a.innerHTML=`<h1>🚕 Agenda Taxi</h1><div class="c">Tu cuenta no está ligada a ningún grupo. Avisa al administrador.</div><button class="s" onclick="salir()">Salir</button>`;return}
 if(!S.me.activo){a.innerHTML=`<h1>🚕 Hola, ${esc(S.me.nombre)}</h1><div class="c">Tu registro está pendiente. El administrador debe activarte para que puedas entrar.</div><div class="r"><button onclick="iniciar()">Ya me activaron</button><button class="s" onclick="salir()">Salir</button></div>`;return}
 if(S.tab=='manejo'){a.innerHTML=`<div class="brand"><b>${APPN}</b><span class="who">🚗 Modo manejo</span><button onclick="tab('serv')">Agenda</button></div><div class="chk"></div><div id="v"></div>`;vManejo();return}
-const tabs=[['serv','Servicios']].concat(staff()?[['nuevo','+ Nuevo'],['var','📅 Varios']]:[]).concat([['doc','📁 Documentos']]).concat(S.me.rol=='admin'?[['av','📢 Avisos'],['eq','Equipo'],['cli','Clientes'],['res','Resumen']]:[]);
-a.innerHTML=`<div class="brand"><b>${APPN}</b><span class="who">🚕 ${esc(S.me.nombre)}<br>${S.me.rol}${S.me.rol=='taxista'?' · renta hasta '+(S.me.pagado_hasta||'—'):''}</span><button onclick="salir()">Salir</button></div><div class="chk"></div><div id="pushbar"></div>
+const tabs=[['serv','Servicios']].concat(staff()?[['nuevo','+ Nuevo'],['var','📅 Varios']]:[]).concat(conCuenta()?[['cta','💰 Mi cuenta']]:[]).concat([['doc','📁 Documentos']]).concat(S.me.rol=='admin'?[['cue','💰 Cuentas'],['av','📢 Avisos'],['eq','Equipo'],['cli','Clientes'],['res','Resumen']]:[]);
+a.innerHTML=`<div class="brand"><b>${APPN}</b><span class="who">🚕 ${esc(S.me.nombre)}<br>${S.me.rol}${conCuenta()&&S.me.modo=='renta'?' · renta hasta '+(S.me.pagado_hasta||'—'):saldoTxt()}</span><button onclick="salir()">Salir</button></div><div class="chk"></div><div id="pushbar"></div>${S.tab=='serv'?saldoBanner():''}
 <div class="r tabs" style="margin:8px 0">${tabs.map(t=>`<button class="${S.tab==t[0]?'':'s'}" onclick="tab('${t[0]}')">${t[1]}</button>`).join('')}</div><div id="v"></div>`;
-({serv:vServ,nuevo:vForm,var:vVarios,av:vAv,eq:vEq,cli:vCli,res:vRes,doc:vDoc})[S.tab]();
+({serv:vServ,nuevo:vForm,var:vVarios,av:vAv,eq:vEq,cli:vCli,res:vRes,doc:vDoc,cta:vCta,cue:vCue})[S.tab]();
 {let fb=$('fab');if(staff()&&S.tab!='nuevo'){if(!fb){fb=document.createElement('button');fb.id='fab';fb.textContent='➕';fb.title='Nuevo servicio';fb.onclick=()=>tab('nuevo');fb.style.cssText='position:fixed;right:16px;bottom:calc(20px + env(safe-area-inset-bottom));width:64px;height:64px;border-radius:50%;font-size:30px;z-index:8;box-shadow:0 4px 14px rgba(0,0,0,.35);background:var(--ac);color:#1d1d1b;padding:0';document.body.appendChild(fb)}fb.hidden=false}else if(fb)fb.hidden=true}pushInit()}
-function tab(t){S.mis=false;S.bq='';S.BR=null;S.tab=t;S.edit=null;S.form=t=='nuevo'?{}:null;S.gdt=0;S.SEL=S.LO=S.LD=null;if(t=='serv')cargar();if(t=='cli'){S.CL=null;cargarCli()}if(t=='res')cargarRes();if(t=='doc'){S.DOCS=null;S.docU=S.me.rol=='admin'?null:S.me.id;cargarDocs()}if(t=='av')cargarAv().then(()=>{if(S.tab=='av')render()});render()}
+function tab(t){S.mis=false;S.bq='';S.BR=null;S.tab=t;S.edit=null;S.form=t=='nuevo'?{}:null;S.gdt=0;S.SEL=S.LO=S.LD=null;if(t=='serv')cargar();if(t=='cli'){S.CL=null;cargarCli()}if(t=='res')cargarRes();if(t=='cta'){S.MS=S.MS||null;cargarCta()}if(t=='cue'){S.CU=null;cargarCue()}if(t=='doc'){S.DOCS=null;S.docU=S.me.rol=='admin'?null:S.me.id;cargarDocs()}if(t=='av')cargarAv().then(()=>{if(S.tab=='av')render()});render()}
 function editarS(id){S.tab='nuevo';S.form={id};render()}
 
 const zona=t=>{const p=String(t||'').split(',').map(x=>x.trim().replace(/^\d{5}\s+/,'')).filter(x=>x&&!/^\d{5}$/.test(x));if(!p.length)return '—';let z=p[0];if((/^(calle|c\.|av\.?|avenida|and\.?|andador|prol|carretera|blvd|boulevard|circuito)/i.test(z)||/\d/.test(z))&&p[1])z=p[1];return z.length>26?z.slice(0,25)+'…':z};
@@ -564,7 +645,7 @@ function rsm(){if(!$('fwrap'))return;forSync();gChips('ubic');gChips('destino');
 const ex=$('expres').checked,hr=hh(),c=+$('costo').value||0,n=nTaxis(),p=+$('personas').value||1;
 $('tot').innerHTML=n>1&&c?`🚕 ${n} taxis × $${r2(c)} = <b>$${r2(c*n)} en total</b>`:'';
 const r=$('rsm');if(!r)return;const u=$('ubic').value.trim(),d=$('destino').value.trim();
-r.innerHTML=`<b>Revisa antes de subir:</b><br>${ex?'<b style="color:#c0261b">⚡ EXPRÉS · sale ya</b>':'<b style="color:#1c4fa1">🕐 '+esc(dia($('fecha').value))+' · '+(hr?h12(hr):'<span style="color:var(--rd)">falta la hora</span>')+'</b>'}<br>👤 ${esc($('c_nombre').value||'Sin nombre')} ${$('c_cel').value?'· '+esc($('c_cel').value):''}<br>📍 ${u?esc(zona(u)):'<span style="color:var(--rd)">falta dónde recoger</span>'} → 🏁 ${d?esc(zona(d)):'<span style="color:var(--rd)">falta el destino</span>'}${(S.PAR||[]).length?' · 🛑 '+S.PAR.length+' parada(s)':''}<br>👥 ${p} persona(s)${n>1?' · 🚕 '+n+' taxis':''} · 💰 ${c?'$'+r2(c)+(n>1?' c/u':''):'<span style="color:var(--rd)">sin precio</span>'} · ${esc($('pago').value)}${$('factura').checked?' · 🧾':''}${$('privado').checked?' · 🔒 Privado':''}${$('mio')&&$('mio').checked?' · 🙋 Me lo quedo yo':''}`}
+r.innerHTML=`<b>Revisa antes de subir:</b><br>${ex?'<b style="color:#c0261b">⚡ EXPRÉS · sale ya</b>':'<b style="color:#1c4fa1">🕐 '+esc(dia($('fecha').value))+' · '+(hr?h12(hr):'<span style="color:var(--rd)">falta la hora</span>')+'</b>'}<br>👤 ${esc($('c_nombre').value||'Sin nombre')} ${$('c_cel').value?'· '+esc($('c_cel').value):''}<br>📍 ${u?esc(zona(u)):'<span style="color:var(--rd)">falta dónde recoger</span>'} → 🏁 ${d?esc(zona(d)):'<span style="color:var(--rd)">falta el destino</span>'}${(S.PAR||[]).length?' · 🛑 '+S.PAR.length+' parada(s)':''}<br>👥 ${p} persona(s)${n>1?' · 🚕 '+n+' taxis':''} · 💰 ${c?'$'+r2(c)+(n>1?' c/u':''):'<span style="color:var(--rd)">sin precio</span>'} · ${esc($('pago').value)}${$('factura').checked?' · 🧾':''}${$('privado').checked?' · 🔒 Privado':''}${$('mio')&&$('mio').checked?' · 🙋 Me lo quedo yo':''}${progAviso()}`}
 function aerSync(){const a=$('aeropuerto');if(!a||!$('ubic')||!$('destino'))return;const m=/aeropuerto/i.test($('ubic').value);if(m){if(!a.checked)S.aerAuto=true;a.checked=true}else if(S.aerAuto){a.checked=false;S.aerAuto=false}}
 function tarVis(){const w=$('tar_wrap');if(!w)return;const x=(($('ubic')||{}).value||'')+' '+(($('destino')||{}).value||'');w.hidden=!(/aeropuerto|tren maya/i.test(x)||($('tar')&&$('tar').value))}
 function aplT(){const t=S.T.find(x=>x.id==$('tar').value);if(!t)return;
@@ -886,10 +967,10 @@ const per=S.E.filter(p=>(F=='todos'||(F=='sin'&&!p.activo)||(F=='act'&&p.activo)
 const por=(F=='todos'||F=='por')?(S.A||[]).filter(a=>!cels.has(String(a.cel))&&hit(a.nombre,a.cel)):[];
 const tg=(t,c)=>`<span class="t" style="background:${c};color:#fff">${t}</span>`;
 const pc=per.map(p=>{if(S.edit==p.id)return eqForm(p);
-const venc=p.rol=='taxista'&&p.pagado_hasta&&p.pagado_hasta<hoy,col=!p.activo?'#c0392b':(venc?'#e67e22':'#27ae60');
+const venc=(p.modo||'comision')=='renta'&&['taxista','programador'].includes(p.rol)&&(!p.pagado_hasta||p.pagado_hasta<hoy),col=!p.activo?'#c0392b':(venc?'#e67e22':'#27ae60');
 return `<div class="c" style="border-left:8px solid ${col}"><div class="r" style="justify-content:space-between;flex-wrap:nowrap"><b>${esc(p.nombre)}</b><span>${!p.activo?tg('🔴 SIN ACCESO','#c0392b'):tg('🟢 ACTIVO','#27ae60')}</span></div>
 <div class="mu"><span class="t">${p.rol}</span>${p.taxi?' 🚕 '+esc(p.taxi):' · sin taxi'}${p.federal?' · ✈️':''} · 📱 ${esc(p.cel)}</div>
-<div class="mu">${venc?'<b style="color:#c0580a">🟠 Renta vencida</b> (hasta '+p.pagado_hasta+')':'Renta hasta '+(p.pagado_hasta||'—')}</div>
+<div class="mu">${(p.modo||'comision')=='comision'?'💰 Paga por comisión (saldo)'+(p.jefe?' · 🚕 unidad de '+esc((S.E.find(x=>x.id==p.jefe)||{}).nombre||''):''):venc?'<b style="color:#c0580a">🟠 Renta vencida</b> (hasta '+(p.pagado_hasta||'—')+')':'Renta hasta '+(p.pagado_hasta||'—')}</div>
 <div class="r" style="margin-top:8px"><button class="s" onclick="S.edit='${p.id}';vEq()">✏️ Editar</button>${!p.activo?`<button onclick="eqActivo('${p.id}',true)">✅ Activar</button>`:(p.id!=S.me.id?`<button class="s" onclick="eqActivo('${p.id}',false)">⛔ Desactivar</button>`:'')}<a class="b s" target="_blank" href="https://wa.me/${tel(p.cel)}">💬</a></div></div>`}).join('');
 const ac=por.map(a=>`<div class="c" style="border-left:8px solid #f2b705"><div class="r" style="justify-content:space-between;flex-wrap:nowrap"><b>${esc(a.nombre||'Sin nombre')}</b>${tg('🟡 FALTA REGISTRARSE','#b8860b')}</div><div class="mu">📱 ${esc(a.cel)} · autorizado, todavía no crea su cuenta</div><div class="r" style="margin-top:8px"><button onclick="eqInvitar('${a.id}')">📩 Mandar invitación</button><button class="s" onclick="delAut('${a.id}')">🗑️ Quitar</button></div></div>`).join('');
 $('eqlist').innerHTML=(pc||ac)?pc+ac:'<p class="mu">No hay nadie con ese filtro.</p>'}
@@ -906,14 +987,17 @@ ${ck('activo','Activo (puede entrar)',p.activo)}
 <label>Rol</label><select id="e_rol">${opts(['taxista','programador','despachador','admin'],p.rol)}</select><div class="mu">🚕 <b>taxista</b>: toma servicios · 📋 <b>programador</b>: sube sus propios servicios y solo ve SUS clientes · 🏢 <b>despachador</b>: tu oficina, ve todos los clientes · 👑 <b>admin</b>: todo</div>
 ${f('taxi','Número de taxi',p.taxi)}${f('linea','Línea',p.linea)}${f('carro','Tipo de carro',p.carro)}${f('placas','Placas',p.placas)}${f('cobra_con','Cobra con (efectivo, tarjeta, transferencia)',p.cobra_con)}<label>Datos para transferirle (nombre, CLABE, banco)</label><textarea id="e_cuenta_transferencia" rows="4">${esc(p.cuenta_transferencia)}</textarea>
 ${ck('terminal','Tiene terminal',p.terminal)}${ck('transferencia','Recibe transferencia',p.transferencia)}${ck('factura','Puede facturar',p.factura)}${ck('unidad_ok','Unidad en buen estado',p.unidad_ok)}${ck('federal','✈️ Placas federales (puede tomar servicios del aeropuerto)',p.federal)}
-${f('pagado_hasta','Renta pagada hasta',p.pagado_hasta,'date')}<button class="s" style="margin-top:6px" onclick="mas7()">+7 días de renta</button>
+<label>💰 Forma de pago</label><select id="e_modo">${['comision','renta'].map(x=>`<option value="${x}"${(p.modo||'comision')==x?' selected':''}>${x=='comision'?'Comisión (saldo)':'Renta semanal'}</option>`).join('')}</select>
+${f('pagado_hasta','Renta pagada hasta (solo si paga renta)',p.pagado_hasta,'date')}<button class="s" style="margin-top:6px" onclick="mas7()">+7 días de renta</button>
+<label>📋 % de la comisión para él si es programador (vacío = ${+((S.g&&S.g.prog_pct)||50)}%)</label><input id="e_prog_pct" type="number" value="${p.prog_pct==null?'':+p.prog_pct}">
+<label>🚕 Es unidad del programador (no paga comisión en los servicios de él)</label><select id="e_jefe"><option value="">— Ninguno —</option>${S.E.filter(x=>x.rol=='programador'&&x.id!=p.id).map(x=>`<option value="${x.id}"${p.jefe==x.id?' selected':''}>${esc((x.taxi?x.taxi+' · ':'')+x.nombre)}</option>`).join('')}</select>
 ${eqPagos(p)}
 <div class="r" style="margin-top:8px"><button onclick="guardarE('${p.id}')" style="flex:1">Guardar</button><button class="s" onclick="S.edit=null;render()">Cancelar</button></div></div>`}
 function mas7(){const h=iso(new Date()),c=$('e_pagado_hasta').value,b=c&&c>h?c:h,d=new Date(b+'T12:00:00');d.setDate(d.getDate()+7);$('e_pagado_hasta').value=iso(d)}
 async function guardarE(id){
 const v=i=>$('e_'+i).value.trim()||null,k=i=>$('e_'+i).checked;
 if(!v('nombre'))return toast('Falta el nombre');
-const o={nombre:v('nombre'),activo:k('activo'),rol:$('e_rol').value,taxi:v('taxi'),linea:v('linea'),carro:v('carro'),placas:v('placas'),cobra_con:v('cobra_con'),cuenta_transferencia:v('cuenta_transferencia'),terminal:k('terminal'),transferencia:k('transferencia'),factura:k('factura'),unidad_ok:k('unidad_ok'),federal:k('federal'),pagado_hasta:v('pagado_hasta')};
+const o={nombre:v('nombre'),activo:k('activo'),rol:$('e_rol').value,taxi:v('taxi'),linea:v('linea'),carro:v('carro'),placas:v('placas'),cobra_con:v('cobra_con'),cuenta_transferencia:v('cuenta_transferencia'),terminal:k('terminal'),transferencia:k('transferencia'),factura:k('factura'),unidad_ok:k('unidad_ok'),federal:k('federal'),pagado_hasta:v('pagado_hasta'),modo:$('e_modo').value,prog_pct:$('e_prog_pct').value===''?null:Math.min(100,Math.max(0,+$('e_prog_pct').value)),jefe:$('e_jefe').value||null};
 const {error}=await sb.from('perfiles').update(o).eq('id',id);
 if(error)return toast('Error: '+error.message);
 S.edit=null;await cargarE();render();toast('Guardado')}
@@ -1138,13 +1222,16 @@ if(k=='sem'||k=='semp'){const w=(d.getDay()+6)%7;a=new Date(d);a.setDate(d.getDa
 else{const m=h.getMonth()-(k=='mesp'?1:0);a=new Date(h.getFullYear(),m,1);b=new Date(h.getFullYear(),m+1,0)}
 return [iso(a),iso(b)]}
 async function cargarRes(){S.RS=null;const [a,b]=rango(S.rp||'sem');
-const sv=await sb.from('servicios').select('id,folio,fecha,hora,estado,costo,comision_tipo,comision_valor,comision_iva,tomado_por,tomado_nombre,tomado_taxi,tomado_en,creado,expres,especial,externo,practica,terminado_en').gte('fecha',a).lte('fecha',b).order('fecha');
+const sv=await sb.from('servicios').select('id,folio,fecha,hora,estado,costo,comision_tipo,comision_valor,comision_iva,tomado_por,tomado_nombre,tomado_taxi,tomado_en,creado,creado_por,precio_sug,expres,especial,externo,practica,terminado_en').gte('fecha',a).lte('fecha',b).order('fecha');
 const pg=await sb.from('pagos').select('*').gte('creado',new Date(a+'T00:00:00').toISOString()).lt('creado',new Date(new Date(b+'T00:00:00').getTime()+864e5).toISOString());
 const cf=await sb.from('calificaciones').select('*').gte('creado',new Date(a+'T00:00:00').toISOString()).order('creado',{ascending:false}).limit(300);
-if(sv.error)toast('Error: '+sv.error.message);S.RS={a,b,sv:(sv.data||[]).filter(x=>!x.practica),pg:pg.data||[],cf:cf.data||[]};await calCli();render()}
+if(sv.error)toast('Error: '+sv.error.message);S.RS={a,b,sv:(sv.data||[]).filter(x=>!x.practica),pg:pg.data||[],cf:cf.data||[]};
+try{const mg=await sb.from('movimientos').select('perfil_id,tipo,monto,creado').eq('tipo','ganancia').gte('creado',new Date(a+'T00:00:00').toISOString()).lt('creado',new Date(new Date(b+'T00:00:00').getTime()+864e5).toISOString());S.RS.mg=mg.data||[];
+const ids=S.RS.sv.map(x=>x.id),cl=[];for(let i=0;i<ids.length;i+=120){const r=await sb.from('servicio_cliente').select('servicio_id,nombre,celular').in('servicio_id',ids.slice(i,i+120));cl.push(...(r.data||[]))}S.RS.cl=cl}catch(e){}
+await calCli();render()}
 async function calCli(){const L=(S.RS&&S.RS.cf)||[];if(!L.length)return;const {data}=await sb.from('servicio_cliente').select('servicio_id,nombre,celular').in('servicio_id',L.map(x=>x.servicio_id));S.CFC={};(data||[]).forEach(x=>S.CFC[x.servicio_id]=x);
 const {data:sv}=await sb.from('servicios').select('id,folio,fecha,tomado_taxi,tomado_nombre,ubic,destino').in('id',L.map(x=>x.servicio_id));S.CFS={};(sv||[]).forEach(x=>S.CFS[x.id]=x)}
-function vRes(){vRes0();$('v').insertAdjacentHTML('beforeend',`<div class="c"><b>💾 Respaldo</b><div class="mu">Descarga tus datos para guardarlos en tu compu. Se abren con Excel o Numbers. Deja las fechas vacías para bajar todo.</div><div class="g"><div><label>Desde</label><input type="date" value="${esc((S.bk||{}).d||'')}" onchange="S.bk=Object.assign(S.bk||{},{d:this.value})"></div><div><label>Hasta</label><input type="date" value="${esc((S.bk||{}).h||'')}" onchange="S.bk=Object.assign(S.bk||{},{h:this.value})"></div></div><div class="r" style="margin-top:8px"><button onclick="respaldoServ()">⬇️ Servicios</button><button class="s" onclick="respaldoCli()">⬇️ Clientes</button></div></div>`)}
+function vRes(){vRes0();if(S.RS)$('v').insertAdjacentHTML('beforeend',resExtra());$('v').insertAdjacentHTML('beforeend',`<div class="c"><b>💾 Respaldo</b><div class="mu">Descarga tus datos para guardarlos en tu compu. Se abren con Excel o Numbers. Deja las fechas vacías para bajar todo.</div><div class="g"><div><label>Desde</label><input type="date" value="${esc((S.bk||{}).d||'')}" onchange="S.bk=Object.assign(S.bk||{},{d:this.value})"></div><div><label>Hasta</label><input type="date" value="${esc((S.bk||{}).h||'')}" onchange="S.bk=Object.assign(S.bk||{},{h:this.value})"></div></div><div class="r" style="margin-top:8px"><button onclick="respaldoServ()">⬇️ Servicios</button><button class="s" onclick="respaldoCli()">⬇️ Clientes</button></div></div>`)}
 function csvDown(nombre,filas){const e=v=>{v=v==null?'':String(v);if(/^[=@]/.test(v))v="'"+v;return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
 const t='\ufeff'+filas.map(r=>r.map(e).join(',')).join('\r\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv;charset=utf-8'}));a.download=nombre;document.body.appendChild(a);a.click();a.remove()}
 async function paginas(q){let out=[];for(let i=0;;i+=1000){const {data,error}=await q().range(i,i+999);if(error){toast('Error: '+error.message);return null}out=out.concat(data||[]);if(!data||data.length<1000)break}return out}
@@ -1163,6 +1250,24 @@ const cl=await paginas(()=>sb.from('clientes').select('*').order('cel'));if(!cl)
 const K=[];cl.forEach(r=>Object.keys(r).forEach(k=>{if(!K.includes(k)&&k!='id'&&k!='grupo_id')K.push(k)}));
 const val=v=>v&&typeof v=='object'?JSON.stringify(v):v;
 csvDown('agenda-taxi-clientes-'+iso(new Date())+'.csv',[K].concat(cl.map(r=>K.map(k=>val(r[k])))));toast('✅ Descargado: '+cl.length+' clientes')}
+
+function barras(L,fmt){L=L.filter(x=>x.v>0).slice(0,5);if(!L.length)return '<div class="mu">Sin datos en estas fechas.</div>';const mx=Math.max(...L.map(x=>x.v));
+return L.map((x,i)=>`<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;gap:8px"><span>${['🥇','🥈','🥉','4️⃣','5️⃣'][i]} ${esc(x.l)}</span><b>${fmt?fmt(x.v):x.v}</b></div><div style="height:12px;border-radius:6px;background:var(--bd);overflow:hidden"><div style="height:100%;width:${Math.max(4,Math.round(x.v*100/mx))}%;background:linear-gradient(90deg,var(--mo2),var(--ac))"></div></div></div>`).join('')}
+function resExtra(){const R=S.RS;if(!R)return '';const sv=R.sv,fin=x=>x.estado=='terminado',E=id=>S.E.find(y=>y.id==id)||{},nm=id=>{const e=E(id);return (e.taxi?e.taxi+' · ':'')+(e.nombre||'')};
+const tot=sv.length,cub=sv.filter(x=>x.tomado_por||x.externo).length,ter=sv.filter(fin).length,can=sv.filter(x=>x.estado=='cancelado').length;
+const T={};sv.filter(fin).forEach(x=>{if(!x.tomado_por)return;T[x.tomado_por]=(T[x.tomado_por]||0)+1});
+const PR=S.E.filter(p=>p.rol=='programador'),G={};(R.mg||[]).forEach(m=>G[m.perfil_id]=(G[m.perfil_id]||0)+(+m.monto||0));
+const pst=PR.map(p=>{const sub=sv.filter(x=>x.creado_por==p.id);return {p,sub:sub.length,cub:sub.filter(fin).length,gan:G[p.id]||0,bajo:sub.filter(x=>+x.precio_sug>0&&+x.costo<+x.precio_sug).length}});
+const C={};(R.cl||[]).forEach(c=>{const k=nrm(c.celular)||c.nombre||'?';const s=sv.find(x=>x.id==c.servicio_id);C[k]=C[k]||{n:0,nom:c.nombre,cel:c.celular,$:0};C[k].n++;if(c.nombre)C[k].nom=c.nombre;if(s&&fin(s))C[k].$+=+s.costo||0});
+const CL=Object.values(C).sort((a,b)=>b.n-a.n).slice(0,10);
+return `<div class="c"><b>📊 Servicios en estas fechas</b>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center;margin-top:6px">${[['Subidos',tot,'var(--mo2)'],['Cubiertos',cub,'#27ae60'],['Terminados',ter,'#1f6feb'],['Cancelados',can,'#c0392b']].map(x=>`<div style="border:2px solid ${x[2]};border-radius:10px;padding:6px"><div style="font-size:22px;font-weight:900">${x[1]}</div><div class="mu" style="font-size:11px">${x[0]}</div></div>`).join('')}</div>
+<div class="mu" style="margin-top:4px">Se cubrió el ${tot?Math.round(cub*100/tot):0}% de los servicios.</div></div>
+<div class="c"><b>🏆 Taxis que más servicios terminaron</b>${barras(Object.keys(T).map(id=>({l:nm(id),v:T[id]})).sort((a,b)=>b.v-a.v))}</div>
+${PR.length?`<div class="c"><b>📋 Programadores</b>${pst.map(x=>`<div style="padding:5px 0;border-bottom:1px solid var(--bd)"><b>${esc(nm(x.p.id))}</b><div class="mu">Subió ${x.sub} · se cubrieron ${x.cub} · ganó <b>$${r2(x.gan)}</b>${x.bajo?` · ⚠️ ${x.bajo} abajo de la tarifa`:''}</div></div>`).join('')}
+<div style="margin-top:8px"><b>🏆 Los que más subieron</b>${barras(pst.map(x=>({l:nm(x.p.id),v:x.sub})).sort((a,b)=>b.v-a.v))}</div>
+<div style="margin-top:8px"><b>🏆 Los que más ganaron</b>${barras(pst.map(x=>({l:nm(x.p.id),v:x.gan})).sort((a,b)=>b.v-a.v),v=>'$'+r2(v))}</div></div>`:''}
+<div class="c"><b>👥 Clientes que más pidieron</b>${CL.length?CL.map((c,i)=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid var(--bd)"><span>${i+1}. ${esc(c.nom||'Sin nombre')} <span class="mu">${esc(c.cel||'')}</span></span><span><b>${c.n}</b> serv. · $${r2(c.$)}</span></div>`).join(''):'<div class="mu">Sin datos de clientes en estas fechas.</div>'}</div>`}
 function vRes0(){
 const R=S.RS,bt=(k,l)=>`<button class="${(S.rp||'sem')==k?'':'s'}" onclick="S.rp='${k}';cargarRes()">${l}</button>`;
 const h=`<div class="r">${bt('sem','Esta semana')}${bt('semp','Semana pasada')}${bt('mes','Este mes')}${bt('mesp','Mes pasado')}</div>`;
