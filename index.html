@@ -13,7 +13,7 @@
 :root{--bg:#f6f5f0;--cd:#fff;--tx:#1d1d1b;--mu:#6b6b66;--ac:#f2b705;--bd:#e2e0d8;--rd:#c0392b;--bl:#1f6feb;--mo:#5b2c83;--mo2:#7d3cb5}
 @media(prefers-color-scheme:dark){:root{--bg:#141216;--cd:#201c25;--tx:#f1eef5;--mu:#a59cae;--bd:#3a3242}.tabs button:not(.s){background:var(--mo2);color:#fff}}
 .brand{display:flex;justify-content:space-between;align-items:center;gap:8px;background:linear-gradient(90deg,var(--mo),var(--mo2));color:#fff;border-radius:14px;padding:10px 12px}
-.brand b{font-size:20px;letter-spacing:2px;font-weight:900}.brand .who{font-size:13px;opacity:.9;text-align:right;line-height:1.25}
+.brand b{font-size:19px;letter-spacing:1px;font-weight:900;white-space:nowrap}.brand .who{font-size:13px;opacity:.9;text-align:right;line-height:1.25}
 .brand button{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.35);padding:7px 10px}
 .chk{height:9px;margin:6px 0 8px;border-radius:3px;background:repeating-linear-gradient(90deg,var(--mo) 0 14px,var(--ac) 14px 28px)}
 @media(prefers-color-scheme:dark){.chk{background:repeating-linear-gradient(90deg,var(--ac) 0 14px,transparent 14px 28px)}}
@@ -78,6 +78,7 @@ const opts=(a,v)=>a.map(o=>`<option${o==v?' selected':''}>${o}</option>`).join('
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t.h);t.h=setTimeout(()=>t.style.display='none',4500)}
 const h12=t=>{let [h,m]=t.split(':');h=+h;return (h%12||12)+':'+m+' '+(h>=12?'pm':'am')};
 const llegada=s=>{let [h,m]=s.hora.split(':'),x=(+h)*60+(+m)-(+s.min_antes);if(x<0)x+=1440;return String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0')};
+const APPN='AGENDA TAXI';
 const dia=f=>{const t=new Date(f+'T12:00:00').toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}).replace(',','');return t[0].toUpperCase()+t.slice(1)};
 const com=s=>{if(s.practica)return{c:0,i:0,t:0};const v=+s.comision_valor||0,c=s.comision_tipo=='fijo'?v:(+s.costo||0)*v/100,i=c*(+s.comision_iva||0)/100;return{c,i,t:c+i}};
 function pt(l,t){const m=(l||'').match(/(?:q=|@)(-?\d+\.\d+),(-?\d+\.\d+)/);return m?m[1]+','+m[2]:t}
@@ -269,7 +270,7 @@ for(const sv of (S.L||[]).filter(x=>x.estado=='disponible'&&puedo(x))){const R=(
 const t0=Math.min(...R.map(r=>new Date(r.creado).getTime()));if(Date.now()-t0<seg)continue;
 S.AUTO[sv.id]=1;await qEta(sv.id);const O=qOrden(sv.id);if(!O.length)continue;
 await asignarQ(sv.id,O[0].usuario_id,true)}}
-setInterval(async()=>{if(S.me&&S.me.activo&&modoQ()&&S.tab=='serv'&&!S.form&&!document.hidden&&!S.mis&&!S.bq&&!new URLSearchParams(location.search).get('s')){const a=JSON.stringify(Object.keys(S.Q||{}).map(k=>k+':'+S.Q[k].length));await cargarQ();if(a!=JSON.stringify(Object.keys(S.Q||{}).map(k=>k+':'+S.Q[k].length)))vServ();qTick()}},5000);
+setInterval(async()=>{if(S.me&&S.me.activo&&modoQ()&&S.tab=='serv'&&!S.form&&!document.hidden&&!escribiendo()&&!S.mis&&!S.bq&&!new URLSearchParams(location.search).get('s')){const a=JSON.stringify(Object.keys(S.Q||{}).map(k=>k+':'+S.Q[k].length));await cargarQ();if(a!=JSON.stringify(Object.keys(S.Q||{}).map(k=>k+':'+S.Q[k].length)))vServ();qTick()}},5000);
 async function guardarQ(){const m=$('g_mq').value=='1',sg=Math.min(300,Math.max(20,parseInt($('g_qs').value)||60));
 const {error}=await sb.from('grupos').update({modo_quiero:m,quiero_seg:sg}).eq('id',S.g.id);if(error)return toast('Error: '+error.message);S.g.modo_quiero=m;S.g.quiero_seg=sg;toast(m?'✅ Ahora los taxistas ven "🙋 Lo quiero" (se asigna al más cercano a los '+sg+' s)':'✅ Ahora los taxistas ven "✋ Lo tomo" (el primero que toque)');vEq()}
 function panelQ(){const g=S.g||{};return `<div class="c"><b>Cómo se toman los servicios</b><div class="mu">Con "Lo quiero", cada taxista toca el botón, la app toma su ubicación una sola vez y se asigna al que llegue más pronto al cliente.</div>
@@ -351,16 +352,16 @@ if(!pre&&!s.avisado){sb.from('servicios').update({avisado:true}).eq('id',id).the
 function render(){
 const a=$('app');{const fb=$('fab');if(fb)fb.hidden=true}
 if(!S.ses){
-a.innerHTML=`<div class="logo"><div class="chk"></div><b>TAXICEL</b><span>Agenda de servicios</span></div><div class="c"><div class="r"><button class="${S.modo=='in'?'':'s'}" onclick="modo('in')">Entrar</button><button class="${S.modo=='up'?'':'s'}" onclick="modo('up')">Registrarme</button></div>
+a.innerHTML=`<div class="logo"><div class="chk"></div><b>${APPN}</b><span>Servicios de taxi en grupo</span></div><div class="c"><div class="r"><button class="${S.modo=='in'?'':'s'}" onclick="modo('in')">Entrar</button><button class="${S.modo=='up'?'':'s'}" onclick="modo('up')">Registrarme</button></div>
 <label>Celular (10 dígitos)</label><input id="cel" type="tel" inputmode="numeric" autocomplete="username">
 ${S.modo=='up'?'<label>Tu nombre</label><input id="nom"><label>Código del grupo</label><input id="cod" autocapitalize="characters">':''}
 <label>PIN (6 números)</label><input id="pin" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password">
 <p id="err" style="color:var(--rd)"></p><button onclick="entrar()" style="width:100%">${S.modo=='in'?'Entrar':'Crear cuenta'}</button></div>`;return}
 if(!S.me){a.innerHTML=`<h1>🚕 Agenda Taxi</h1><div class="c">Tu cuenta no está ligada a ningún grupo. Avisa al administrador.</div><button class="s" onclick="salir()">Salir</button>`;return}
 if(!S.me.activo){a.innerHTML=`<h1>🚕 Hola, ${esc(S.me.nombre)}</h1><div class="c">Tu registro está pendiente. El administrador debe activarte para que puedas entrar.</div><div class="r"><button onclick="iniciar()">Ya me activaron</button><button class="s" onclick="salir()">Salir</button></div>`;return}
-if(S.tab=='manejo'){a.innerHTML=`<div class="brand"><b>${esc(((S.g&&S.g.nombre)||'Taxicel').toUpperCase())}</b><span class="who">🚗 Modo manejo</span><button onclick="tab('serv')">Agenda</button></div><div class="chk"></div><div id="v"></div>`;vManejo();return}
+if(S.tab=='manejo'){a.innerHTML=`<div class="brand"><b>${APPN}</b><span class="who">🚗 Modo manejo</span><button onclick="tab('serv')">Agenda</button></div><div class="chk"></div><div id="v"></div>`;vManejo();return}
 const tabs=[['serv','Servicios']].concat(staff()?[['nuevo','+ Nuevo'],['var','📅 Varios']]:[]).concat([['doc','📁 Documentos']]).concat(S.me.rol=='admin'?[['av','📢 Avisos'],['eq','Equipo'],['cli','Clientes'],['res','Resumen']]:[]);
-a.innerHTML=`<div class="brand"><b>${esc(((S.g&&S.g.nombre)||'Taxicel').toUpperCase())}</b><span class="who">🚕 ${esc(S.me.nombre)}<br>${S.me.rol}${S.me.rol=='taxista'?' · renta hasta '+(S.me.pagado_hasta||'—'):''}</span><button onclick="salir()">Salir</button></div><div class="chk"></div><div id="pushbar"></div>
+a.innerHTML=`<div class="brand"><b>${APPN}</b><span class="who">🚕 ${esc(S.me.nombre)}<br>${S.me.rol}${S.me.rol=='taxista'?' · renta hasta '+(S.me.pagado_hasta||'—'):''}</span><button onclick="salir()">Salir</button></div><div class="chk"></div><div id="pushbar"></div>
 <div class="r tabs" style="margin:8px 0">${tabs.map(t=>`<button class="${S.tab==t[0]?'':'s'}" onclick="tab('${t[0]}')">${t[1]}</button>`).join('')}</div><div id="v"></div>`;
 ({serv:vServ,nuevo:vForm,var:vVarios,av:vAv,eq:vEq,cli:vCli,res:vRes,doc:vDoc})[S.tab]();
 {let fb=$('fab');if(staff()&&S.tab!='nuevo'){if(!fb){fb=document.createElement('button');fb.id='fab';fb.textContent='➕';fb.title='Nuevo servicio';fb.onclick=()=>tab('nuevo');fb.style.cssText='position:fixed;right:16px;bottom:calc(20px + env(safe-area-inset-bottom));width:64px;height:64px;border-radius:50%;font-size:30px;z-index:8;box-shadow:0 4px 14px rgba(0,0,0,.35);background:var(--ac);color:#1d1d1b;padding:0';document.body.appendChild(fb)}fb.hidden=false}else if(fb)fb.hidden=true}pushInit()}
@@ -469,7 +470,7 @@ if(T.length)h+=`<details class="c" style="margin-top:10px"><summary style="curso
 return h}
 function cerrarBq(){S.bq='';S.BR=null;cargar()}
 function vServ(){
-const bqBox=`<div class="r" style="margin-bottom:6px;flex-wrap:nowrap"><input id="bq" type="search" placeholder="🔎 Buscar: cliente, celular, lugar, folio…" value="${esc(S.bq||'')}" onkeydown="if(event.key=='Enter')buscar(this.value)" style="flex:1;width:auto"><button class="s" onclick="buscar($('bq').value)">Buscar</button></div><div class="r" style="margin-bottom:6px"><button class="s" onclick="misServ()" style="flex:1">🚕 Mi ruta de hoy · Mis servicios</button></div>`;
+const bqBox=`<div class="r" style="margin-bottom:6px;flex-wrap:nowrap"><input id="bq" type="search" placeholder="🔎 Buscar: cliente, celular, lugar, folio…" value="${esc(S.bq||'')}" onkeydown="if(event.key=='Enter')buscar(this.value)" style="flex:1;width:auto;background:#fff8dc;color:#1d1d1b;border:2px solid var(--ac)"><button onclick="buscar($('bq').value)">Buscar</button></div><div class="r" style="margin-bottom:6px"><button onclick="misServ()" style="flex:1;background:linear-gradient(90deg,var(--mo2),#4a1f70);color:#fff;font-size:17px;font-weight:900;border:2px solid var(--ac)">🚕 Mi ruta de hoy · Mis servicios</button></div>`;
 if(S.mis&&S.BR){vMis();return}
 if(S.bq&&S.BR){$('v').innerHTML=bqBox+`<div class="r" style="justify-content:space-between"><p class="mu" style="margin:6px 0">🔎 ${S.BR.length} resultado(s) para “${esc(S.bq)}”${S.BR.length>=60?' (primeros 60)':''}</p><button class="s" onclick="cerrarBq()">✖ Cerrar búsqueda</button></div>${S.BR.map(x=>`<div class="mu" style="margin:8px 0 0;font-weight:700">📅 ${dia(x.fecha)} ${fo(x)}</div>`+card(x)).join('')||'<p class="mu">No encontré nada. Prueba con otra palabra.</p>'}`;return}
 $('v').innerHTML=postBanner()+avBanners()+mjBanner()+bqBox+`<div class="r"><button class="s" onclick="dia_(0)">Hoy</button><button class="s" onclick="dia_(1)">Mañana</button><input type="date" value="${S.fecha}" style="flex:1;width:auto" onchange="S.fecha=this.value;cargar()"></div>
@@ -984,7 +985,7 @@ await sb.from('autorizados').delete().eq('id',id);delA=null;await cargarA();rend
 let ncod=false;async function nuevoCodigo(){if(!ncod){ncod=true;toast('Toca otra vez para cambiar el código. El anterior dejará de servir.');setTimeout(()=>ncod=false,4000);return}
 ncod=false;const {data,error}=await sb.rpc('nuevo_codigo');if(error)return toast('Error: '+error.message);S.g.codigo=data;render();toast('Código nuevo: '+data)}
 iniciar();
-setInterval(()=>{if(S.me&&S.me.activo&&S.tab=='serv'&&!(document.activeElement&&/INPUT|SELECT/.test(document.activeElement.tagName)))cargar()},20000);
+function escribiendo(){const a=document.activeElement;return !!(S.ext||S.asg||(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName)&&a.id!='bq'))}
 
 async function cargarV(){const {data}=await sb.from('clientes_vigilados').select('*').order('nombre');S.V=data||[];S.VS=new Set(S.V.map(v=>nrm(v.cel)))}
 async function cargarCli(){
@@ -1248,8 +1249,8 @@ const e=data.estado,P=data.paradas||[],pn=+data.parada_n||0,PT=data.paradas_t||[
 if(ant&&ant!=e&&e=='llego'){try{navigator.vibrate&&navigator.vibrate([300,150,300,150,300])}catch(x){}document.title='🚖 ¡Su taxi ya llegó!'}
 {const k=JSON.stringify(data);if(k===S.segK)return;S.segK=k}
 ant=e;const TH={tomado:data.t_tomado,en_camino:data.t_en_camino,llego:data.t_llego,abordo:data.t_abordo,terminado:data.t_terminado},hr=x=>x?new Date(x).toLocaleTimeString('es-MX',{hour:'numeric',minute:'2-digit'}):'',gn=data.grupo||'Taxicel';
-document.title='🚕 '+gn+' · Siga su taxi';
-a.innerHTML=`<div class="logo" style="padding:14px 10px 12px"><div class="chk"></div><b style="font-size:34px">${esc(gn.toUpperCase())}</b><span>Seguimiento de su taxi</span></div>${data.practica?'<div class="c" style="background:#555;color:#fff;text-align:center;font-weight:800">🎓 SERVICIO DE PRÁCTICA · NO ES REAL</div>':''}<div class="c" style="background:${B[1]};color:${e=='disponible'?'#1d1d1b':'#fff'};text-align:center;font-size:22px;font-weight:800;padding:18px">${B[0]}</div>
+document.title='🚕 Agenda Taxi · Siga su taxi';
+a.innerHTML=`<div class="logo" style="padding:14px 10px 12px"><div class="chk"></div><b style="font-size:34px">${APPN}</b><span>Seguimiento de su taxi</span></div>${data.practica?'<div class="c" style="background:#555;color:#fff;text-align:center;font-weight:800">🎓 SERVICIO DE PRÁCTICA · NO ES REAL</div>':''}<div class="c" style="background:${B[1]};color:${e=='disponible'?'#1d1d1b':'#fff'};text-align:center;font-size:22px;font-weight:800;padding:18px">${B[0]}</div>
 <div class="c"><div class="mu">Folio ${data.folio?'T-'+String(data.folio).padStart(4,'0'):''} · ${dia(data.fecha)} · ${h12(data.hora)}</div>${data.ubic?`<div>📍 ${esc(data.ubic)}</div>`:''}${P.map((x,j)=>`<div>${j<pn?'✅':'🛑'} Destino ${j+1}: ${esc(x)}</div>`).join('')}${data.destino?`<div>🏁 ${P.length?'Destino '+(P.length+1)+' (último): ':''}${esc(data.destino)}</div>`:''}
 ${data.taxi?`<hr style="border:0;border-top:1px solid var(--bd)"><div>🚕 Taxi: <b>${esc((data.linea?data.linea+' ':'')+data.taxi)}</b></div><div>👤 Operador(a): <b>${esc(data.operador||'')}</b></div>${data.carro?`<div>🚘 <b>${esc(data.carro)}</b></div>`:''}${data.placas?`<div>🔢 Placas: <b>${esc(data.placas)}</b></div>`:''}`:''}</div>
 ${e!='cancelado'&&e!='disponible'?(()=>{const L=[...['tomado','en_camino','llego','abordo'].map(x=>({n:N[x],t:TH[x]})),...P.map((x,j)=>({n:'Llegó a: '+c1(x),va:'Va hacia: '+c1(x),t:PT[j]})),{n:N.terminado,t:TH.terminado}],ci=e=='terminado'?L.length-1:e=='abordo'?3+pn:i;return `<div class="c">${L.map((x,j)=>`<div style="padding:5px 0;display:flex;justify-content:space-between;gap:8px;${j==ci?'font-weight:800':j<ci?'':j==ci+1&&x.va&&e=='abordo'?'font-weight:800;color:#8e44ad':'color:var(--mu)'}"><span>${j<ci||(j==ci&&e=='terminado')?'✅':j==ci?'➡️':j==ci+1&&x.va&&e=='abordo'?'🚕':'⚪'} ${j==ci+1&&x.va&&e=='abordo'?x.va:x.n}</span><span>${j<=ci&&x.t?'<b>'+hr(x.t)+'</b>':''}</span></div>`).join('')}</div>`})():''}
@@ -1265,5 +1266,5 @@ window.calTag=(x,t)=>{const L=S.cal.tags,i=L.indexOf(x);if(i<0)L.push(x);else L.
 window.calEnviar=async t=>{const c=$('cal_c');const {data,error}=await sb.rpc('calificar',{p_token:t,p_estrellas:S.cal.n,p_etiquetas:S.cal.tags,p_comentario:c?c.value:''});
 if(error)return toast('No se pudo enviar: '+error.message);if(data=='ok'||data=='ya_calificado'){S.calOk=1;S.segK=null;ver()}else toast('No se pudo enviar ('+data+')')};
 await ver();setInterval(()=>{if(!document.hidden)ver()},8000)}
-setInterval(()=>{if(S.me&&S.me.activo&&S.tab=='serv'&&!S.form&&!document.hidden&&!new URLSearchParams(location.search).get('s'))cargar()},20000);
+setInterval(()=>{if(S.me&&S.me.activo&&S.tab=='serv'&&!S.form&&!document.hidden&&!escribiendo()&&!new URLSearchParams(location.search).get('s'))cargar()},20000);
 </script><script>if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{})</script></body></html>
