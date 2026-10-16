@@ -145,7 +145,7 @@ function vozTog(){try{localStorage.setItem('voz',vozOn()?'0':'1')}catch(e){}if(v
 async function wl(){try{if(vozOn()&&!document.hidden&&navigator.wakeLock&&!S.wl){S.wl=await navigator.wakeLock.request('screen');S.wl.addEventListener('release',()=>{S.wl=null})}}catch(e){}}
 async function vozCheck(){if(!S.me||!S.me.activo||document.hidden||!vozOn())return;try{const {data,error}=await sb.from('servicios').select('*').eq('estado','disponible').gte('fecha',hoyIso()).limit(80);if(!error)vozNuevos(data||[])}catch(e){}}
 setInterval(vozCheck,15000);
-document.addEventListener('pointerdown',()=>{if(vozOn()&&!S.vozU&&window.speechSynthesis){S.vozU=1;try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}catch(e){}}wl()},true);
+document.addEventListener('pointerdown',()=>{if(vozOn()&&!S.vozU&&window.speechSynthesis){S.vozU=1;try{const u=new SpeechSynthesisUtterance('.');u.volume=0;u.lang='es-MX';speechSynthesis.speak(u)}catch(e){}}wl()},true);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){wl();vozCheck()}});
 function decir(t){try{if(!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(t);u.lang='es-MX';u.rate=1;speechSynthesis.speak(u)}catch(e){}}
 function vozNuevos(D){S.SEEN=S.SEEN||null;D=(D||[]).filter(x=>x.estado=='disponible');if(S.SEEN===null){S.SEEN=new Set(D.map(x=>x.id));return}
@@ -157,7 +157,7 @@ if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification'
 else if(Notification.permission=='denied'){h='<div class="mu" style="margin:6px 0">🔕 Los avisos están bloqueados en este celular. Actívalos en los permisos del navegador para este sitio.</div>'}
 else{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();
 h=sub&&Notification.permission=='granted'?'<div class="mu" style="margin:6px 0">🔔 Avisos con sonido: <b>activados</b> en este celular <button class="s" onclick="pushQuitar()">Quitar</button></div>':'<div class="c" style="margin:6px 0;background:#fff7e0;color:#1d1d1b">🔔 <b>Activa los avisos</b> para que suene cuando suba un servicio. <button onclick="pushActivar()">Activar</button></div>'}}catch(e){h=''}
-h+=`<div style="margin:4px 0"><button class="s" style="padding:6px 10px" onclick="vozTog()">${vozOn()?'🔊 Voz: activada':'🔇 Voz: apagada'}</button> <span class="mu">${vozOn()?'Deja la agenda abierta en la pantalla: no se apaga y te leo cada servicio nuevo (de hoy y de otros días). Si bloqueas el celular, solo te llega el aviso con sonido.':'Actívala para oír los servicios nuevos sin ver la pantalla.'}</span></div>`;
+h+=`<div style="margin:4px 0"><button class="s" style="padding:6px 10px" onclick="vozTog()">${vozOn()?'🔊 Voz: activada':'🔇 Voz: apagada'}</button>${vozOn()?` <button class="s" style="padding:6px 10px" onclick="S.vozU=1;decir('Prueba de voz. Si me escuchas, ya quedó.')">▶️ Probar voz</button>`:''} <span class="mu">${vozOn()?'Deja la agenda abierta en la pantalla: no se apaga y te leo cada servicio nuevo (de hoy y de otros días). Si bloqueas el celular, solo te llega el aviso con sonido.':'Actívala para oír los servicios nuevos sin ver la pantalla.'}</span></div>`;
 if($('pushbar'))$('pushbar').innerHTML=h}
 async function pushActivar(){try{
 const p=await Notification.requestPermission();if(p!='granted')return toast('No diste permiso. Los avisos no se activaron.');
@@ -178,7 +178,7 @@ function modo(m){S.modo=m;render()}
 async function cargar(){
 const {data,error}=await sb.from('servicios').select('*').eq('fecha',S.fecha).order('hora');
 if(error){toast('Error: '+error.message);return}
-S.L=data||[];S.C={};
+S.L=data||[];S.C={};vozCheck();
 await cargarQ();
 await cargarAv();
 if(staff()&&S.L.length){const {data:C}=await sb.from('servicio_cliente').select('*').in('servicio_id',S.L.map(x=>x.id));(C||[]).forEach(c=>S.C[c.servicio_id]=c)}
