@@ -114,7 +114,7 @@ if(p&&p.activo){
 const g=await sb.from('grupos').select('*').maybeSingle();S.g=g.data;
 const t=await sb.from('tarifas').select('*').order('nombre');S.T=t.data||[];
 if(staff()){await cargarE();await cargarD();await cargarEQ()}
-if(S.me.rol=='admin'){await cargarA();await cargarV();await cargarP()}
+if(S.me.rol=='admin'){await cargarA();await cargarV();await cargarP();await cargarCod()}
 await cargarAv();if(conCuenta())await cargarMS();
 const sp=qs.get('serv');if(sp){const r=await sb.from('servicios').select('fecha').eq('id',sp).maybeSingle();if(r.data){S.fecha=r.data.fecha;S.hl=sp}}
 await cargar();
@@ -128,10 +128,11 @@ if(cel.length!=10)return er('Escribe tu celular de 10 dígitos');
 if(!/^\d{6}$/.test(pin))return er('El PIN son 6 números');
 let r;
 if(S.modo=='up'){
-const n=$('nom').value.trim(),cod=$('cod').value.trim();
-if(!n||!cod)return er('Falta tu nombre o el código del grupo');
-r=await sb.auth.signUp({email:mail(cel),password:pin,options:{data:{nombre:n,codigo:cod,cel:cel}}});
-if(r.error)return er(/Database/i.test(r.error.message)?'No pudimos registrarte. Revisa el código del grupo, o pide al administrador que autorice tu celular.':'No se pudo registrar: '+r.error.message);
+const n=$('nom').value.trim(),cod=$('cod').value.trim(),rv=i=>($(i)&&$(i).value.trim())||'',rk=i=>!!($(i)&&$(i).checked);
+if(!n||!cod)return er('Falta tu nombre o el código');
+const tc=[rk('r_terminal')?'tarjeta':'',rk('r_transf')?'transferencia':''].filter(Boolean);
+r=await sb.auth.signUp({email:mail(cel),password:pin,options:{data:{nombre:n,codigo:cod,cel:cel,taxi:rv('r_taxi'),linea:rv('r_linea'),carro:rv('r_carro'),placas:rv('r_placas'),cobra_con:['efectivo'].concat(tc).join(', '),cuenta:rv('r_cuenta'),terminal:rk('r_terminal'),transferencia:rk('r_transf'),factura:rk('r_factura'),federal:rk('r_federal')}}});
+if(r.error)return er(/Database/i.test(r.error.message)?'No pudimos registrarte. Revisa el código (pídelo al administrador). Si usas el código del grupo, tu celular debe estar autorizado.':/already|registered/i.test(r.error.message)?'Ese celular ya tiene cuenta: toca Entrar.':'No se pudo registrar: '+r.error.message);
 if(!r.data.session)r=await sb.auth.signInWithPassword({email:mail(cel),password:pin})
 }else r=await sb.auth.signInWithPassword({email:mail(cel),password:pin});
 if(r.error)return er('Celular o PIN incorrectos');
@@ -273,6 +274,31 @@ async function eqNuevo(){const n=$('eq_new').value.trim();if(!n)return toast('Es
 async function eqGuardar(id){const g=$('eq_g_'+id).value||null,pv=$('eq_p_'+id).value;const {error}=await sb.from('equipos').update({gerente:g,pct:pv===''?null:Math.min(100,Math.max(0,+pv))}).eq('id',id);if(error)return toast('Error: '+error.message);await cargarEQ();vEq();toast('Guardado')}
 async function eqRep(id,r){const e=(S.EQS||[]).find(x=>x.id==id),g=$('eq_g_'+id)?$('eq_g_'+id).value:e&&e.gerente;if(r=='gerente'&&!g)toast('Elige también al gerente y dale Guardar; mientras no haya gerente, la ganancia va a cada programador');const {error}=await sb.from('equipos').update({reparto:r,gerente:g||null}).eq('id',id);if(error)return toast('Error: '+error.message);await cargarEQ();vEq();toast(r=='gerente'?'Las ganancias van al gerente':'Las ganancias van a cada programador')}
 async function eqBorrar(id){if(!confirm('¿Borrar este equipo? Sus programadores y choferes quedan sin equipo (no se borran).'))return;const {error}=await sb.from('equipos').delete().eq('id',id);if(error)return toast('Error: '+error.message);await cargarEQ();await cargarE();vEq();toast('Equipo borrado')}
+
+
+/* ----- Códigos para entrar ----- */
+const CODT={taxista:'🚕 Taxista del grupo',unidad:'🚕 Chofer (unidad) de un equipo',programador:'📋 Programador',gerente:'👑 Gerente de un equipo'};
+async function cargarCod(){try{const {data}=await sb.from('codigos').select('*').order('creado');S.COD=data||[]}catch(e){S.COD=[]}}
+const genCod=()=>{const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let c='';for(let i=0;i<6;i++)c+=A[Math.floor(Math.random()*A.length)];return c};
+const eqNom=id=>((S.EQS||[]).find(e=>e.id==id)||{}).nombre||'';
+function codDesc(k){return CODT[k.tipo]+(k.equipo_id?' · 👥 '+eqNom(k.equipo_id):(k.tipo=='programador'?' independiente':''))}
+function invTxt(k,nom){const gn=(S.g&&S.g.nombre)||'Taxicel',q=APP+'?c='+k.codigo;
+return '🚕 *Agenda Taxi – '+gn+'*\nHola'+(nom?' '+nom:'')+', te invito a entrar a la agenda de servicios'+(k.equipo_id?' (equipo *'+eqNom(k.equipo_id)+'*)':'')+'.\n\n1️⃣ Abre esta liga (en *Chrome*):\n'+q+'\n2️⃣ Toca *Instalar* y otra vez *Instalar*.\n3️⃣ Toca *Registrarme*: pon tu nombre, tu celular, un PIN de 6 números'+(k.tipo=='taxista'||k.tipo=='unidad'?' y los datos de tu taxi':'')+'. El código ya va puesto: *'+k.codigo+'*\n4️⃣ Espera a que te activemos (te avisamos).\n\n📺 Video de cómo se hace:\n'+APP+'guia'}
+function panelCod(){const L=S.COD||[],E=S.EQS||[];
+return `<div class="mu" style="margin:6px 0">Cada código dice cómo queda la persona al registrarse. Con estos códigos <b>no necesitas autorizar su celular</b>: se registran solos con sus datos, te llega un aviso y tú los activas en <b>🔴 Sin acceso</b>.</div>
+${L.map(k=>`<div class="c" style="margin:6px 0;border-left:6px solid ${k.activo?'#27ae60':'#999'}"><div class="r" style="justify-content:space-between;flex-wrap:nowrap"><b>${esc(codDesc(k))}</b><span class="t" style="background:${k.activo?'#27ae60':'#999'};color:#fff">${k.activo?'ACTIVO':'APAGADO'}</span></div>
+<div style="font-size:24px;font-weight:900;letter-spacing:3px;margin:4px 0">${esc(k.codigo)}</div><div class="mu">${k.nombre?esc(k.nombre)+' · ':''}Lo han usado ${k.usos} vez(es)</div>
+<div class="r" style="margin-top:6px"><a class="b" target="_blank" href="https://wa.me/?text=${encodeURIComponent(invTxt(k))}">📤 Mandar invitación</a><button class="s" onclick="codAct('${k.id}',${!k.activo})">${k.activo?'⏸️ Apagar':'▶️ Prender'}</button><button class="s" onclick="codNuevo('${k.id}')">🔄 Cambiar código</button><button class="s" onclick="codBorrar('${k.id}')">🗑️</button></div></div>`).join('')||'<div class="mu">Todavía no hay códigos.</div>'}
+<div class="c" style="margin-top:8px;border:2px solid var(--ac)"><b>➕ Crear código</b><label>¿Para quién?</label><select id="cd_t" onchange="$('cd_eqw').hidden=this.value=='taxista'">${Object.keys(CODT).map(t=>`<option value="${t}">${CODT[t]}</option>`).join('')}</select>
+<div id="cd_eqw" hidden><label>Equipo (para programador: vacío = independiente)</label><select id="cd_e"><option value="">— Sin equipo —</option>${E.map(e=>`<option value="${e.id}">👥 ${esc(e.nombre)}</option>`).join('')}</select></div>
+<label>Nota (opcional, ej. "Choferes Platinum")</label><input id="cd_n"><button style="width:100%;margin-top:8px" onclick="codCrear()">🔑 Crear código</button></div>`}
+async function codCrear(){const t=$('cd_t').value,e=$('cd_e')&&!$('cd_eqw').hidden?$('cd_e').value:'';if((t=='unidad'||t=='gerente')&&!e)return toast('Elige el equipo');
+const {error}=await sb.from('codigos').insert({grupo_id:S.me.grupo_id,codigo:genCod(),tipo:t,equipo_id:e||null,nombre:$('cd_n').value.trim()||null});if(error)return toast('Error: '+error.message);await cargarCod();S.codOpen=true;vEq();toast('Código creado')}
+async function codAct(id,v){const {error}=await sb.from('codigos').update({activo:v}).eq('id',id);if(error)return toast('Error: '+error.message);await cargarCod();vEq()}
+async function codNuevo(id){if(!confirm('¿Cambiar este código? El anterior deja de servir.'))return;const {error}=await sb.from('codigos').update({codigo:genCod()}).eq('id',id);if(error)return toast('Error: '+error.message);await cargarCod();vEq();toast('Código nuevo listo')}
+async function codBorrar(id){if(!confirm('¿Borrar este código?'))return;const {error}=await sb.from('codigos').delete().eq('id',id);if(error)return toast('Error: '+error.message);await cargarCod();vEq()}
+function invitarExt(cel,nom){const k=(S.COD||[]).find(x=>x.activo&&x.tipo=='taxista');if(!k){toast('Crea primero un código de "Taxista del grupo" en Equipo → 🔑 Códigos');return}
+window.open('https://wa.me/'+(cel.length>=10?'52'+cel.slice(-10):'')+'?text='+encodeURIComponent(invTxt(k,nom)),'_blank')}
 
 /* ---------- datos ---------- */
 async function cargar(){
@@ -452,13 +478,14 @@ if(!pre&&!s.avisado){sb.from('servicios').update({avisado:true}).eq('id',id).the
 function render(){
 const a=$('app');{const fb=$('fab');if(fb)fb.hidden=true}
 if(!S.ses){
+if(!S.pcI){S.pcI=1;const q=new URLSearchParams(location.search).get('c');if(q){S.pc=q.toUpperCase();S.modo='up'}}
 a.innerHTML=`<div class="logo"><div class="chk"></div><b>${APPN}</b><span>Servicios de taxi en grupo</span></div><div class="c"><div class="r"><button class="${S.modo=='in'?'':'s'}" onclick="modo('in')">Entrar</button><button class="${S.modo=='up'?'':'s'}" onclick="modo('up')">Registrarme</button></div>
 <label>Celular (10 dígitos)</label><input id="cel" type="tel" inputmode="numeric" autocomplete="username">
-${S.modo=='up'?'<label>Tu nombre</label><input id="nom"><label>Código del grupo</label><input id="cod" autocapitalize="characters">':''}
+${S.modo=='up'?`<label>Tu nombre</label><input id="nom"><label>Código (te lo da el administrador)</label><input id="cod" autocapitalize="characters" value="${esc(S.pc||'')}"><details class="c" style="margin:8px 0" open><summary style="font-weight:700">🚕 Datos de tu taxi (si manejas)</summary><div class="g"><div><label>Número de taxi</label><input id="r_taxi" placeholder="Ej. TX857"></div><div><label>Línea</label><input id="r_linea" placeholder="Ej. Taxicel"></div></div><div class="g"><div><label>Carro (marca, modelo, año)</label><input id="r_carro" placeholder="Ej. Nissan Versa 2025"></div><div><label>Placas</label><input id="r_placas"></div></div><label><input type="checkbox" id="r_terminal" style="width:auto"> 💳 Cobro con terminal (tarjeta)</label><label><input type="checkbox" id="r_transf" style="width:auto"> 🏦 Acepto transferencia</label><label><input type="checkbox" id="r_factura" style="width:auto"> 🧾 Puedo dar factura</label><label><input type="checkbox" id="r_federal" style="width:auto"> ✈️ Tengo placas federales</label><label>Si aceptas transferencia: banco, cuenta o CLABE y nombre del titular</label><textarea id="r_cuenta" rows="3"></textarea></details>`:''}
 <label>PIN (6 números)</label><input id="pin" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password">
 <p id="err" style="color:var(--rd)"></p><button onclick="entrar()" style="width:100%">${S.modo=='in'?'Entrar':'Crear cuenta'}</button></div>`;return}
 if(!S.me){a.innerHTML=`<h1>🚕 Agenda Taxi</h1><div class="c">Tu cuenta no está ligada a ningún grupo. Avisa al administrador.</div><button class="s" onclick="salir()">Salir</button>`;return}
-if(!S.me.activo){a.innerHTML=`<h1>🚕 Hola, ${esc(S.me.nombre)}</h1><div class="c">Tu registro está pendiente. El administrador debe activarte para que puedas entrar.</div><div class="r"><button onclick="iniciar()">Ya me activaron</button><button class="s" onclick="salir()">Salir</button></div>`;return}
+if(!S.me.activo){a.innerHTML=`<h1>🚕 Hola, ${esc(S.me.nombre)}</h1><div class="c">✅ Tu registro llegó al administrador. En cuanto te active, toca <b>"Ya me activaron"</b>. Si tarda, mándale un WhatsApp.</div><div class="r"><button onclick="iniciar()">Ya me activaron</button><button class="s" onclick="salir()">Salir</button></div>`;return}
 if(S.tab=='manejo'){a.innerHTML=`<div class="brand"><b>${APPN}</b><span class="who">🚗 Modo manejo</span><button onclick="tab('serv')">Agenda</button></div><div class="chk"></div><div id="v"></div>`;vManejo();return}
 const tabs=[['serv','Servicios']].concat(staff()?[['nuevo','+ Nuevo'],['var','📅 Varios']]:[]).concat(conCuenta()?[['cta','💰 Mi cuenta']]:[]).concat([['doc','📁 Documentos']]).concat(S.me.rol=='admin'?[['cue','💰 Cuentas'],['av','📢 Avisos'],['eq','Equipo'],['cli','Clientes'],['res','Resumen']]:[]);
 a.innerHTML=`<div class="brand"><b>${APPN}</b><span class="who">🚕 ${esc(S.me.nombre)}<br>${S.me.rol}${conCuenta()&&S.me.modo=='renta'?' · renta hasta '+(S.me.pagado_hasta||'—'):saldoTxt()}</span><button onclick="salir()">Salir</button></div><div class="chk"></div><div id="pushbar"></div>${S.tab=='serv'?saldoBanner():''}
@@ -973,6 +1000,7 @@ const ch=(k,l)=>`<button class="${F==k?'':'s'}" onclick="S.eqf='${k}';vEq()" sty
 $('v').innerHTML=`<div class="r" style="margin-bottom:6px">${ch('todos','Todos '+(S.E.length+por.length))}${ch('sin','🔴 Sin acceso '+nS)}${ch('por','🟡 Por registrarse '+por.length)}${ch('act','🟢 Activos '+nA)}</div>
 <input id="eqq" type="search" placeholder="🔎 Buscar por nombre, celular o taxi" value="${esc(S.eqq||'')}" oninput="S.eqq=this.value;eqLista()" style="margin-bottom:6px">
 <div id="eqlist"></div>
+<details class="c"${S.codOpen?' open':''} ontoggle="S.codOpen=this.open"><summary style="font-weight:700;cursor:pointer">🔑 Códigos para entrar (taxistas, equipos, programadores)</summary>${panelCod()}</details>
 <details class="c"${S.eqOpen?' open':''} ontoggle="S.eqOpen=this.open"><summary style="font-weight:700;cursor:pointer">👥 Equipos de programadores (ej. Platinum)</summary>${panelEquipos()}</details>
 <details class="c"><summary style="font-weight:700;cursor:pointer">🙋 Cómo se toman los servicios (Lo tomo / Lo quiero)</summary>${panelQ()}</details>
 <details class="c"><summary style="font-weight:700;cursor:pointer">⏰ Alarma de servicios sin cubrir</summary>${panelAl()}</details>
@@ -1031,12 +1059,12 @@ async function verFoto(p){toast('Cargando foto…');const u=await urlFoto(p);if(
 function extAbrir(id){S.ext=S.ext==id?null:id;S.OP=S.OP||{};S.OP[id]=1;render()}
 function extPanel(s){const e=s.externo||{};return `<div class="c" style="margin:8px 0 0;border:2px solid #6d4c41"><b>🚕 ¿Quién lo cubrió?</b><div class="mu">Para llevar el registro, aunque no esté en la agenda. Lo puedes completar después.</div>
 <div class="g"><div><label>Número de taxi *</label><input id="ext_t" value="${esc(e.taxi)}" placeholder="Ej. 123"></div><div><label>Nombre (opcional)</label><input id="ext_n" value="${esc(e.nombre)}"></div></div>
-<label>Agrupación (opcional)</label><input id="ext_g" list="dl_grp" value="${esc(e.grupo)}" placeholder="Ej. Platinum"><datalist id="dl_grp"><option value="Taxicel"><option value="Taxi Platinum"><option value="Taxi JKPE"><option value="Particular"></datalist>
+<label>Agrupación (opcional)</label><input id="ext_g" list="dl_grp" value="${esc(e.grupo)}" placeholder="Ej. Platinum"><datalist id="dl_grp"><option value="Taxicel"><option value="Taxi Platinum"><option value="Taxi JKPE"><option value="Particular"></datalist><label>📱 Su celular (opcional, para invitarlo a la app)</label><input id="ext_c" type="tel" inputmode="numeric" value="${esc(e.cel||'')}" placeholder="10 dígitos">
 <div class="r" style="margin-top:8px"><button onclick="extGuardar('${s.id}')" style="flex:1">💾 Guardar</button><button class="s" onclick="S.ext=null;render()">Cancelar</button></div></div>`}
-async function extGuardar(id){const sv=byId(id),t=$('ext_t').value.trim(),nm=$('ext_n').value.trim(),g=$('ext_g').value.trim();if(!t)return toast('Pon al menos el número de taxi');
+async function extGuardar(id){const sv=byId(id),t=$('ext_t').value.trim(),nm=$('ext_n').value.trim(),g=$('ext_g').value.trim(),ec=($('ext_c')?$('ext_c').value:'').replace(/\D/g,'');if(!t)return toast('Pon al menos el número de taxi');
 const prev=sv.externo||{},cuando=prev.cuando||new Date().toISOString(),tarde=prev.cuando?!!prev.tarde:(new Date()>new Date(sv.fecha+'T'+hm(sv.hora)+':00'));
-const o={externo:{taxi:t,nombre:nm,grupo:g,cuando,tarde},tomado_taxi:t,tomado_nombre:(nm||'Externo')+(g?' ('+g+')':'')};if(sv.estado=='disponible')Object.assign(o,{estado:'tomado',tomado_por:null,tomado_en:new Date().toISOString()});
-const {error}=await sb.from('servicios').update(o).eq('id',id);if(error)return toast('Error: '+error.message);sb.from('interesados').delete().eq('servicio_id',id).then(()=>{});S.ext=null;toast('Registrado: lo cubrió el taxi '+t);cargar()}
+const o={externo:{taxi:t,nombre:nm,grupo:g,cel:ec||null,cuando,tarde},tomado_taxi:t,tomado_nombre:(nm||'Externo')+(g?' ('+g+')':'')};if(sv.estado=='disponible')Object.assign(o,{estado:'tomado',tomado_por:null,tomado_en:new Date().toISOString()});
+const {error}=await sb.from('servicios').update(o).eq('id',id);if(error)return toast('Error: '+error.message);sb.from('interesados').delete().eq('servicio_id',id).then(()=>{});S.ext=null;toast('Registrado: lo cubrió el taxi '+t);cargar();if(ec.length>=10&&S.me.rol=='admin'&&confirm('¿Mandarle invitación por WhatsApp para que entre a la app?'))invitarExt(ec,nm)}
 function panelAl(){const g=S.g||{},a1=g.alerta1_min==null?60:+g.alerta1_min,a2=g.alerta2_min==null?30:+g.alerta2_min,o=(L,v)=>L.map(x=>`<option value="${x[0]}"${+x[0]==v?' selected':''}>${x[1]}</option>`).join('');
 return `<div class="mu" style="margin:6px 0">Si un programado sigue sin que nadie lo tome, te suena una alarma a ti y a los despachadores (aunque tengan la agenda cerrada).</div>
 <label>Primera alarma</label><select id="al1">${o([[0,'Sin alarma'],[120,'2 horas antes'],[90,'1 hora y media antes'],[60,'1 hora antes'],[45,'45 min antes'],[30,'30 min antes']],a1)}</select>
