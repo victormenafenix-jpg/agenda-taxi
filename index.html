@@ -36,6 +36,7 @@
 .fotov img{max-width:100%;max-height:80vh;border-radius:12px}
 *{box-sizing:border-box}
 .mpfull{position:fixed!important;inset:0;z-index:40;background:var(--bg);margin:0!important;border-radius:0!important;display:flex;flex-direction:column;gap:8px;overflow:auto;padding:10px}.mpfull #mpmap{height:auto!important;flex:1;min-height:300px}
+@media(min-width:1100px){body.ancho{max-width:1500px}.esc{display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:16px;align-items:start}#side{position:sticky;top:10px;max-height:calc(100vh - 20px);overflow:auto}}
 body{margin:0 auto;background:var(--bg);color:var(--tx);font:16px system-ui,-apple-system,sans-serif;padding:12px;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:calc(60px + env(safe-area-inset-bottom));max-width:640px}
 h1{font-size:20px;margin:6px 0}
 .r{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -341,6 +342,24 @@ setInterval(()=>{document.querySelectorAll('.espbox').forEach(b=>{const s=byId(b
 function totalGrande(s){if(!s)return;const c=+s.costo||0,e=+s.cargo_espera||0,d=document.createElement('div');d.className='fotov';
 d.innerHTML=`<div class="c" style="max-width:440px;width:100%;text-align:center"><div style="font-size:20px;font-weight:800">✅ Servicio terminado</div><div class="mu" style="margin-top:6px">Cóbrale al cliente</div><div style="font-size:56px;font-weight:900;color:#27ae60;line-height:1.1;margin:6px 0">$${r2(c+e)}</div>${e?`<div style="font-size:17px">Viaje $${r2(c)} + espera $${r2(e)}</div>`:''}<div style="margin-top:6px;font-weight:700">${esc(s.pago||'Efectivo')}${s.factura?' · 🧾 Factura':''}</div><button style="width:100%;margin-top:14px;font-size:18px" onclick="this.closest('.fotov').remove()">Listo</button></div>`;document.body.appendChild(d)}
 
+
+/* ----- versión computadora: panel lateral ----- */
+const ancho=()=>window.innerWidth>=1100&&!!S.me&&staff();
+{let rz=null;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(S.me&&S.me.activo&&!escribiendo()&&!!$('side')!=ancho())render()},400)})}
+function abrirSv(id){S.form=null;S.tab='serv';S.mis=false;S.bq='';S.OP=S.OP||{};S.OP[id]=1;S.hl=id;render();setTimeout(()=>{const e=[...document.querySelectorAll('#v .c')].find(x=>x.innerHTML.includes(id));if(e)e.scrollIntoView({behavior:'smooth',block:'center'})},150)}
+function vSide(){const b=$('side');if(!b)return;const L=(S.L||[]).filter(x=>x.estado!='cancelado'),curso=L.filter(x=>['tomado','en_camino','llego','abordo'].includes(x.estado)),sc=L.filter(sinCub),pend=L.filter(x=>x.estado=='disponible'),ter=L.filter(x=>x.estado=='terminado');
+const box=(n,l,c)=>`<div style="border:2px solid ${c};border-radius:10px;padding:6px;text-align:center"><div style="font-size:24px;font-weight:900">${n}</div><div class="mu" style="font-size:12px">${l}</div></div>`;
+const fila=x=>{const c=S.C[x.id]||{};return `<div onclick="abrirSv('${x.id}')" style="cursor:pointer;padding:7px 8px;border-radius:10px;border:1px solid var(--bd);border-left:6px solid ${sinCub(x)?'#7b1d14':ST_COL[x.estado]||'var(--bd)'};margin:5px 0"><div style="display:flex;justify-content:space-between;gap:6px"><b>${x.expres?'⚡ Exprés':'🕐 '+h12(hm(x.hora))}</b><span class="t" style="background:${ST_COL[x.estado]};color:${x.estado=='disponible'?'#1d1d1b':'#fff'}">${sinCub(x)?'SIN CUBRIR':ST_TXT[x.estado]}</span></div><div style="font-size:14px">${esc(zona(x.ubic))} → ${esc(zona(x.destino))}${nPar(x)?' · 🛑'+nPar(x):''} · <b>$${r2(+x.costo||0)}</b></div><div class="mu" style="font-size:13px">${x.tomado_taxi?'🚕 '+esc(x.tomado_taxi)+' · '+esc(x.tomado_nombre||''):'Sin taxi'}${c.nombre?' · 👤 '+esc(c.nombre):''}${+x.cargo_espera?' · ⏱️ +$'+r2(+x.cargo_espera):''}</div></div>`};
+const sec=(t,A)=>A.length?`<div style="font-weight:800;margin-top:10px">${t} (${A.length})</div>`+A.map(fila).join(''):'';
+b.innerHTML=`<div class="c" style="margin:0"><div style="display:flex;justify-content:space-between;align-items:center"><b>📋 ${esc(dia(S.fecha))}</b><button onclick="tab('nuevo')" style="padding:6px 12px">➕ Nuevo</button></div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px">${box(pend.length,'Disponibles','#f2b705')}${box(sc.length,'Sin cubrir','#c0392b')}${box(curso.length,'En curso','#27ae60')}${box(ter.length,'Terminados','#8a8a85')}</div>
+${sec('⏰ Sin cubrir',sc)}${sec('🚕 En curso',curso)}${sec('🟡 Disponibles',pend.filter(x=>!sinCub(x)))}${S.tab!='serv'?sec('✅ Terminados',ter):''}${!L.length?'<div class="mu" style="margin-top:8px">Sin servicios este día.</div>':''}
+<div class="mu" style="margin-top:8px">Toca un servicio para abrirlo.</div></div>`}
+/* cambiar el nombre del cliente */
+async function renC(){const x=S.SEL;if(!x)return;const v=prompt('Nombre del cliente',x.nombre||'');if(v===null)return;const n=v.trim();if(!n)return;
+const {error}=await sb.from('clientes').update({nombre:n}).eq('grupo_id',S.me.grupo_id).eq('cel',x.cel);if(error)return toast('Error: '+error.message);
+x.nombre=n;(S.D||[]).forEach(d=>{if(d.cel==x.cel)d.nombre=n});if($('c_nombre'))$('c_nombre').value=n;if($('selnom'))$('selnom').textContent='👤 '+n;toast('Nombre guardado')}
+
 /* ---------- datos ---------- */
 async function cargar(){
 const {data,error}=await sb.from('servicios').select('*').eq('fecha',S.fecha).order('hora');
@@ -353,7 +372,7 @@ S.CN=S.CN||{};
 if(!ofi()){await Promise.all(S.L.filter(x=>x.tomado_por==S.me.id&&!S.C[x.id]&&S.CN[x.id]===undefined).map(async x=>{const r=await sb.rpc('mi_cliente',{p_id:x.id});S.CN[x.id]=r.error?'':(r.data||'')}))}
 if(S.mis&&S.tab=='serv'&&!S.form){misServ(1);return}
 if(S.bq&&S.tab=='serv'&&!S.form){buscar(S.bq,1);return}
-if(S.tab=='serv'&&!S.form&&!(document.activeElement&&document.activeElement.id=='bq'))render()}
+vSide();if(S.tab=='serv'&&!S.form&&!(document.activeElement&&document.activeElement.id=='bq'))render()}
 async function cargarAv(){
 try{const r=await sb.from('avisos').select('*').or('expira.is.null,expira.gt.'+new Date().toISOString()).order('creado',{ascending:false}).limit(30);
 if(r.error){S.AV=[];return}
@@ -530,8 +549,8 @@ if(!S.me.activo){a.innerHTML=`<h1>🚕 Hola, ${esc(S.me.nombre)}</h1><div class=
 if(S.tab=='manejo'){a.innerHTML=`<div class="brand"><b>${APPN}</b><span class="who">🚗 Modo manejo</span><button onclick="tab('serv')">Agenda</button></div><div class="chk"></div><div id="v"></div>`;vManejo();return}
 const tabs=[['serv','Servicios']].concat(staff()?[['nuevo','+ Nuevo'],['var','📅 Varios']]:[]).concat(conCuenta()?[['cta','💰 Mi cuenta']]:[]).concat([['doc','📁 Documentos']]).concat(S.me.rol=='admin'?[['cue','💰 Cuentas'],['av','📢 Avisos'],['eq','Equipo'],['cli','Clientes'],['res','Resumen']]:[]);
 a.innerHTML=`<div class="brand"><b>${APPN}</b><span class="who">🚕 ${esc(S.me.nombre)}<br>${S.me.rol}${conCuenta()&&S.me.modo=='renta'?' · renta hasta '+(S.me.pagado_hasta||'—'):saldoTxt()}</span><button onclick="salir()">Salir</button></div><div class="chk"></div><div id="pushbar"></div>${S.tab=='serv'?saldoBanner():''}
-<div class="r tabs" style="margin:8px 0">${tabs.map(t=>`<button class="${S.tab==t[0]?'':'s'}" onclick="tab('${t[0]}')">${t[1]}</button>`).join('')}</div><div id="v"></div>`;
-({serv:vServ,nuevo:vForm,var:vVarios,av:vAv,eq:vEq,cli:vCli,res:vRes,doc:vDoc,cta:vCta,cue:vCue})[S.tab]();
+<div class="r tabs" style="margin:8px 0">${tabs.map(t=>`<button class="${S.tab==t[0]?'':'s'}" onclick="tab('${t[0]}')">${t[1]}</button>`).join('')}</div>${ancho()?'<div class="esc"><div id="v"></div><div id="side"></div></div>':'<div id="v"></div>'}`;document.body.classList.toggle('ancho',ancho());
+({serv:vServ,nuevo:vForm,var:vVarios,av:vAv,eq:vEq,cli:vCli,res:vRes,doc:vDoc,cta:vCta,cue:vCue})[S.tab]();vSide();
 {let fb=$('fab');if(staff()&&S.tab!='nuevo'){if(!fb){fb=document.createElement('button');fb.id='fab';fb.textContent='➕';fb.title='Nuevo servicio';fb.onclick=()=>tab('nuevo');fb.style.cssText='position:fixed;right:16px;bottom:calc(20px + env(safe-area-inset-bottom));width:64px;height:64px;border-radius:50%;font-size:30px;z-index:8;box-shadow:0 4px 14px rgba(0,0,0,.35);background:var(--ac);color:#1d1d1b;padding:0';document.body.appendChild(fb)}fb.hidden=false}else if(fb)fb.hidden=true}pushInit()}
 function tab(t){S.mis=false;S.bq='';S.BR=null;S.tab=t;S.edit=null;S.form=t=='nuevo'?{}:null;S.gdt=0;S.SEL=S.LO=S.LD=null;if(t=='serv')cargar();if(t=='cli'){S.CL=null;cargarCli()}if(t=='res')cargarRes();if(t=='cta'){S.MS=S.MS||null;cargarCta()}if(t=='cue'){S.CU=null;cargarCue()}if(t=='doc'){S.DOCS=null;S.docU=S.me.rol=='admin'?null:S.me.id;cargarDocs()}if(t=='av')cargarAv().then(()=>{if(S.tab=='av')render()});render()}
 function editarS(id){S.tab='nuevo';S.form={id};render()}
@@ -1229,7 +1248,7 @@ if(e)return toast('Error: '+e.message);cargarCli()}
 let delVid=null;async function delV(id){if(delVid!=id){delVid=id;toast('Toca 🗑️ otra vez para quitarlo');setTimeout(()=>delVid=null,4000);return}
 const e=(await sb.from('clientes_vigilados').delete().eq('id',id)).error;delVid=null;if(e)return toast('Error: '+e.message);cargarCli()}
 
-function horaSel(t){let h='',m='',pm='AM';if(t){let [a,b]=t.split(':');a=+a;m=b;pm=a>=12?'PM':'AM';h=String(a%12||12)}
+function horaSel(t){let h='',m='',pm=new Date().getHours()>=12?'PM':'AM';if(t){let [a,b]=t.split(':');a=+a;m=b;pm=a>=12?'PM':'AM';h=String(a%12||12)}
 const o=(arr,v)=>arr.map(x=>`<option${String(x)==String(v)?' selected':''}>${x}</option>`).join('');
 return `<label>🕐 Hora</label><div class="r" style="flex-wrap:nowrap"><select id="h_h" onchange="hrCambio()"><option value="">Hora</option>${o([1,2,3,4,5,6,7,8,9,10,11,12],h)}</select><select id="h_m">${o(Array.from({length:60},(_,i)=>String(i).padStart(2,'0')),m||'00')}</select><select id="h_p">${o(['AM','PM'],pm)}</select></div>`}
 function hrCambio(){if($('h_h').value)$('expres').checked=false;if($('km'))sug()}
@@ -1253,7 +1272,7 @@ $('personas').value=u.personas||1;if(u.nota)$('nota').value=u.nota;if(u.foraneo&
 function elegirC(i){const x=S.SG[i],L=x.lugares||[];S.ULT=null;ultimoDe(x.cel).then(u=>{S.ULT=u;const b=$('ult_box');if(b&&u)b.innerHTML=`<button style="width:100%;margin-top:8px" onclick="repetir()">🔁 Repetir el último: ${esc(zona(u.ubic))} → ${esc(zona(u.destino))} · $${r2(+u.costo||0)} <span class="mu">(${esc(u.fecha)})</span></button>`});S.SEL=x;S.LO=S.LD=null;$('c_nombre').value=x.nombre||'';$('c_cel').value=shw(x.cel);
 const bt=k=>L.map((l,j)=>`<button class="s" onclick="ponL('${k}',${j})">${ic(l.n)} ${esc(l.n)}</button>`).join('');
 const rec=(x.viajes||[]).map((v,j)=>+v.costo>0?`<button class="s" onclick="ponV(${j})">🔁 ${esc(v.de)}${(v.via||[]).map(a=>' → '+esc(a)).join('')} → ${esc(v.a)} · $${v.costo}</button>`:'').join('');
-$('sgc').innerHTML=`<div class="c" style="margin:8px 0"><b>👤 ${esc(x.nombre||'Cliente sin nombre')}</b><div id="ult_box"></div>${x.pago||x.factura?`<div class="mu">Habitual: ${esc(x.pago||'')}${x.factura?' · con factura':''}</div>`:''}${L.length?`<label>📍 Recoger en</label><div class="r">${bt('o')}</div><label>🏁 Destino</label><div class="r">${bt('d')}</div><div class="mu" style="margin-top:6px">Si es otro lugar, escríbelo abajo.</div>`:'<div class="mu">Aún no tiene lugares guardados. Escribe la ubicación abajo y elige cómo guardarla.</div>'}${rec?`<label>🔁 Recorridos guardados (un toque llena todo)</label><div class="r">${rec}</div>`:''}${L.length||(x.viajes||[]).length?`<details style="margin-top:8px"><summary class="mu" style="cursor:pointer">🗑️ Borrar lugares o recorridos guardados</summary>${L.map((l,j)=>`<div class="r" style="margin:4px 0"><span style="flex:1">${ic(l.n)} ${esc(l.n)}<span class="mu"> · ${esc((l.t||'').slice(0,40))}</span></span><button class="s" onclick="delLV('l',${j})">🗑️</button></div>`).join('')}${(x.viajes||[]).map((v,j)=>`<div class="r" style="margin:4px 0"><span style="flex:1">🔁 ${esc(v.de)}${(v.via||[]).map(a=>' → '+esc(a)).join('')} → ${esc(v.a)} · $${v.costo}</span><button class="s" onclick="delLV('v',${j})">🗑️</button></div>`).join('')}</details>`:''}</div>`;
+$('sgc').innerHTML=`<div class="c" style="margin:8px 0"><b id="selnom">👤 ${esc(x.nombre||'Cliente sin nombre')}</b> <button class="s" style="padding:4px 10px" onclick="renC()">✏️ Cambiar nombre</button><div id="ult_box"></div>${x.pago||x.factura?`<div class="mu">Habitual: ${esc(x.pago||'')}${x.factura?' · con factura':''}</div>`:''}${L.length?`<label>📍 Recoger en</label><div class="r">${bt('o')}</div><label>🏁 Destino</label><div class="r">${bt('d')}</div><div class="mu" style="margin-top:6px">Si es otro lugar, escríbelo abajo.</div>`:'<div class="mu">Aún no tiene lugares guardados. Escribe la ubicación abajo y elige cómo guardarla.</div>'}${rec?`<label>🔁 Recorridos guardados (un toque llena todo)</label><div class="r">${rec}</div>`:''}${L.length||(x.viajes||[]).length?`<details style="margin-top:8px"><summary class="mu" style="cursor:pointer">🗑️ Borrar lugares o recorridos guardados</summary>${L.map((l,j)=>`<div class="r" style="margin:4px 0"><span style="flex:1">${ic(l.n)} ${esc(l.n)}<span class="mu"> · ${esc((l.t||'').slice(0,40))}</span></span><button class="s" onclick="delLV('l',${j})">🗑️</button></div>`).join('')}${(x.viajes||[]).map((v,j)=>`<div class="r" style="margin:4px 0"><span style="flex:1">🔁 ${esc(v.de)}${(v.via||[]).map(a=>' → '+esc(a)).join('')} → ${esc(v.a)} · $${v.costo}</span><button class="s" onclick="delLV('v',${j})">🗑️</button></div>`).join('')}</details>`:''}</div>`;
 ['g_ub','g_dn'].forEach(id=>{const e=$(id);if(e)e.innerHTML=lugOpts('No guardar')});parRender();
 if(x.pago)$('pago').value=x.pago;
 if(x.factura){$('factura').checked=true;$('fx').hidden=false;['regimen','rfc','razon_social','correo','cp'].forEach(f=>{if(x[f])$(f).value=x[f]})}
