@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#5b2c83">
+<title>Únete a Taxicel</title>
+<meta name="description" content="Trabaja con Taxicel: servicios por app y WhatsApp, sin renta, comisión solo sobre el precio base.">
+<meta property="og:title" content="🚕 Únete a Taxicel">
+<meta property="og:description" content="Más servicios para tu taxi. Sin renta: solo 10% del precio base y lo extra es todo tuyo.">
+<meta property="og:image" content="https://agenda-taxi.pages.dev/taxicel-og.jpg">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/png" href="/icon-192.png">
+<style>
+:root{--bg:#f6f5f0;--cd:#fff;--tx:#1d1d1b;--mu:#6b6b66;--ac:#f2b705;--bd:#e2e0d8;--mo:#5b2c83;--mo2:#7d3cb5;--ok:#27ae60}
+@media(prefers-color-scheme:dark){:root{--bg:#141216;--cd:#201c25;--tx:#f1eef5;--mu:#a59cae;--bd:#3a3242}}
+*{box-sizing:border-box}
+body{margin:0 auto;max-width:560px;background:var(--bg);color:var(--tx);font:17px/1.45 system-ui,-apple-system,sans-serif;padding:14px 16px calc(40px + env(safe-area-inset-bottom))}
+.hero{background:linear-gradient(160deg,var(--mo2),#3e1660);color:#fff;border-radius:20px;padding:24px 18px 20px;text-align:center}
+.chk{height:10px;width:70%;margin:0 auto 14px;border-radius:3px;background:repeating-linear-gradient(90deg,var(--ac) 0 14px,#1d1d1b 14px 28px)}
+.hero h1{font-size:42px;font-weight:900;letter-spacing:2px;margin:0;line-height:1.05}
+.hero p{margin:10px 0 0;font-size:19px;color:#f3e9ff}
+.cta{display:block;width:100%;text-align:center;text-decoration:none;font-weight:900;font-size:21px;border-radius:14px;padding:16px 12px;margin:12px 0 0;border:0}
+.wa{background:#25d366;color:#fff}.reg{background:var(--ac);color:#1d1d1b}
+h2{font-size:21px;margin:22px 0 8px}
+.c{background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:12px 14px;margin:8px 0}
+.it{display:flex;gap:12px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--bd)}.it:last-child{border:0}
+.it i{font-style:normal;font-size:28px;line-height:1;width:34px;text-align:center;flex:none}
+.it>div>b{display:block}.mu{color:var(--mu);font-size:15px}
+.ej{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:16px}.ej b{text-align:right}
+.big{font-size:20px;color:var(--ok)}
+.st{counter-reset:p}.st div{counter-increment:p;padding:6px 0 6px 40px;position:relative}
+.st div:before{content:counter(p);position:absolute;left:0;top:4px;width:28px;height:28px;border-radius:50%;background:var(--mo2);color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center}
+footer{text-align:center;margin-top:22px}
+</style></head>
+<body>
+<div class="hero"><div class="chk"></div><h1>TAXICEL</h1><p>Únete y recibe más servicios para tu taxi</p></div>
+
+<a class="cta reg" id="breg" hidden>✅ Registrarme ya</a>
+<a class="cta wa" id="bwa" target="_blank" rel="noopener">💬 Quiero entrar · escríbenos</a>
+
+<h2>¿Qué ganas?</h2>
+<div class="c">
+<div class="it"><i>🏠</i><div><b>Sin renta</b><span class="mu">No pagas cuota fija. Solo una comisión cuando trabajas.</span></div></div>
+<div class="it"><i>🧾</i><div><b>Comisión del 10% sobre el precio base</b><span class="mu">Lo que sube por espera o por alta demanda es <b>todo tuyo</b>.</span></div></div>
+<div class="it"><i>📲</i><div><b>Servicios por app y por WhatsApp</b><span class="mu">Te llega un aviso grande con sonido. Ves de dónde a dónde, cuánto paga y a qué distancia está.</span></div></div>
+<div class="it"><i>📍</i><div><b>El más cercano hasta arriba</b><span class="mu">Los servicios para ahorita salen ordenados por cercanía a ti.</span></div></div>
+<div class="it"><i>✈️</i><div><b>Aeropuerto, Tren Maya y turistas</b><span class="mu">Clientes en 6 idiomas. Hablas con el cliente por el chat de la app.</span></div></div>
+<div class="it"><i>📊</i><div><b>Tu tablero</b><span class="mu">Ves cuánto ganaste hoy, en la semana y en el mes.</span></div></div>
+<div class="it"><i>🚧</i><div><b>Reportes de la calle</b><span class="mu">Tus compañeros avisan de inundaciones, tráfico, accidentes y retenes para que no pierdas tiempo.</span></div></div>
+<div class="it"><i>🎁</i><div><b>Saldo de regalo al entrar</b><span class="mu">Con él pagas tus primeras comisiones.</span></div></div>
+</div>
+
+<h2>Ejemplo de un viaje</h2>
+<div class="c ej">
+<span>Precio del viaje</span><b>$100</b>
+<span>Comisión Taxicel (10%)</span><b>−$10</b>
+<span>El cliente te hizo esperar</span><b>+$10</b>
+<span><b>Te quedas con</b></span><b class="big">$100</b>
+<span class="mu" style="grid-column:1/-1">La espera no paga comisión: es todo para ti.</span>
+</div>
+
+<h2>¿Cómo entro?</h2>
+<div class="c st">
+<div>Toca <b>“Quiero entrar”</b> y mándanos tu nombre y número de taxi.</div>
+<div>Te mandamos la liga para instalar la agenda y registrarte con los datos de tu taxi.</div>
+<div>Te activamos y empiezas a recibir servicios.</div>
+</div>
+
+<footer><a class="cta wa" id="bwa2" target="_blank" rel="noopener">💬 Quiero entrar</a>
+<p class="mu">Taxicel · Campeche · 981 115 0093</p></footer>
+
+<script>
+(function(){
+  var NUM='529811150093',p=new URLSearchParams(location.search),c=(p.get('c')||'').replace(/[^A-Za-z0-9_-]/g,'').toUpperCase();
+  var txt='Hola, quiero entrar a Taxicel. Mi nombre es: \nMi número de taxi es: ';
+  var wa='https://api.whatsapp.com/send?phone='+NUM+'&text='+encodeURIComponent(txt);
+  document.getElementById('bwa').href=wa;document.getElementById('bwa2').href=wa;
+  if(c){var r=document.getElementById('breg');r.href='/?c='+encodeURIComponent(c);r.hidden=false;
+    document.getElementById('bwa').textContent='💬 Tengo dudas · escríbenos'}
+})();
+</script>
+</body></html>
