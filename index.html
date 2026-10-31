@@ -3916,7 +3916,7 @@ ${P.per>4?`<div class="c" style="border:2px solid #e67e22;margin:6px 0">🚐 Par
 <input id="pnota" style="margin-top:6px" placeholder="Nota: llevo una maleta grande" value="${esc(P.nota||'')}" oninput="S.PD.nota=this.value"></details>
 <div id="pprecio" class="c" style="margin-top:10px;border:3px solid #27ae60;text-align:center"></div>
 <button id="pbtn" style="width:100%;font-size:22px;font-weight:900;padding:16px;margin-top:6px" onclick="pEnviar()">${P.tipo=='van'?'💬 Solicitar Cotización de Trayecto':'🚕 PEDIR TAXI'}</button>
-<div class="mu" style="margin-top:6px;text-align:center">Tu taxista te escribe por el chat de esta app. Si hace falta, la central te llama a tu celular. Precio aproximado: si cambia la ruta, cambia el precio. Las esperas de más de 3 minutos se cobran.</div></div>
+${P.tipo=='van'?'<div class="mu" style="margin-top:6px;text-align:center">La cotización le llega por WhatsApp al número que registró.</div>':'<div class="mu" style="margin-top:6px;text-align:center">Tu taxista te escribe por el chat de esta app. Si hace falta, la central te llama a tu celular. Precio aproximado: si cambia la ruta, cambia el precio. Las esperas de más de 3 minutos se cobran.</div>'}</div>
 `}<button class="s" style="width:100%;margin:6px 0" onclick="recomendar()">📤 Recomendar la app a un familiar o amigo</button>`;if(S.PD.ahora===undefined)S.PD.ahora=true;pPrecio();trDom($('app'))}
 /* ---- 🚐 Van 14: el cliente pide cotización (no se despacha taxi) ---- */
 async function pCotVan(nom,cel){const P=S.PD;if(!P.ut.trim())return toast('Falta dónde te recogemos');if(!P.dt.trim())return toast('Falta a dónde vas');if(!P.fe||!P.ho)return toast(trTxt('Indique el día y la hora del viaje'));
