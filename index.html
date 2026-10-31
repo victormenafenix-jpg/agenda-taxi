@@ -2216,7 +2216,7 @@ ${S.modo=='up'?`<div style="color:#666;font-size:10px;letter-spacing:1.5px;margi
 <div style="color:#666;font-size:10px;letter-spacing:1.5px;margin-bottom:6px;font-weight:600">🔐 PIN (6 números)</div>
 <input id="pin" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password" placeholder="• • • • • •" style="width:100%;box-sizing:border-box;background:#1e1e1e;border:1px solid #2a2a2a;border-radius:12px;color:#f2b705;font-size:26px;padding:14px;letter-spacing:10px;text-align:center;outline:none;font-family:inherit">
 <p id="err" style="color:#ff4f4f;font-size:13px;min-height:18px;margin:10px 0 4px"></p>
-<button id="btn_entrar" onclick="entrar()" style="width:100%;background:linear-gradient(135deg,#f2b705,#c98f00);color:#0d0d0d;border:none;border-radius:12px;padding:17px;font-size:15px;font-weight:900;letter-spacing:2px;cursor:pointer;box-shadow:0 6px 22px rgba(242,183,5,.45);margin-top:2px">${S.modo=='in'?'ENTRAR AL TURNO →':'CREAR CUENTA →'}</button>
+<button id="btn_entrar" onclick="this.style.transform='scale(0.96)';this.style.boxShadow='0 2px 8px rgba(242,183,5,.3)';setTimeout(()=>{this.style.transform='';this.style.boxShadow='0 6px 22px rgba(242,183,5,.45)'},150);entrar()" style="width:100%;background:linear-gradient(135deg,#f2b705,#c98f00);color:#0d0d0d;border:none;border-radius:12px;padding:17px;font-size:15px;font-weight:900;letter-spacing:2px;cursor:pointer;box-shadow:0 6px 22px rgba(242,183,5,.45);margin-top:2px;transition:transform .1s,box-shadow .1s;active:transform:scale(0.96)">${S.modo=='in'?'ENTRAR AL TURNO →':'CREAR CUENTA →'}</button>
 </div>
 <div style="text-align:center;margin-top:28px;color:#2e2e2e;font-size:10px;letter-spacing:2.5px;font-weight:600">RADIO SUCH · IET CAMPECHE · 2025</div>
 </div>`;return}
