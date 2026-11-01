@@ -1,0 +1,10 @@
+/
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+/:marca/
+  Cache-Control: no-cache
+/ver.json
+  Cache-Control: no-store
+/sw.js
+  Cache-Control: no-cache
