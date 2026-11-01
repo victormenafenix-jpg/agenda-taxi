@@ -5,7 +5,7 @@
 <script>window.__E=[];window.addEventListener('error',function(e){__E.push((e.message||'error')+' @'+String(e.filename||'').split('/').pop()+':'+(e.lineno||''))});window.addEventListener('unhandledrejection',function(e){__E.push('promesa: '+((e.reason&&e.reason.message)||e.reason))});
 setTimeout(function(){var d=document.getElementById('app');if(d&&!d.innerHTML.trim()){d.innerHTML='<div style="padding:16px;font-family:sans-serif"><b>⏳ Está tardando en cargar.</b><br>Puede ser la señal de internet. Toca Recargar. Si sigue igual, toma captura y mándala:<pre style="white-space:pre-wrap;color:#c00;font-size:13px">'+(__E.join('\n')||'(sin error)')+'\n'+location.href+'\n'+navigator.userAgent+'</pre><button onclick="location.reload(true)" style="font-size:18px;padding:10px 16px">🔄 Recargar</button></div>'}},15000)</script>
 <script>/* 🔄 Versión: si hay una agenda nueva publicada, se recarga sola (la app de Android y los celulares no se quedan con la vieja) */
-window.APPV='123';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
+window.APPV='124';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
 const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.value)return;if(window.S&&(S.form||S.ext||S.asg))return;
 let k;try{k=sessionStorage.getItem('recargaV')}catch(e){}if(k===j.v)return;try{sessionStorage.setItem('recargaV',j.v)}catch(e){}location.reload()}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,600000);setTimeout(chk,4000)})();</script>
@@ -3784,7 +3784,38 @@ async function registrarFF(sid,sv,ctel,monto){
   if(r.error)toast('Servicio cancelado (no se pudo guardar falso flete: '+r.error.message+')');
   else toast('⚠️ Falso flete de $'+monto+' registrado al cliente')}
 async function perdonarFF(ffid){if(!confirm('¿Perdonar este falso flete? El cliente quedará sin deuda.'))return;const {error}=await sb.from('falso_fletes').update({estado:'perdonado'}).eq('id',ffid);if(error)return toast('Error: '+error.message);toast('Falso flete perdonado');verFF()}
-async function verFF(){const el=$('ff_lista');if(!el)return;el.textContent='Cargando…';const {data,error}=await sb.from('falso_fletes').select('id,monto,estado,creado,folio,cliente_tel,pagado_en').eq('grupo_id',S.g.id).order('creado',{ascending:false}).limit(50);if(error){el.innerHTML='Error: '+esc(error.message);return}const D=data||[];if(!D.length){el.textContent='Sin registros de falso flete.';return}const cli=ct=>(Object.values(S.C||{}).find(c=>nrm(c.cel)==ct)||{});el.innerHTML=D.map(f=>{const c=cli(f.cliente_tel),fe=new Date(f.creado).toLocaleDateString('es-MX',{day:'numeric',month:'short'});const st={pendiente:'🔴 Pendiente',pagado:'✅ Pagado',perdonado:'🤝 Perdonado'}[f.estado]||f.estado;return `<div style="border-top:1px solid var(--bd);padding:6px 0"><div><b>${esc(c.nombre||f.cliente_tel)}</b> · ${st} · $${f.monto}</div><div class="mu">${fe}${f.folio?' · Folio #'+f.folio:''}${f.pagado_en?' · Pagado '+new Date(f.pagado_en).toLocaleDateString('es-MX',{day:'numeric',month:'short'}):''}</div>${f.estado=='pendiente'?`<button class="s" style="margin-top:4px;padding:4px 10px" onclick="perdonarFF('${f.id}')">🤝 Perdonar</button>`:''}</div>`}).join('')}
+async function verFF(){const el=$('ff_lista');if(!el)return;el.textContent='Cargando…';const {data,error}=await sb.from('falso_fletes').select('id,monto,estado,creado,folio,cliente_tel,taxista_id,cobrado_taxi_id,pagado_en,abonado_en').eq('grupo_id',S.g.id).order('creado',{ascending:false}).limit(50);if(error){el.innerHTML='Error: '+esc(error.message);return}const D=data||[];if(!D.length){el.textContent='Sin registros de falso flete.';return}const cli=ct=>(Object.values(S.C||{}).find(c=>nrm(c.cel)==ct)||{});const tax=id=>id?(S.E||[]).find(p=>p.id==id)||{}:{};el.innerHTML=D.map(f=>{const c=cli(f.cliente_tel),tx=tax(f.taxista_id),tc=tax(f.cobrado_taxi_id),fe=new Date(f.creado).toLocaleDateString('es-MX',{day:'numeric',month:'short'});const st={pendiente:'🔴 Pendiente',pagado:f.abonado_en?'✅ Pagado y abonado':'✅ Pagado (pendiente abonar al taxista)',perdonado:'🤝 Perdonado'}[f.estado]||f.estado;const cobradoArg=f.cobrado_taxi_id?`,'${f.cobrado_taxi_id}'`:'';return `<div style="border-top:1px solid var(--bd);padding:6px 0"><div><b>${esc(c.nombre||f.cliente_tel)}</b> · ${st} · $${f.monto}</div><div class="mu">${fe}${f.folio?' · Folio #'+f.folio:''}${f.pagado_en?' · Cobrado '+new Date(f.pagado_en).toLocaleDateString('es-MX',{day:'numeric',month:'short'}):''}</div>${tx.nombre?`<div class="mu">🚕 Esperó: <b>${esc(tx.nombre)}</b>${tx.cel?' · '+esc(shw(nrm(tx.cel))):''}</div>`:''}${tc.nombre?`<div class="mu">💵 Cobró: <b>${esc(tc.nombre)}</b>${tc.cel?' · '+esc(shw(nrm(tc.cel))):''}</div>`:''}${f.estado=='pendiente'?`<div class="r" style="margin-top:4px;gap:6px"><button class="s" style="padding:4px 10px" onclick="perdonarFF('${f.id}')">🤝 Perdonar</button></div>`:f.estado=='pagado'&&!f.abonado_en&&f.taxista_id?`<div class="r" style="margin-top:4px"><button style="padding:4px 10px;font-size:13px" onclick="abonarFF('${f.id}','${f.taxista_id}',${f.monto}${cobradoArg})">💰 Abonar $${f.monto} al taxista${f.cobrado_taxi_id?' + descontar al que cobró':''}</button></div>`:''}</div>`}).join('')}
+async function abonarFF(ffid,taxId,monto,cobradoId){
+  const tx=(S.E||[]).find(p=>p.id==taxId)||{};
+  // Si no tenemos cobradoId del registro, intentar obtenerlo del servicio de pago
+  let resolvedCobradoId=cobradoId;
+  if(!resolvedCobradoId){
+    const {data:ffr}=await sb.from('falso_fletes').select('cobrado_taxi_id,pagado_en_servicio').eq('id',ffid).single();
+    if(ffr&&ffr.cobrado_taxi_id)resolvedCobradoId=ffr.cobrado_taxi_id;
+    else if(ffr&&ffr.pagado_en_servicio){
+      const {data:sv}=await sb.from('servicios').select('tomado_por').eq('id',ffr.pagado_en_servicio).single();
+      if(sv&&sv.tomado_por)resolvedCobradoId=sv.tomado_por;
+    }
+  }
+  const tc=(S.E||[]).find(p=>p.id==resolvedCobradoId)||{};
+  let msg='¿Abonar $'+monto+' al saldo de '+(tx.nombre||'el taxista que esperó')+'?';
+  if(resolvedCobradoId)msg+='\n\nAdemás se descontarán $'+monto+' del saldo de '+(tc.nombre||'el taxista que dio el servicio')+'.\n\nAsí ninguno pierde: el que esperó recupera y el que cobró de más queda en balance.';
+  else msg+='\n\n⚠️ No se encontró quién cobró el servicio con la deuda. Solo se abonará al taxista que esperó.';
+  if(!confirm(msg))return;
+  const ops=[];
+  // abonar al que esperó
+  ops.push(sb.from('movimientos').insert({grupo_id:S.g.id,perfil_id:taxId,tipo:'recarga',monto,nota:'Abono falso flete — cliente pagó deuda en su siguiente servicio'}));
+  // descontar al que recibió los $25 de más
+  if(resolvedCobradoId)ops.push(sb.from('movimientos').insert({grupo_id:S.g.id,perfil_id:resolvedCobradoId,tipo:'ajuste',monto:-monto,nota:'Descuento falso flete — recibió $'+monto+' extra del cliente por deuda anterior'}));
+  const res=await Promise.all(ops);
+  const err=res.find(r=>r.error);
+  if(err)return toast('Error: '+err.error.message);
+  const upd={abonado_en:new Date().toISOString()};
+  if(resolvedCobradoId)upd.cobrado_taxi_id=resolvedCobradoId;
+  await sb.from('falso_fletes').update(upd).eq('id',ffid);
+  toast('✅ Balance: +$'+monto+' a '+(tx.nombre||'taxista que esperó')+(resolvedCobradoId?' · −$'+monto+' a '+(tc.nombre||'taxista que cobró'):''));
+  verFF();cargarCue()
+}
 function msgAsig(s,p,gr){const cl=S.C[s.id],pn=cl&&cl.nombre?cl.nombre.trim().split(/\s+/)[0]:'';let t=msg(s,false);
 if(gr)return '✅ *ASIGNADO* a *'+p.taxi+'* · '+p.nombre+(fo(s)?'\n🔖 Folio '+fo(s):'')+'\n\n'+t;
 t='Hola '+p.nombre.split(' ')[0]+', te asigné este servicio 🚖'+(fo(s)?'\n🔖 Folio *'+fo(s)+'*':'')+'\n\n'+t;
