@@ -5,7 +5,7 @@
 <script>window.__E=[];window.addEventListener('error',function(e){__E.push((e.message||'error')+' @'+String(e.filename||'').split('/').pop()+':'+(e.lineno||''))});window.addEventListener('unhandledrejection',function(e){__E.push('promesa: '+((e.reason&&e.reason.message)||e.reason))});
 setTimeout(function(){var d=document.getElementById('app');if(d&&!d.innerHTML.trim()){d.innerHTML='<div style="padding:16px;font-family:sans-serif"><b>⏳ Está tardando en cargar.</b><br>Puede ser la señal de internet. Toca Recargar. Si sigue igual, toma captura y mándala:<pre style="white-space:pre-wrap;color:#c00;font-size:13px">'+(__E.join('\n')||'(sin error)')+'\n'+location.href+'\n'+navigator.userAgent+'</pre><button onclick="location.reload(true)" style="font-size:18px;padding:10px 16px">🔄 Recargar</button></div>'}},15000)</script>
 <script>/* 🔄 Versión: si hay una agenda nueva publicada, se recarga sola (la app de Android y los celulares no se quedan con la vieja) */
-window.APPV='121';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
+window.APPV='122';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
 const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.value)return;if(window.S&&(S.form||S.ext||S.asg))return;
 let k;try{k=sessionStorage.getItem('recargaV')}catch(e){}if(k===j.v)return;try{sessionStorage.setItem('recargaV',j.v)}catch(e){}location.reload()}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,600000);setTimeout(chk,4000)})();</script>
@@ -2906,7 +2906,9 @@ if(s.estado=='disponible')x+=btnTomar(s);
 if((mine||puedo(s))&&n)x+=btnSig(s);x+=prBtn(s);
 if(mine&&['tomado','en_camino','llego','abordo'].includes(s.estado)&&!s.destino_abierto){const q=proxPto(s);x+=`<a class="b" style="background:var(--mo2);color:#fff" target="_blank" href="${navTo(q.t,q.m)}">🧭 Ir a ${esc(q.l)}: ${esc(cto(q.t))}</a>`}
 x+='</div>';
-const grp=(t,b)=>b?`<div style="margin-top:8px;border-top:1px dashed var(--bd);padding-top:6px"><div class="mu" style="font-size:12px;font-weight:800;letter-spacing:.5px">${t}</div><div class="r">${b}</div></div>`:'';
+const _SC={disponible:{bg:'#fff9c4',fg:'#1a1a00'},tomado:{bg:'#bbdefb',fg:'#001a33'},en_camino:{bg:'#bbdefb',fg:'#001a33'},llego:{bg:'#ffe0b2',fg:'#2a1000'},abordo:{bg:'#e1bee7',fg:'#1a0026'},terminado:{bg:'#c8e6c9',fg:'#001a00'},cancelado:{bg:'#ffcdd2',fg:'#1a0000'}};
+const _sc=_SC[s.estado]||{bg:'#f5f5f5',fg:'#111'};
+const grp=(k,t,b)=>{if(!b)return '';const bID='gp_'+s.id+'_'+k;const open=((S.GP=S.GP||{})[s.id]||{})[k];return `<button onclick="(S.GP=S.GP||{});(S.GP['${s.id}']=S.GP['${s.id}']||{});S.GP['${s.id}']['${k}']=!S.GP['${s.id}']['${k}'];render()" style="flex:1;padding:10px 4px;border-radius:10px;font-size:13px;font-weight:900;border:2px solid ${open?_sc.fg+'55':'transparent'};background:${open?_sc.bg:'rgba(0,0,0,.06)'};color:${open?_sc.fg:'var(--tx)'}">${t}</button><div style="display:${open?'block':'none'};grid-column:1/-1;background:${_sc.bg};border-radius:10px;padding:8px;margin-bottom:4px"><div class="r" style="flex-wrap:wrap">${b}</div></div>`};
 let gM='',gC='',gT='',gX='';
 if(s.ubic_maps)gM+=`<a class="b s" target="_blank" href="${esc(s.ubic_maps)}">📍 Dónde recoger</a>`;
 if(s.destino_maps)gM+=`<a class="b s" target="_blank" href="${esc(s.destino_maps)}">🏁 Destino</a>`;
@@ -2930,7 +2932,7 @@ if(['tomado','en_camino','llego'].includes(s.estado))gX+=`<button class="s" oncl
 if(live)gX+=`<button class="s" onclick="cancelarS('${s.id}')">❌ Cancelar</button>`;
 gX+=`<button class="s" onclick="editarS('${s.id}')">✏️ Editar</button>`;
 if(S.me.rol=='admin')gX+=`<button class="s" onclick="verHist('${s.id}')">📜 Historial</button><button class="s" onclick="borrarS('${s.id}')">🗑️ Borrar</button>`}
-x+=grp('🗺️ MAPA',gM)+grp('👤 CLIENTE',gC)+grp('🚕 TAXISTA',gT)+grp('🏁 CERRAR',gX);
+x+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin-top:8px">${grp('m','🗺️ Mapa',gM)}${grp('c','👤 Cliente',gC)}${grp('t','🚕 Taxista',gT)}${grp('x','⚙️ Más',gX)}</div>`;
 return x+(S.chat==s.id?chatPanel(s):'')+qPanel(s)+(S.od==s.id?odPanel(s):'')+(S.asg==s.id?asgPanel(s):'')+(S.env&&S.env.id==s.id?envPanel(s):'')+(S.hist&&S.hist.id==s.id?histPanel():'')+(S.vi==s.id?viPanel(s):'')+'</div>'}
 
 async function buscar(q,quiet){
