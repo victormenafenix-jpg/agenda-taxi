@@ -5,7 +5,7 @@
 <script>window.__E=[];window.addEventListener('error',function(e){__E.push((e.message||'error')+' @'+String(e.filename||'').split('/').pop()+':'+(e.lineno||''))});window.addEventListener('unhandledrejection',function(e){__E.push('promesa: '+((e.reason&&e.reason.message)||e.reason))});
 setTimeout(function(){var d=document.getElementById('app');if(d&&!d.innerHTML.trim()){d.innerHTML='<div style="padding:16px;font-family:sans-serif"><b>⏳ Está tardando en cargar.</b><br>Puede ser la señal de internet. Toca Recargar. Si sigue igual, toma captura y mándala:<pre style="white-space:pre-wrap;color:#c00;font-size:13px">'+(__E.join('\n')||'(sin error)')+'\n'+location.href+'\n'+navigator.userAgent+'</pre><button onclick="location.reload(true)" style="font-size:18px;padding:10px 16px">🔄 Recargar</button></div>'}},15000)</script>
 <script>/* 🔄 Versión: si hay una agenda nueva publicada, se recarga sola (la app de Android y los celulares no se quedan con la vieja) */
-window.APPV='120';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
+window.APPV='121';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
 const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.value)return;if(window.S&&(S.form||S.ext||S.asg))return;
 let k;try{k=sessionStorage.getItem('recargaV')}catch(e){}if(k===j.v)return;try{sessionStorage.setItem('recargaV',j.v)}catch(e){}location.reload()}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,600000);setTimeout(chk,4000)})();</script>
@@ -3145,14 +3145,14 @@ $('km').value=rap.k;S.cotMin=rap.min;S.poly=rap.poly;sug()}
 catch(e){S.cotMin=0;if($('sug'))$('sug').innerHTML='⚠️ No pude calcular la ruta ('+esc(String(e.message||e).slice(0,90))+'). Escribe los kilómetros a mano y te calculo el precio.'}
 (MP.map?mapaPines(true):Promise.resolve()).then(mapaRefrescar)}
 const esVan=()=>S.form&&S.form.id?((byId(S.form.id)||{}).vehiculo=='van'):((+($('personas')||{}).value||1)>4&&capU()>=14);
-function tarifaVan(k,fo){const g=S.g||{},r=+g.redondeo||0,mi=+g.van_minimo||0;if(!mi)return 0;let p=fo?Math.max(mi,k*(+g.van_carretera_km||0)):mi+Math.max(0,k-(+g.van_km_base||0))*(+g.van_km||0);return r>0?Math.round(p/r)*r:Math.round(p)}
+function tarifaVan(k,fo){const g=S.g||{},r=+g.redondeo||0,mi=+g.van_minimo||0;if(!mi)return 0;let p=fo?Math.max(mi,k*(+g.van_carretera_km||0)):mi+Math.max(0,k-(+g.van_km_base||0))*(+g.van_km||0);return r>0?Math.ceil(p/r)*r:Math.ceil(p)}
 function sugVan(k){const g=S.g||{},fo=!!($('foraneo')&&$('foraneo').checked),pv=tarifaVan(k,fo),c=$('costo'),cur=+c.value;
 if(!pv){$('sug').innerHTML=`<div>📏 ${k} km</div><div style="margin:6px 0;padding:10px 12px;border-radius:12px;background:#f3e5f5;border:2px solid #6a1b9a">🚐 Todavía no pones la tarifa de la van. Ve a <b>💲 Precios</b> → <b>🚐 Van de 14 pasajeros</b>.</div>`;return}
 if(c.value===''||cur===S.autoC){c.value=pv;S.autoC=pv}
 $('sug').innerHTML=`<div>📏 ${k} km${S.cotMin?' · ⏱️ '+S.cotMin+' min':''}</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0;padding:10px 12px;border-radius:12px;background:#f3e5f5;border:${+c.value==pv?'3px':'1px'} solid #6a1b9a;color:#3d0f59"><span>🚐 <b style="font-size:17px">Van de 14${fo?' en carretera':''}: $${pv}</b><br><small>${fo?k+' km × $'+(+g.van_carretera_km||0)+(k*(+g.van_carretera_km||0)<+g.van_minimo?' (aplica el mínimo $'+g.van_minimo+')':'')+' · sin casetas':'Mínimo $'+g.van_minimo+' cubre '+(+g.van_km_base||0)+' km, luego $'+(+g.van_km||0)+' por km'}</small>${+c.value==pv?' ✓':''}</span><button onclick="$('costo').value=${pv};rsm();sug()">Usar</button></div>`;rsm()}
 function tarifa(k,prog,fo){const g=S.g||{},r=+g.redondeo||0;let p;
 if(fo)p=k*(+g.foraneo_km||16);else{const b=+g.precio_base||55,pk=+g.precio_km||11;p=(g.modo_tarifa||'max')=='max'?Math.max(b,k*pk):b+Math.max(0,k-(+g.km_base||3))*pk;if(prog)p+=+g.recargo_programado||0}
-return r>0?Math.round(p/r)*r:Math.round(p)}
+return r>0?Math.ceil(p/r)*r:Math.ceil(p)}
 const CEN={lat:19.845,lng:-90.523};function llMaps(m){const x=String(m||'').match(/[?&](?:q|query|destination)=(-?\d+\.\d+),(-?\d+\.\d+)/)||String(m||'').match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);return x?{lat:+x[1],lng:+x[2]}:null}
 function zonaPts(){const z=(S.g||{}).zona_ciudad;return Array.isArray(z)&&z.length>=3?z:null}
 function dentroZona(p,Z){let d=false;for(let i=0,j=Z.length-1;i<Z.length;j=i++){const [yi,xi]=Z[i],[yj,xj]=Z[j];if(((yi>p.lat)!=(yj>p.lat))&&(p.lng<(xj-xi)*(p.lat-yi)/(yj-yi)+xi))d=!d}return d}
