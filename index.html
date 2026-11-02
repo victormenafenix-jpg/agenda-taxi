@@ -5,7 +5,7 @@
 <script>window.__E=[];window.addEventListener('error',function(e){__E.push((e.message||'error')+' @'+String(e.filename||'').split('/').pop()+':'+(e.lineno||''))});window.addEventListener('unhandledrejection',function(e){__E.push('promesa: '+((e.reason&&e.reason.message)||e.reason))});
 setTimeout(function(){var d=document.getElementById('app');if(d&&!d.innerHTML.trim()){d.innerHTML='<div style="padding:16px;font-family:sans-serif"><b>⏳ Está tardando en cargar.</b><br>Puede ser la señal de internet. Toca Recargar. Si sigue igual, toma captura y mándala:<pre style="white-space:pre-wrap;color:#c00;font-size:13px">'+(__E.join('\n')||'(sin error)')+'\n'+location.href+'\n'+navigator.userAgent+'</pre><button onclick="location.reload(true)" style="font-size:18px;padding:10px 16px">🔄 Recargar</button></div>'}},15000)</script>
 <script>/* 🔄 Versión: si hay una agenda nueva publicada, se recarga sola (la app de Android y los celulares no se quedan con la vieja) */
-window.APPV='126';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
+window.APPV='127';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
 const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.value)return;if(window.S&&(S.form||S.ext||S.asg))return;
 let k;try{k=sessionStorage.getItem('recargaV')}catch(e){}if(k===j.v)return;try{sessionStorage.setItem('recargaV',j.v)}catch(e){}location.reload()}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,600000);setTimeout(chk,4000)})();</script>
@@ -3427,6 +3427,7 @@ const u=String(ub||'').trim().toLowerCase();
 return L.find(x=>(ids.has(x.id)&&Math.abs(mn(x.hora)-mn(h))<=30)||(u&&mn(x.hora)==mn(h)&&String(x.ubic||'').trim().toLowerCase()==u))||null}
 function errDsc(m){m=String(m||'');if(/sin_wallet/.test(m))return '🤝 No te alcanza la wallet para esa cortesía ('+m.replace(/.*sin_wallet:?\s*/,'')+')';if(/cupon_invalido/.test(m))return '🎟️ Cupón: '+m.replace(/.*cupon_invalido:?\s*/,'');if(/cortesia_mayor/.test(m))return 'La cortesía no puede ser mayor que el precio';if(/cortesia_solo_programador/.test(m))return 'La cortesía solo la puede dar un programador';return 'Error: '+m}
 async function guardarS(){
+const btn=$('[onclick="guardarS()"]');if(btn){if(btn.disabled)return;btn.disabled=true;btn.textContent='⏳ Subiendo…'}
 const v=i=>$(i).value.trim(),n=i=>+$(i).value||0;
 let hora=hh(),ma=n('min_antes');
 if(!v('fecha')){if($('expres')&&$('expres').checked&&!hh())$('fecha').value=iso(new Date());else return toast('Falta la fecha')}
@@ -3455,7 +3456,7 @@ if(id){e=(await sb.from('servicios').update(o).eq('id',id)).error}
 let IDS=[],FOL=[];
 if(!id){const N=nTaxis(),ref=N>1?(crypto.randomUUID?crypto.randomUUID():null):null,rows=Array.from({length:N},(_,i)=>Object.assign({},o,{grupo_id:S.me.grupo_id,creado_por:S.me.id},S.form&&S.form.wa?{origen:'whatsapp'}:{},N>1?{grupo_ref:ref,parte:i+1,partes:N,personas:Math.max(1,Math.min(capU(),o.personas-capU()*i))}:{},i>0?{cupon_id:null,cortesia:0}:{}));
 const r=await sb.from('servicios').insert(rows).select('id,folio');e=r.error;IDS=(r.data||[]).map(x=>x.id);FOL=(r.data||[]).map(x=>x.folio);id=IDS[0];if(!e&&IDS.length&&!o.privado&&!mio)pushNuevo(IDS)}
-if(e)return toast(errDsc(e.message));
+if(e){if(btn){btn.disabled=false;btn.textContent=S.form&&S.form.id?'💾 Guardar cambios':'✅ SUBIR SERVICIO'}return toast(errDsc(e.message))}
 if(!IDS.length)IDS=[id];
 const c={servicio_id:id,grupo_id:S.me.grupo_id,nombre:v('c_nombre'),celular:v('c_cel')};
 if(o.factura)Object.assign(c,{rfc:v('rfc').toUpperCase(),regimen:v('regimen'),razon_social:v('razon_social'),correo:v('correo'),cp:v('cp')});
@@ -3473,7 +3474,7 @@ else if($('g_cost').checked)toast('Para guardar el recorrido, todos los puntos (
 d.viajes=VJ;
 if($('g_pago').checked){d.pago=v('pago');d.factura=$('factura').checked;if(d.factura)Object.assign(d,{rfc:v('rfc').toUpperCase(),regimen:v('regimen'),razon_social:v('razon_social'),correo:v('correo'),cp:v('cp')})}
 const er=await cliGuardar(d);if(er)toast('Servicio guardado, pero no se pudo guardar el cliente: '+er.message);await cargarD()}
-const nuevo=!S.form.id;S.fecha=o.fecha;toast('Guardado');if(nuevo){const P0=S.post={ids:IDS,fol:FOL,o,nom:v('c_nombre'),cel:v('c_cel'),n:IDS.length};clearTimeout(S.postT);S.postT=setTimeout(()=>{if(S.post===P0){S.post=null;if(S.tab=='serv'&&!S.form&&!escribiendo())vServ()}},15000)};tab('serv')}
+const nuevo=!S.form.id;S.fecha=o.fecha;toast(nuevo?'✅ ¡Servicio subido! Folio '+(FOL[0]?'T-'+String(FOL[0]).padStart(4,'0'):''):'✅ Cambios guardados');if(nuevo){const P0=S.post={ids:IDS,fol:FOL,o,nom:v('c_nombre'),cel:v('c_cel'),n:IDS.length};clearTimeout(S.postT);S.postT=setTimeout(()=>{if(S.post===P0){S.post=null;if(S.tab=='serv'&&!S.form&&!escribiendo())vServ()}},15000)};tab('serv')}
 function postBanner(){const P=S.post;if(!P)return '';const o=P.o;return `<div class="c" style="border:3px solid #27ae60;margin:8px 0"><div class="r" style="justify-content:space-between"><b>✅ Servicio subido${P.n>1?' · '+P.n+' taxis':''}${P.fol&&P.fol[0]?' · T-'+String(P.fol[0]).padStart(4,'0'):''}</b><button class="s" onclick="S.post=null;vServ()">✖</button></div><div class="mu">${o.expres?'⚡ Exprés':'🕐 '+esc(dia(o.fecha))+' · '+h12(o.hora)} · ${esc(zona(o.ubic))} → ${esc(zona(o.destino))}</div><div class="r" style="margin-top:8px">${P.cel?`<button onclick="postConf()" style="flex:1">📤 Mandar confirmación al cliente</button>`:''}<button class="s" onclick="S.post=null;tab('nuevo')">➕ Subir otro</button></div></div>`}
 function postConf(){const P=S.post;if(!P)return;const o=P.o,nm=P.nom?' *'+P.nom.trim().split(/\s+/)[0]+'*':'',tot=(+o.costo||0)*P.n;
 const t='Buen día'+nm+' 🚖\nSu servicio quedó registrado:\n'+(o.expres?'⚡ Sale en este momento':'📅 '+dia(o.fecha)+' · '+h12(o.hora))+'\n📍 '+(o.ubic||'')+'\n🏁 '+(o.destino||'')+(P.n>1?'\n🚕 '+P.n+' taxis':'')+(+o.costo>0?'\n💰 $'+o.costo+(P.n>1?' por taxi (total $'+tot+')':''):'')+(o.foraneo?'\n\n🛣️ Servicio foráneo. Tarifa base calculada por trayecto. Los cargos adicionales por concepto de casetas de peaje o estacionamientos corren por cuenta del solicitante.'+(o.casetas?' Casetas aprox.: $'+o.casetas+'.':''):'')+'\n\nEn cuanto se asigne su taxi le enviamos los datos. ¡Gracias por su preferencia!';
@@ -4301,7 +4302,7 @@ try{const body={origin:o,destination:d,travelMode:'DRIVE',routingPreference:'TRA
 const r=await fetch('https://routes.googleapis.com/directions/v2:computeRoutes',{method:'POST',headers:{'Content-Type':'application/json','X-Goog-Api-Key':GKEY,'X-Goog-FieldMask':'routes.distanceMeters,routes.duration,routes.optimizedIntermediateWaypointIndex,routes.polyline.encodedPolyline'},body:JSON.stringify(body)});
 const j=await r.json(),RL=(j.routes||[]).filter(x=>x.distanceMeters),rt=RL.slice().sort((a,b)=>parseInt(a.duration)-parseInt(b.duration))[0];if(!r.ok||!rt||!rt.distanceMeters)throw new Error('sin ruta');
 const rk=RL.slice().sort((a,b)=>a.distanceMeters-b.distanceMeters)[0];
-let reo=false;const ix=rt.optimizedIntermediateWaypointIndex;if(Array.isArray(ix)&&ix.length==pr.length&&ix.some((v,i)=>v!==i)){P.par=ix.map(i=>pr[i]);reo=true}
+const reo=false;/* reordenamiento automático desactivado: el admin pone las paradas en el orden que quiere */
 const k=Math.round(rt.distanceMeters/100)/10,min=Math.round(parseInt(rt.duration)/60),txt=(P.ut+' '+P.dt).toLowerCase(),lejos=[P.um,P.dm].concat(P.par.map(x=>x.m)).some(m=>fueraCd(m));
 const trR=/tren maya|estaci[oó]n.*tren/,trC=(t,m)=>trR.test(String(t).toLowerCase())&&!/edzn|tenabo|hecelch|calkin|esc[aá]rcega|m[eé]rida|maxcan|champot|xpujil|calakmul|palenque|tenosique/i.test(String(t))&&kmCentro(m)<=15,trOk=!pr.length&&((trC(P.dt,P.dm)&&!fueraCd(P.um))||(trC(P.ut,P.um)&&!fueraCd(P.dm)));
 let fija=null;if(!pr.length&&!lejos&&/aeropuerto/.test(txt))fija=S.T.find(t=>/aeropuerto/i.test(t.nombre));else if(trOk)fija=S.T.find(t=>/tren maya/i.test(t.nombre));
