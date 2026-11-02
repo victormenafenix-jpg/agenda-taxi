@@ -2918,7 +2918,7 @@ ${cl?`<div class="mu">👤 ${esc(cl.nombre||'Cliente sin nombre')} · ${esc(cl.c
 if(s.estado=='disponible')x+=btnTomar(s);
 if((mine||puedo(s))&&n)x+=btnSig(s);x+=prBtn(s);
 if(mine&&['tomado','en_camino','llego','abordo'].includes(s.estado)&&!s.destino_abierto){const q=proxPto(s);x+=`<a class="b" style="background:var(--mo2);color:#fff" target="_blank" href="${navTo(q.t,q.m)}">🧭 Ir a ${esc(q.l)}: ${esc(cto(q.t))}</a>`}
-${s.privado&&ofi()&&s.creado_por!=S.me.id?`<div style="background:#2d1a4a;border-radius:10px;padding:10px 12px;margin:8px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><span style="color:#d9b8ff;font-size:13px;font-weight:700">🔒 Servicio privado del programador · Solo puedes ver, no modificar</span><button class="s" style="font-size:13px;padding:6px 12px" onclick="solicitarAccesoPrivado('${s.id}')">📩 Pedir al programador que lo pase al grupo</button></div>`:''}
+if(s.privado&&ofi()&&s.creado_por!=S.me.id)x+=`<div style="background:#2d1a4a;border-radius:10px;padding:10px 12px;margin:8px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><span style="color:#d9b8ff;font-size:13px;font-weight:700">🔒 Servicio privado del programador · Solo puedes ver, no modificar</span><button class="s" style="font-size:13px;padding:6px 12px" onclick="solicitarAccesoPrivado('${s.id}')">📩 Pedir al programador que lo pase al grupo</button></div>`;
 x+='</div>';
 const _SC={disponible:{bg:'#fff9c4',fg:'#1a1a00'},tomado:{bg:'#bbdefb',fg:'#001a33'},en_camino:{bg:'#bbdefb',fg:'#001a33'},llego:{bg:'#ffe0b2',fg:'#2a1000'},abordo:{bg:'#e1bee7',fg:'#1a0026'},terminado:{bg:'#c8e6c9',fg:'#001a00'},cancelado:{bg:'#ffcdd2',fg:'#1a0000'}};
 const _sc=_SC[s.estado]||{bg:'#f5f5f5',fg:'#111'};
