@@ -5,7 +5,7 @@
 <script>window.__E=[];window.addEventListener('error',function(e){__E.push((e.message||'error')+' @'+String(e.filename||'').split('/').pop()+':'+(e.lineno||''))});window.addEventListener('unhandledrejection',function(e){__E.push('promesa: '+((e.reason&&e.reason.message)||e.reason))});
 setTimeout(function(){var d=document.getElementById('app');if(d&&!d.innerHTML.trim()){d.innerHTML='<div style="padding:16px;font-family:sans-serif"><b>⏳ Está tardando en cargar.</b><br>Puede ser la señal de internet. Toca Recargar. Si sigue igual, toma captura y mándala:<pre style="white-space:pre-wrap;color:#c00;font-size:13px">'+(__E.join('\n')||'(sin error)')+'\n'+location.href+'\n'+navigator.userAgent+'</pre><button onclick="location.reload(true)" style="font-size:18px;padding:10px 16px">🔄 Recargar</button></div>'}},15000)</script>
 <script>/* 🔄 Versión: si hay una agenda nueva publicada, se recarga sola (la app de Android y los celulares no se quedan con la vieja) */
-window.APPV='128';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
+window.APPV='129';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
 const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.value)return;if(window.S&&(S.form||S.ext||S.asg))return;
 let k;try{k=sessionStorage.getItem('recargaV')}catch(e){}if(k===j.v)return;try{sessionStorage.setItem('recargaV',j.v)}catch(e){}location.reload()}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,600000);setTimeout(chk,4000)})();</script>
@@ -3766,12 +3766,13 @@ if(x.pago)$('pago').value=x.pago;
 if(x.factura){$('factura').checked=true;$('fx').hidden=false;['regimen','rfc','razon_social','correo','cp'].forEach(f=>{if(x[f])$(f).value=x[f]})}
 $('g_ub').value='No guardar'}
 async function delLV(t,j){const x=S.SEL;if(!x)return;let msg;
-if(t=='l'){const l=(x.lugares||[])[j];if(!l)return;const n=(x.viajes||[]).filter(v=>v.de==l.n||v.a==l.n||(v.via||[]).includes(l.n)).length;msg='¿Borrar el lugar "'+l.n+'" de este cliente?'+(n?'\n\nTambién se borran '+n+' recorrido(s) guardado(s) que lo usan.':'')}
-else{const v=(x.viajes||[])[j];if(!v)return;msg='¿Borrar el recorrido "'+v.de+(v.via||[]).map(a=>' → '+a).join('')+' → '+v.a+'"?'}
-if(!confirm(msg))return;
+if(t=='l'){const l=(x.lugares||[])[j];if(!l)return;const n=(x.viajes||[]).filter(v=>v.de==l.n||v.a==l.n||(v.via||[]).includes(l.n)).length;msg='¿Borrar el lugar "'+l.n+'"?'+(n?' (también borra '+n+' recorrido(s) que lo usan)':'')}
+else{const v=(x.viajes||[])[j];if(!v)return;msg='¿Borrar recorrido "'+v.de+' → '+v.a+'"?'}
+const ok=await new Promise(res=>{const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';d.innerHTML=`<div style="background:var(--bg,#fff);border-radius:14px;padding:20px;max-width:320px;width:100%;text-align:center"><div style="margin-bottom:16px;font-size:15px">${esc(msg)}</div><div style="display:flex;gap:10px;justify-content:center"><button class="s" style="padding:8px 20px" onclick="this.closest('div[style*=fixed]').remove();window._dlvRes(false)">Cancelar</button><button style="padding:8px 20px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer" onclick="this.closest('div[style*=fixed]').remove();window._dlvRes(true)">🗑️ Borrar</button></div></div>`;window._dlvRes=res;document.body.appendChild(d)});
+if(!ok)return;
 if(t=='l'){const l=x.lugares[j];x.lugares.splice(j,1);x.viajes=(x.viajes||[]).filter(v=>!(v.de==l.n||v.a==l.n||(v.via||[]).includes(l.n)))}else x.viajes.splice(j,1);
 const er=(await sb.from('clientes').update({lugares:x.lugares,viajes:x.viajes||[]}).eq('grupo_id',S.me.grupo_id).eq('cel',x.cel)).error;
-if(er)return toast('No se pudo borrar: '+er.message);toast('Borrado');const i=(S.SG||[]).indexOf(x);if(i>=0)elegirC(i);cargarD()}
+if(er)return toast('No se pudo borrar: '+er.message);toast('✅ Borrado');const i=(S.SG||[]).indexOf(x);if(i>=0)elegirC(i);cargarD()}
 function ponL(k,j){const l=S.SEL.lugares[j];
 if(k=='o'){$('ubic').value=l.t||'';$('ubic_maps').value=l.m||'';S.LO=l.n;$('g_ub').value='No guardar'}
 else{parSync();const cur=$('destino').value.trim();
