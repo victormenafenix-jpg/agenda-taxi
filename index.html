@@ -5,7 +5,7 @@
 <script>window.__E=[];window.addEventListener('error',function(e){__E.push((e.message||'error')+' @'+String(e.filename||'').split('/').pop()+':'+(e.lineno||''))});window.addEventListener('unhandledrejection',function(e){__E.push('promesa: '+((e.reason&&e.reason.message)||e.reason))});
 setTimeout(function(){var d=document.getElementById('app');if(d&&!d.innerHTML.trim()){d.innerHTML='<div style="padding:16px;font-family:sans-serif"><b>⏳ Está tardando en cargar.</b><br>Puede ser la señal de internet. Toca Recargar. Si sigue igual, toma captura y mándala:<pre style="white-space:pre-wrap;color:#c00;font-size:13px">'+(__E.join('\n')||'(sin error)')+'\n'+location.href+'\n'+navigator.userAgent+'</pre><button onclick="location.reload(true)" style="font-size:18px;padding:10px 16px">🔄 Recargar</button></div>'}},15000)</script>
 <script>/* 🔄 Versión: si hay una agenda nueva publicada, se recarga sola (la app de Android y los celulares no se quedan con la vieja) */
-window.APPV='127';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
+window.APPV='128';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
 const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.value)return;if(window.S&&(S.form||S.ext||S.asg))return;
 let k;try{k=sessionStorage.getItem('recargaV')}catch(e){}if(k===j.v)return;try{sessionStorage.setItem('recargaV',j.v)}catch(e){}location.reload()}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,600000);setTimeout(chk,4000)})();</script>
@@ -959,8 +959,10 @@ ${ds?`<div style="color:#4caf50;font-weight:700;font-size:13px;margin-top:6px">�
 </div>
 ${e-xe>0&&(s.tomado_por==(S.me&&S.me.id)||(S.me&&S.me.rol=='admin'))?`<div style="background:#1c2025;border-radius:14px;padding:12px;margin-bottom:12px;text-align:left"><div style="color:#f2b705;font-size:13px;font-weight:700;margin-bottom:6px">${s.espera_tope?'⏱️ La espera llegó al máximo. ':''} ¿No cobraste la espera?</div><button class="stbtn-s" onclick="sinEspera('${s.id}',this)">🙅 No cobré la espera</button></div>`:''}
 ${s.tomado_por==(S.me&&S.me.id)?`<div id="ccal" style="background:#1c2025;border-radius:14px;padding:14px;margin-bottom:12px;text-align:left"><div style="color:#fff;font-weight:800;font-size:15px;margin-bottom:4px">👤 ¿Cómo fue el cliente?</div><div style="color:#aaa;font-size:13px;margin-bottom:8px">Puntual, amable, pagó bien. Los compañeros ven su calificación la próxima vez.</div><div style="font-size:36px;letter-spacing:8px">${[1,2,3,4,5].map(n=>`<span style="cursor:pointer;filter:grayscale(1);transition:filter .2s" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(1)'" onclick="calCliente('${s.id}',${n})">⭐</span>`).join('')}</div></div>`:''}
+${(()=>{const cel=(S.C&&S.C[s.id]&&S.C[s.id].celular)||'';const placeId=(S.g&&S.g.google_place_id)||'ChIJLcF0jkUz-IURVuCIpbYCet0';if(!cel||!placeId)return '';const reviewUrl='https://search.google.com/local/writereview?placeid='+placeId;const msg='¡Hola! Es un gusto saludarte nuevamente. En *Taxicel* valoramos mucho tu preferencia y nos encantaría saber qué te parece nuestro servicio. Si tienes un momento, te agradeceríamos mucho que nos dejaras una reseña y nos calificaras en este enlace:\n\n👉 '+reviewUrl+'\n\n¡Esperamos saludarte pronto en tu próximo viaje!';return `<button class="stbtn-s" style="margin:0 0 10px" onclick="waReseña('${s.id}','${esc(cel)}')">⭐ Pedir reseña en Google</button>`})()}
 <button class="stbtn" style="margin:0" onclick="this.closest('.fotov').remove()">✅ LISTO</button>
 </div>`;document.body.appendChild(d)}
+async function waReseña(id,cel){const placeId=(S.g&&S.g.google_place_id)||'ChIJLcF0jkUz-IURVuCIpbYCet0';const reviewUrl='https://search.google.com/local/writereview?placeid='+placeId;const msg='¡Hola! Es un gusto saludarte nuevamente. En *Taxicel* valoramos mucho tu preferencia y nos encantaría saber qué te parece nuestro servicio. Si tienes un momento, te agradeceríamos mucho que nos dejaras una reseña y nos calificaras en este enlace:\n\n👉 '+reviewUrl+'\n\n¡Esperamos saludarte pronto en tu próximo viaje!';await waCli(cel,msg);}
 async function calCliente(id,n){const r=await sb.rpc('calificar_cliente',{p_id:id,p_estrellas:n});const b=$('ccal');if(r.error||r.data!='ok'){toast(r.data=='sin_cliente'?'Este servicio no tiene celular del cliente':'No se pudo guardar');return}if(b)b.innerHTML='<b>👤 Calificaste al cliente: '+'⭐'.repeat(n)+'</b>';toast('✅ Gracias')}
 
 
@@ -2916,6 +2918,7 @@ ${cl?`<div class="mu">👤 ${esc(cl.nombre||'Cliente sin nombre')} · ${esc(cl.c
 if(s.estado=='disponible')x+=btnTomar(s);
 if((mine||puedo(s))&&n)x+=btnSig(s);x+=prBtn(s);
 if(mine&&['tomado','en_camino','llego','abordo'].includes(s.estado)&&!s.destino_abierto){const q=proxPto(s);x+=`<a class="b" style="background:var(--mo2);color:#fff" target="_blank" href="${navTo(q.t,q.m)}">🧭 Ir a ${esc(q.l)}: ${esc(cto(q.t))}</a>`}
+${s.privado&&ofi()&&s.creado_por!=S.me.id?`<div style="background:#2d1a4a;border-radius:10px;padding:10px 12px;margin:8px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><span style="color:#d9b8ff;font-size:13px;font-weight:700">🔒 Servicio privado del programador · Solo puedes ver, no modificar</span><button class="s" style="font-size:13px;padding:6px 12px" onclick="solicitarAccesoPrivado('${s.id}')">📩 Pedir al programador que lo pase al grupo</button></div>`:''}
 x+='</div>';
 const _SC={disponible:{bg:'#fff9c4',fg:'#1a1a00'},tomado:{bg:'#bbdefb',fg:'#001a33'},en_camino:{bg:'#bbdefb',fg:'#001a33'},llego:{bg:'#ffe0b2',fg:'#2a1000'},abordo:{bg:'#e1bee7',fg:'#1a0026'},terminado:{bg:'#c8e6c9',fg:'#001a00'},cancelado:{bg:'#ffcdd2',fg:'#1a0000'}};
 const _sc=_SC[s.estado]||{bg:'#f5f5f5',fg:'#111'};
@@ -3603,6 +3606,14 @@ const r=await sb.from('servicios').insert(rows).select('id');if(r.error)return t
 await sb.from('servicio_cliente').upsert(r.data.map(x=>({servicio_id:x.id,grupo_id:S.me.grupo_id,nombre:'Cliente de práctica',celular:''})));pushNuevo(r.data.map(x=>x.id));toast('🎓 Listo: 4 servicios de práctica');S.fecha=hoy;tab('serv')}
 async function borrarPractica(){if(!confirm('¿Borrar todos los servicios de práctica?'))return;const {error}=await sb.from('servicios').delete().eq('practica',true);if(error)return toast('Error: '+error.message);toast('Práctica borrada');cargar()}
 async function guardarAl(){const o={alerta1_min:+$('al1').value,alerta2_min:+$('al2').value,realertar:$('al_t').checked};const {error}=await sb.from('grupos').update(o).eq('id',S.g.id);if(error)return toast('Error: '+error.message);Object.assign(S.g,o);toast('Alarma guardada')}
+async function solicitarAccesoPrivado(id){
+const s=byId(id);if(!s)return;
+const prog=(S.E||[]).find(p=>p.id==s.creado_por);
+const cel=prog&&prog.cel;
+const fo2='T-'+String(s.folio||0).padStart(4,'0');
+const msg='📋 *Hola'+( prog&&prog.nombre?' '+prog.nombre.split(' ')[0]:'')+',* tengo una consulta sobre el servicio *'+fo2+'* ('+h12(s.hora)+' · '+zona(s.ubic)+' → '+zona(s.destino)+'). ¿Puedes pasarlo al grupo o darme acceso para revisarlo?';
+if(!cel){copiar(msg);return toast('Copiado · Mándaselo al programador por WhatsApp')}
+const w=window.open('','_blank');w.location.href='https://api.whatsapp.com/send?phone='+tel(cel)+'&text='+encodeURIComponent(msg)}
 async function pasarGrupo(id){if(!confirm('¿Pasar este servicio al grupo?\nDeja de ser privado, queda DISPONIBLE y le llega el aviso a todos.'))return;
 const {error}=await sb.from('servicios').update({privado:false,estado:'disponible',tomado_por:null,tomado_nombre:null,tomado_taxi:null,tomado_en:null}).eq('id',id).in('estado',['disponible','tomado']);
 if(error)return toast('Error: '+error.message);pushNuevo([id]);toast('Pasado al grupo');cargar()}
