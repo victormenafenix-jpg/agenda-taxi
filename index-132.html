@@ -5,7 +5,7 @@
 <script>window.__E=[];window.addEventListener('error',function(e){__E.push((e.message||'error')+' @'+String(e.filename||'').split('/').pop()+':'+(e.lineno||''))});window.addEventListener('unhandledrejection',function(e){__E.push('promesa: '+((e.reason&&e.reason.message)||e.reason))});
 setTimeout(function(){var d=document.getElementById('app');if(d&&!d.innerHTML.trim()){d.innerHTML='<div style="padding:16px;font-family:sans-serif"><b>⏳ Está tardando en cargar.</b><br>Puede ser la señal de internet. Toca Recargar. Si sigue igual, toma captura y mándala:<pre style="white-space:pre-wrap;color:#c00;font-size:13px">'+(__E.join('\n')||'(sin error)')+'\n'+location.href+'\n'+navigator.userAgent+'</pre><button onclick="location.reload(true)" style="font-size:18px;padding:10px 16px">🔄 Recargar</button></div>'}},15000)</script>
 <script>/* 🔄 Versión: si hay una agenda nueva publicada, se recarga sola (la app de Android y los celulares no se quedan con la vieja) */
-window.APPV='131';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
+window.APPV='132';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
 const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.value)return;if(window.S&&(S.form||S.ext||S.asg))return;
 let k;try{k=sessionStorage.getItem('recargaV')}catch(e){}if(k===j.v)return;try{sessionStorage.setItem('recargaV',j.v)}catch(e){}location.reload()}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,600000);setTimeout(chk,4000)})();</script>
@@ -1215,7 +1215,7 @@ ${T.map(t=>`<tr><td><input style="width:120px" value="${esc(t.nombre)}" onchange
 <b style="display:block;margin-top:10px">🧳 Cuánto ocupa cada cosa (carga)</b><div class="r">🎒 Chica ${inp(`S.TSC.equipaje,'chica'`,c.equipaje.chica,50)} · 🧳 Grande ${inp(`S.TSC.equipaje,'grande'`,c.equipaje.grande,50)} · 🚴 Bici ${inp(`S.TSC.equipaje,'bici'`,c.equipaje.bici,50)}</div>
 <b style="display:block;margin-top:10px">🏠 Encierro (donde termina la van)</b><input id="ts_bn" value="${esc(c.base.nombre||'')}" placeholder="Nombre" onchange="S.TSC.base.nombre=this.value"><div class="r" style="margin-top:4px;align-items:center"><input id="ts_bl" placeholder="Pega la liga de Google Maps" style="flex:1;width:auto" value="${c.base.lat?'https://maps.google.com/?q='+c.base.lat+','+c.base.lng:''}" onchange="const l=llMaps(this.value);if(l){S.TSC.base.lat=l.lat;S.TSC.base.lng=l.lng;toast('📍 Listo')}else toast('Esa liga no trae ubicación')"><button class="s" onclick="navigator.geolocation&&navigator.geolocation.getCurrentPosition(p=>{S.TSC.base.lat=p.coords.latitude;S.TSC.base.lng=p.coords.longitude;tsPrec();toast('📍 Listo')})">📍 Estoy aquí</button></div>
 <b style="display:block;margin-top:10px">💬 WhatsApp que ven los clientes</b><input value="${esc(c.wa||'')}" onchange="S.TSC.wa=this.value.replace(/\\D/g,'')">
-<b style="display:block;margin-top:10px">🚴 IRONMAN</b><label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" style="width:auto"${c.ironman.activo?' checked':''} onchange="S.TSC.ironman.activo=this.checked"> Mostrar el botón IRONMAN en la app</label><div class="g"><div><label>Nombre</label><input value="${esc(c.ironman.nombre||'')}" onchange="S.TSC.ironman.nombre=this.value"></div><div><label>Fecha</label><input type="date" value="${esc(c.ironman.fecha||'')}" onchange="S.TSC.ironman.fecha=this.value"></div></div>
+<b style="display:block;margin-top:10px">🚴 IRONMAN / Van Colectiva</b><label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" style="width:auto"${c.ironman.activo?' checked':''} onchange="S.TSC.ironman.activo=this.checked"> Mostrar el botón Van Colectiva IRONMAN en la app</label><div class="g"><div><label>Nombre del evento</label><input value="${esc(c.ironman.nombre||'')}" placeholder="Ej. IRONMAN Campeche 2025" onchange="S.TSC.ironman.nombre=this.value"></div><div><label>Fecha</label><input type="date" value="${esc(c.ironman.fecha||'')}" onchange="S.TSC.ironman.fecha=this.value"></div></div><div class="g" style="margin-top:6px"><div><label>💰 Precio por espacio ($)</label>${inp(`S.TSC.ironman,'precio_esp'`,c.ironman.precio_esp??150)}<div class="mu">Bicicleta = 2 espacios</div></div><div><label>🪑 Máx. espacios por van</label>${inp(`S.TSC.ironman,'max_esp'`,c.ironman.max_esp??8,60)}<div class="mu">4 bicis = 8 esp.</div></div></div>
 <label style="display:flex;gap:8px;align-items:center;font-weight:400;margin-top:8px"><input type="checkbox" style="width:auto"${c.activo?' checked':''} onchange="S.TSC.activo=this.checked"> ✅ Tours y traslados visibles en la app</label>
 <button style="width:100%;margin-top:10px;font-size:18px" onclick="tsGuardar()">💾 Guardar precios</button></div>`}
 function tsLug(){const c=S.TSC;c.lugares=c.lugares||[];
@@ -3047,6 +3047,7 @@ const EST_TREN=['Palenque','Boca del Cerro','Tenosique','Balancán','El Triunfo'
 $('v').innerHTML=`<div class="c fwrap" id="fwrap" oninput="rsmT()" onchange="rsmT()" onclick="rsmT()"><b id="ftit" style="font-size:19px">${S.form.id?'Editar servicio':'Nuevo servicio'}</b>
 ${S.form.id?'':`<button class="s" style="width:100%;margin-top:8px;border:2px dashed var(--mo2);font-weight:800" onclick="pegarPedido()">📋 Pegar pedido de WhatsApp</button>`}
 <div class="r tipo" style="margin:10px 0 4px;flex-wrap:nowrap"><button id="t_ex" onclick="setTipo(1)">⚡ EXPRÉS<small>sale ya</small></button><button id="t_pr" onclick="setTipo(0)">🕐 PROGRAMADO<small>otra hora o día</small></button></div>
+${(()=>{const ir=(S.TSC&&S.TSC.ironman)||{},hoy=hoyIso();if(!(ir.activo&&ir.fecha&&ir.fecha>=hoy))return '';return `<button class="s" style="width:100%;margin:4px 0 8px;border:2px solid #8e0f14;background:rgba(142,15,20,.08);font-weight:800;font-size:15px" onclick="ironForm()">🚴 Van Colectiva · ${esc(ir.nombre||'IRONMAN')} · ${esc(ir.fecha||'')} · $${ir.precio_esp||150}/espacio</button>`})()}
 <input type="checkbox" id="expres"${ex?' checked':''} hidden>
 <div id="hrbox" ${ex?'hidden':''}><div class="g"><div>${f('fecha','📅 Fecha',fch,'date')}</div><div>${horaSel(ex?'':s.hora)}</div></div></div>
 <div class="paso">👤 ¿Quién pide?</div>
@@ -3144,7 +3145,50 @@ const {data,error}=await sb.rpc('ver_cupon',{p_codigo:cod,p_cel:$('c_cel').value
 if(error){$('cup_r').innerHTML='⚠️ '+esc(error.message);return false}
 if(!data||!data.ok){S.CUP=null;$('cup_r').innerHTML='<b style="color:#c0261b">❌ '+esc((data&&data.msg)||'Cupón no válido')+'</b>';rsm();return false}
 S.CUP={id:data.id,codigo:data.codigo,tipo:data.tipo,valor:+data.valor,descuento:+data.descuento};$('cup').value=data.codigo;rsm();return true}
+function ironForm(){const ir=(S.TSC&&S.TSC.ironman)||{};const aer=(S.g&&S.g.aer_ubic)||'Aeropuerto Internacional de Campeche, Campeche';const aerM=(S.g&&S.g.aer_maps)||'';const pxEsp=+(ir.precio_esp||150),maxEsp=+(ir.max_esp||8),nombre=ir.nombre||'IRONMAN',fecha=ir.fecha||hoyIso();
+const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+d.innerHTML=`<div style="background:var(--bg,#fff);border-radius:14px;padding:20px;max-width:360px;width:100%;color:var(--tx)"><div style="font-size:17px;font-weight:900;color:#8e0f14;margin-bottom:12px">🚴 Van Colectiva · ${esc(nombre)}</div>
+<div class="g"><div><label style="font-size:14px">👤 Personas</label><input id="ir_per" type="number" min="1" max="16" inputmode="numeric" value="1" style="font-size:18px;font-weight:700" oninput="ironCalc(${pxEsp},${maxEsp})"></div><div><label style="font-size:14px">🚴 Bicicletas</label><input id="ir_bic" type="number" min="0" max="8" inputmode="numeric" value="0" style="font-size:18px;font-weight:700" oninput="ironCalc(${pxEsp},${maxEsp})"></div></div>
+<div style="margin:10px 0;padding:10px;background:rgba(142,15,20,.08);border-radius:10px;border:1px solid #8e0f14">
+<div id="ir_calc" style="font-size:16px;font-weight:700;color:#8e0f14"></div>
+<div id="ir_cap" style="font-size:13px;margin-top:4px" class="mu"></div></div>
+<div class="g"><div><label style="font-size:14px">📅 Fecha del evento</label><input id="ir_fch" type="date" value="${esc(fecha)}"></div><div><label style="font-size:14px">⏰ Hora de llegada</label><input id="ir_hora" type="time" value="06:00"></div></div>
+<div class="r" style="margin-top:14px;gap:8px"><button class="s" style="flex:1" onclick="this.closest('div[style*=fixed]').remove()">Cancelar</button><button style="flex:1;background:#8e0f14;color:#fff;border:none;border-radius:8px;font-size:15px;padding:10px;cursor:pointer;font-weight:800" onclick="ironConfirm(${pxEsp},'${aer.replace(/'/g,"\\'")}','${aerM.replace(/'/g,"\\'")}')">✅ Pre-llenar servicio</button></div></div>`;
+window._ironCalc=()=>ironCalc(pxEsp,maxEsp);
+document.body.appendChild(d);ironCalc(pxEsp,maxEsp)}
+function ironCalc(pxEsp,maxEsp){const p=+($('ir_per')&&$('ir_per').value)||1,b=+($('ir_bic')&&$('ir_bic').value)||0,esp=p+b*2,tot=esp*pxEsp;const cal=$('ir_calc'),cap=$('ir_cap');if(!cal)return;cal.textContent=p+' pers + '+b+' bici = '+esp+' espacios → $'+tot.toLocaleString('es-MX');if(cap)cap.textContent=esp>maxEsp?'⚠️ Excede la capacidad de la van (máx '+maxEsp+' espacios)':esp==maxEsp?'✅ Van llena':'🪑 Quedan '+(maxEsp-esp)+' espacios libres en la van';if(cap)cap.style.color=esp>maxEsp?'#c0392b':esp==maxEsp?'#27ae60':''}
+function ironConfirm(pxEsp,aer,aerM){const p=+($('ir_per')&&$('ir_per').value)||1,b=+($('ir_bic')&&$('ir_bic').value)||0,esp=p+b*2,tot=esp*pxEsp,fch=$('ir_fch')&&$('ir_fch').value,hora=$('ir_hora')&&$('ir_hora').value;
+const modal=document.querySelector('div[style*="position:fixed"][style*="9999"]');if(modal)modal.remove();
+setTipo(0);
+if(fch&&$('fecha'))$('fecha').value=fch;if(hora&&$('hora'))$('hora').value=hora;
+if($('ubic'))$('ubic').value=aer;if($('ubic_maps'))$('ubic_maps').value=aerM;
+if($('personas'))$('personas').value=p;if($('costo'))$('costo').value=tot;S.autoC=tot;
+if($('nota'))$('nota').value='🚴 Van Colectiva IRONMAN · '+p+' pers + '+b+' bici = '+esp+' esp · $'+pxEsp+'/esp';
+if($('aeropuerto')){$('aeropuerto').checked=true;S.aerAuto=true}
+tarVis();rsm();toast('🚴 IRONMAN pre-llenado · $'+tot.toLocaleString('es-MX')+' · llena el destino y los datos del cliente')}
 function aerSync(){const a=$('aeropuerto');if(!a||!$('ubic')||!$('destino'))return;const m=/aeropuerto/i.test($('ubic').value);if(m){if(!a.checked)S.aerAuto=true;a.checked=true}else if(S.aerAuto){a.checked=false;S.aerAuto=false}}
+function ironForm(){const ir=(S.TSC&&S.TSC.ironman)||{};const aer=(S.g&&S.g.aer_ubic)||'Aeropuerto Internacional de Campeche, Campeche';const aerM=(S.g&&S.g.aer_maps)||'';const pxEsp=+(ir.precio_esp||150);
+// Abrir modal para capturar personas y bicicletas
+const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+d.innerHTML=`<div style="background:var(--bg,#fff);border-radius:16px;padding:20px;max-width:340px;width:100%"><div style="font-size:18px;font-weight:800;margin-bottom:12px">🚴 Van Colectiva ${esc(ir.nombre||'IRONMAN')}<br><span style="font-size:13px;font-weight:400;color:var(--mu,#888)">${esc(ir.fecha||'')} · $${pxEsp}/espacio · bicicleta = 2 espacios</span></div>
+<label>👥 Personas</label><input id="ir_per" type="number" min="1" value="2" style="margin-bottom:8px">
+<label>🚴 Bicicletas</label><input id="ir_bic" type="number" min="0" value="1" style="margin-bottom:8px">
+<label>📅 Fecha del vuelo</label><input id="ir_fch" type="date" value="${esc(ir.fecha||hoyIso())}" style="margin-bottom:8px">
+<label>🕐 Hora del vuelo</label><input id="ir_hora" type="time" value="" style="margin-bottom:4px">
+<div id="ir_calc" style="background:var(--cd,#f5f5f5);border-radius:10px;padding:10px;margin:8px 0;font-weight:800;text-align:center;font-size:17px"></div>
+<div id="ir_cap" style="font-size:12px;color:var(--mu,#888);text-align:center;margin-bottom:12px"></div>
+<div class="r" style="gap:8px"><button class="s" onclick="this.closest('div[style*=fixed]').remove()">Cancelar</button><button id="ir_ok" onclick="ironConfirm(${pxEsp},'${esc(aer)}','${esc(aerM)}')">✅ Pre-llenar formulario</button></div></div>`;
+function irCalc(){const p=Math.max(1,+($('ir_per')||{}).value||1),b=+($('ir_bic')||{}).value||0,esp=p+b*2,tot=esp*pxEsp,cap=+(ir.max_esp||8);const c=$('ir_calc'),ca=$('ir_cap');if(c)c.textContent=`${p} pers + ${b} bici = ${esp} espacios = $${tot.toLocaleString('es-MX')}`;if(ca)ca.textContent=esp>cap?`⚠️ Excede la capacidad (máx ${cap} espacios)`:`Quedan ${cap-esp} espacios libres en la van`;}
+['ir_per','ir_bic'].forEach(id=>{const el=d.querySelector('#'+id);if(el)el.addEventListener('input',irCalc)});irCalc();document.body.appendChild(d)}
+function ironConfirm(pxEsp,aer,aerM){const p=Math.max(1,+($('ir_per')||{}).value||1),b=+($('ir_bic')||{}).value||0,esp=p+b*2,tot=esp*pxEsp,fch=$('ir_fch')&&$('ir_fch').value,hora=$('ir_hora')&&$('ir_hora').value;document.querySelector('div[style*="position:fixed"][style*="9999"]').remove();
+// pre-llenar formulario
+setTipo(0);// programado
+if(fch&&$('fecha'))$('fecha').value=fch;if(hora&&$('hora'))$('hora').value=hora;
+if($('ubic'))$('ubic').value=aer;if($('ubic_maps'))$('ubic_maps').value=aerM;
+if($('personas'))$('personas').value=p;if($('costo'))$('costo').value=tot;S.autoC=tot;
+if($('nota'))$('nota').value='🚴 Van Colectiva IRONMAN · '+p+' pers + '+b+' bici = '+esp+' esp · $'+pxEsp+'/esp';
+$('aeropuerto')&&($('aeropuerto').checked=true,S.aerAuto=true);
+tarVis();rsm();toast('🚴 Ironman pre-llenado · $'+tot.toLocaleString('es-MX')+' · llena destino y datos del cliente');}
 function tarVis(){const w=$('tar_wrap');if(!w)return;const x=(($('ubic')||{}).value||'')+' '+(($('destino')||{}).value||'');w.hidden=!(/aeropuerto|tren maya/i.test(x)||($('tar')&&$('tar').value))}
 function aplT(){const t=S.T.find(x=>x.id==$('tar').value);if(!t)return;
 $('destino').value=t.nombre;$('costo').value=$('factura').checked&&t.precio_factura?t.precio_factura:t.precio;
