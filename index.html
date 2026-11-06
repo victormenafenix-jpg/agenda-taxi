@@ -5,7 +5,7 @@
 <script>window.__E=[];window.addEventListener('error',function(e){__E.push((e.message||'error')+' @'+String(e.filename||'').split('/').pop()+':'+(e.lineno||''))});window.addEventListener('unhandledrejection',function(e){__E.push('promesa: '+((e.reason&&e.reason.message)||e.reason))});
 setTimeout(function(){var d=document.getElementById('app');if(d&&!d.innerHTML.trim()){d.innerHTML='<div style="padding:16px;font-family:sans-serif"><b>⏳ Está tardando en cargar.</b><br>Puede ser la señal de internet. Toca Recargar. Si sigue igual, toma captura y mándala:<pre style="white-space:pre-wrap;color:#c00;font-size:13px">'+(__E.join('\n')||'(sin error)')+'\n'+location.href+'\n'+navigator.userAgent+'</pre><button onclick="location.reload(true)" style="font-size:18px;padding:10px 16px">🔄 Recargar</button></div>'}},15000)</script>
 <script>/* 🔄 Versión: si hay una agenda nueva publicada, se recarga sola (la app de Android y los celulares no se quedan con la vieja) */
-window.APPV='141';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
+window.APPV='142';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
 const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.value)return;if(window.S&&(S.form||S.ext||S.asg))return;
 let k;try{k=sessionStorage.getItem('recargaV')}catch(e){}if(k===j.v)return;try{sessionStorage.setItem('recargaV',j.v)}catch(e){}location.reload()}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,600000);setTimeout(chk,4000)})();</script>
@@ -3075,16 +3075,9 @@ return `<div style="background:#1c2025;border-radius:18px;padding:14px 16px;marg
 <div style="display:flex;align-items:center;gap:5px;margin-top:2px"><span style="width:8px;height:8px;border-radius:50%;background:#f2b705;display:inline-block"></span><span style="color:#aaa;font-size:11px;font-weight:700;letter-spacing:1.5px">${lbl}</span></div>
 </div></div>
 <div style="display:flex;gap:6px;flex-shrink:0">
-<button onclick="tab('nuevo')" style="width:40px;height:40px;border-radius:10px;background:#1a2e1a;border:none;cursor:pointer;font-size:20px" title="Nuevo servicio">➕</button>
 <button onclick="tab('cta')" style="width:40px;height:40px;border-radius:10px;background:#262a30;border:none;cursor:pointer;font-size:20px" title="Mi cuenta">💰</button>
 </div></div>
-<button onclick="tab('nuevo')" style="width:100%;min-height:68px;background:linear-gradient(135deg,#dc2626,#ef4444);border:none;border-radius:16px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 20px rgba(220,38,38,.35)">
-<div style="display:flex;align-items:center;gap:14px">
-<div style="width:44px;height:44px;border-radius:10px;background:rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:28px">⚡</div>
-<div style="text-align:left"><div style="color:#fff;font-size:20px;font-weight:900;line-height:1;letter-spacing:0px;text-shadow:0 1px 4px rgba(0,0,0,.4)">NUEVO SERVICIO</div><div style="color:#fff;font-size:13px;font-weight:800;letter-spacing:1.5px;margin-top:3px;opacity:.95">ASIGNACIÓN INMEDIATA</div></div>
-</div>
-<div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;font-weight:900">+</div>
-</button>`}
+`}
 function vServ(){return keepPos(vServ0)}
 function vServ0(){
 const bqBox=`<div class="r" style="margin-bottom:6px;flex-wrap:nowrap"><input id="bq" type="search" placeholder="🔎 Buscar: cliente, celular, lugar, folio…" value="${esc(S.bq||'')}" onkeydown="if(event.key=='Enter')buscar(this.value)" style="flex:1;width:auto;background:#fff8dc;color:#1d1d1b;border:2px solid var(--ac)"><button onclick="buscar($('bq').value)">Buscar</button></div><div class="r" style="margin-bottom:6px"><button onclick="misServ()" style="flex:1;background:linear-gradient(90deg,var(--mo2),#4a1f70);color:#fff;font-size:17px;font-weight:900;border:2px solid var(--ac)">🚕 Mi ruta de hoy · Mis servicios</button>${ay('Aquí ves los servicios que tú tomaste, en orden, con lo que vas a cobrar y tus calificaciones.')}</div>`;
