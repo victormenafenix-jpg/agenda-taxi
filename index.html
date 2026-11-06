@@ -5,7 +5,7 @@
 <script>window.__E=[];window.addEventListener('error',function(e){__E.push((e.message||'error')+' @'+String(e.filename||'').split('/').pop()+':'+(e.lineno||''))});window.addEventListener('unhandledrejection',function(e){__E.push('promesa: '+((e.reason&&e.reason.message)||e.reason))});
 setTimeout(function(){var d=document.getElementById('app');if(d&&!d.innerHTML.trim()){d.innerHTML='<div style="padding:16px;font-family:sans-serif"><b>⏳ Está tardando en cargar.</b><br>Puede ser la señal de internet. Toca Recargar. Si sigue igual, toma captura y mándala:<pre style="white-space:pre-wrap;color:#c00;font-size:13px">'+(__E.join('\n')||'(sin error)')+'\n'+location.href+'\n'+navigator.userAgent+'</pre><button onclick="location.reload(true)" style="font-size:18px;padding:10px 16px">🔄 Recargar</button></div>'}},15000)</script>
 <script>/* 🔄 Versión: si hay una agenda nueva publicada, se recarga sola (la app de Android y los celulares no se quedan con la vieja) */
-window.APPV='144';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
+window.APPV='145';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
 const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.value)return;if(window.S&&(S.form||S.ext||S.asg))return;
 let k;try{k=sessionStorage.getItem('recargaV')}catch(e){}if(k===j.v)return;try{sessionStorage.setItem('recargaV',j.v)}catch(e){}location.reload()}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,600000);setTimeout(chk,4000)})();</script>
@@ -944,7 +944,7 @@ if(s.pr_ini){const m=Math.max(0,Math.floor((Date.now()-new Date(s.pr_ini))/60000
 return `<button class="${c} s" onclick="prAcc('${s.id}','ini')">🛑 Parada en la ruta <span style="font-weight:400">(+$${pp}, ${pm} min)</span></button>`}
 async function prAcc(id,a){const s=byId(id)||(S.MJ||[]).find(x=>x.id==id);
 if(a=='ini'&&!confirm('¿El cliente te pidió una parada?\nSe cobran $'+(+((S.g||{}).parada_precio??25))+' e incluye '+(+((S.g||{}).parada_min??5))+' minutos. Al terminar toca ▶️ Seguimos el viaje.'))return;
-const {data,error}=await sb.rpc('parada_ruta',{p_id:id,p_accion:a});if(error)return toast(/parada_ruta/.test(error.message)?'Falta correr el paso 62 en Supabase':'Error: '+error.message);
+let data,error;{const A={p_id:id,p_accion:a};if(navigator.onLine===false||offLee().length){offPon('parada_ruta',A);offMandar();return}try{const r=await rpcT('parada_ruta',A,12000);if(r.error&&esRed(r.error)){offPon('parada_ruta',A);return}({data,error}=r)}catch(e){offPon('parada_ruta',A);return}}if(error)return toast(/parada_ruta/.test(error.message)?'Falta correr el paso 62 en Supabase':'Error: '+error.message);
 if(data!='ok'&&isNaN(+data))return toast(data);toast(a=='ini'?'🛑 Parada empezada. Cuando sigan, toca ▶️ Seguimos el viaje':'✅ Parada cobrada: +$'+r2(+data)+' (sin comisión)');
 try{if(S.MJ)await cargarMJ()}catch(e){}cargar()}
 setInterval(()=>{if(document.hidden||escribiendo())return;const L=[...(S.L||[]),...(S.MJ||[])];if(S.me&&L.some(x=>x.pr_ini&&x.tomado_por==S.me.id&&x.estado=='abordo')){try{if(S.tab=='serv'&&!S.form)renderKeep(vServ)}catch(e){}}},30000);
@@ -2137,7 +2137,7 @@ async function cargar(auto){
 const {data,error}=await sb.from('servicios').select('*').eq('fecha',S.fecha).order('hora');
 if(error){if(!auto)toast('Error: '+error.message);return}
 const sg0=sigL(),id0=new Set((S.L||[]).map(x=>x.id));
-S.L=data||[];proxCargar(!auto);if(!staff())S.C={};vozCheck();if(conCuenta())cargarMS();if(S.me&&S.me.rol=='programador'){try{const r=await sb.rpc('taxis_mis_servicios');if(!r.error){const X={};(r.data||[]).forEach(x=>X[x.id]=x);S.EX=X}}catch(e){}}
+S.L=data||[];offAplica();proxCargar(!auto);if(!staff())S.C={};vozCheck();if(conCuenta())cargarMS();if(S.me&&S.me.rol=='programador'){try{const r=await sb.rpc('taxis_mis_servicios');if(!r.error){const X={};(r.data||[]).forEach(x=>X[x.id]=x);S.EX=X}}catch(e){}}
 await cargarQ();if(S.tab=='map'){mpPins();mpCalor()}
 await cargarAv();
 if(staff()&&S.L.length){const {data:C}=await sb.from('servicio_cliente').select('*').in('servicio_id',S.L.map(x=>x.id));if(C){const N={};C.forEach(c=>N[c.servicio_id]=c);S.C=N}}
@@ -2329,8 +2329,26 @@ function panelQ(){const g=S.g||{};return `<div class="c"><b>Cómo se toman los s
 <div class="mu">El sistema revisa cada 15 segundos y asigna solo, aunque nadie de la oficina tenga la agenda abierta. Tú siempre puedes asignar a mano antes.</div>
 <button style="margin-top:8px" onclick="guardarQ()">Guardar</button></div>`}
 async function cargarE(){const {data}=await sb.from('perfiles').select('*').order('nombre');S.E=data||[]}
+/* 📴 Sin señal: los botones del viaje se guardan con la hora en que los tocaste y se mandan solos cuando vuelve la señal */
+const OFFQ_FN=['cambiar_estado','parada_ruta'];
+const offLee=()=>{try{return JSON.parse(localStorage.getItem('colaOff')||'[]')}catch(e){return []}};
+const offGua=L=>{try{localStorage.setItem('colaOff',JSON.stringify(L))}catch(e){}};
+const esRed=e=>/fetch|network|load failed|timeout|internet/i.test(String(e&&(e.message||e)||''));
+function rpcT(fn,a,ms){return Promise.race([sb.rpc(fn,a),new Promise((_,no)=>setTimeout(()=>no(new Error('timeout')),ms||12000))])}
+function offPon(fn,a){const L=offLee(),t=new Date().toISOString();L.push({fn,a,t});offGua(L);
+[...(S.L||[]),...(S.MJ||[])].filter(x=>x.id==a.p_id).forEach(x=>{if(fn=='cambiar_estado'&&!['parada','sigue'].includes(a.p_estado)){x.estado=a.p_estado;x[a.p_estado+'_en']=t}if(fn=='parada_ruta')x.pr_ini=a.p_accion=='ini'?t:null});
+toast('📴 Sin señal: quedó guardado a las '+new Date().toLocaleTimeString('es-MX',{hour:'numeric',minute:'2-digit'})+'. Se manda solo, con esa hora, cuando regrese la señal.');
+offBar();try{if(S.tab=='manejo')vManejo();else render()}catch(e){}}
+let offAnd=0;async function offMandar(){if(offAnd||navigator.onLine===false)return;let L=offLee();if(!L.length){offBar();return}offAnd=1;let n=0;
+try{while(L.length){const x=L[0];let r;try{r=await rpcT(x.fn,Object.assign({},x.a,{p_t:x.t}),15000)}catch(e){break}if(r.error&&esRed(r.error))break;L.shift();offGua(L);n++}}finally{offAnd=0}
+offBar();if(n){toast('📶 Volvió la señal: se mandaron '+n+' aviso(s) con la hora en que los tocaste');try{await cargarMJ()}catch(e){}try{cargar()}catch(e){}}}
+function offAplica(){const L=offLee();if(!L.length)return;L.forEach(q=>[...(S.L||[]),...(S.MJ||[])].filter(x=>x.id==q.a.p_id).forEach(x=>{if(q.fn=='cambiar_estado'&&!['parada','sigue'].includes(q.a.p_estado)){x.estado=q.a.p_estado;x[q.a.p_estado+'_en']=q.t}if(q.fn=='parada_ruta')x.pr_ini=q.a.p_accion=='ini'?q.t:null}))}
+function offBar(){const n=offLee().length;let b=$('offbar');if(!n){if(b)b.remove();return}if(!b){b=document.createElement('div');b.id='offbar';b.style.cssText='position:fixed;left:50%;transform:translateX(-50%);top:calc(8px + env(safe-area-inset-top));z-index:9998;background:#e67e22;color:#fff;font-weight:800;padding:8px 14px;border-radius:20px;box-shadow:0 4px 14px rgba(0,0,0,.4);font-size:14px;max-width:92vw;text-align:center;cursor:pointer';b.onclick=offMandar;document.body.appendChild(b)}b.textContent='📴 '+n+' aviso(s) guardado(s) sin señal · se mandan solos'}
+window.addEventListener('online',()=>setTimeout(offMandar,1500));setInterval(offMandar,20000);setTimeout(()=>{offBar();offMandar()},3000);
 async function rpc(fn,a,okMsg){
-const {data,error}=await sb.rpc(fn,a);if(error){toast(error.message);return}
+let data,error;
+if(OFFQ_FN.includes(fn)){if(navigator.onLine===false||offLee().length){offPon(fn,a);offMandar();return 'off'}let r;try{r=await rpcT(fn,a,12000)}catch(e){offPon(fn,a);return 'off'}if(r.error&&esRed(r.error)){offPon(fn,a);return 'off'}({data,error}=r)}else({data,error}=await sb.rpc(fn,a));
+if(error){toast(error.message);return}
 if(typeof data=='string'&&data.startsWith('req:')){reqInfo(data.slice(4));return data}
 const m={ok:'Listo',ya_tomado:'Otro compañero ya lo tomó',renta_vencida:'Tu renta semanal está vencida',sin_taxi:'Te falta número de taxi. Avisa al administrador',sin_federal:'Este servicio es del aeropuerto y solo lo pueden tomar taxis con placas federales',sin_acceso:'Sin acceso',no_permitido:'No permitido',ocupado:'Primero termina tu servicio actual. Cuando el pasajero ya vaya a bordo, ya puedes pedir el siguiente exprés.',ya_en_fila:'Ya tienes un exprés esperando. Termínalo antes de tomar otro.',saldo:'🔒 Pasaste tu crédito. Recarga en 💰 Mi cuenta para seguir tomando servicios.',sin_paradas:'Ya llegaste a todos los destinos. Ahora aprieta Terminado.',falta_salir:'Primero aprieta ▶️ Ya nos vamos',faltan_paradas:'Primero termina los destinos que faltan',abierto:'Primero aprieta 📍 Llegué aquí'};
 if(okMsg)m.ok=okMsg;toast(m[data]||data);cargar();return data}
@@ -2342,7 +2360,7 @@ if(!confirm('¿Liberar este servicio?\nQueda DISPONIBLE y les suena a todos para
 /* ---------- modo manejo y aviso con botón ---------- */
 const BTN={en_camino:'🚕 Voy en camino',llego:'📍 Ya llegué',abordo:'👤 Ya abordó',terminado:'✅ Terminé el servicio'};
 const hoyIso=()=>iso(new Date()),ayerIso=()=>{const d=new Date();d.setDate(d.getDate()-1);return iso(d)};
-async function cargarMJ(){if(!S.me)return;const {data}=await sb.from('servicios').select('*').eq('tomado_por',S.me.id).in('estado',['tomado','en_camino','llego','abordo']).gte('fecha',ayerIso()).order('fecha').order('hora');S.MJ=data||[];
+async function cargarMJ(){if(!S.me)return;const {data}=await sb.from('servicios').select('*').eq('tomado_por',S.me.id).in('estado',['tomado','en_camino','llego','abordo']).gte('fecha',ayerIso()).order('fecha').order('hora');if(!data&&S.MJ&&S.MJ.length)return;S.MJ=data||[];offAplica();
 const c=mjCur(S.MJ);if(c){S.CN=S.CN||{};if(puedo(c)){if(!S.C[c.id]){const r=await sb.from('servicio_cliente').select('*').eq('servicio_id',c.id).maybeSingle();if(r.data)S.C[c.id]=r.data}}else if(S.CN[c.id]===undefined){const r=await sb.rpc('mi_cliente',{p_id:c.id});S.CN[c.id]=r.error?'':(r.data||'')}}}
 function mjCur(L){L=L||[];return L.find(x=>['en_camino','llego','abordo'].includes(x.estado))||L.find(x=>x.expres&&x.estado=='tomado')||L.find(x=>x.estado=='tomado'&&x.fecha==hoyIso())||null}
 function mjPto(s,dst){const t=dst?s.destino:s.ubic,m=String((dst?s.destino_maps:s.ubic_maps)||'').match(/[?&](?:q|query|destination)=(-?\d+\.\d+),(-?\d+\.\d+)/)||String((dst?s.destino_maps:s.ubic_maps)||'').match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);return {t:t||'',ll:m?m[1]+','+m[2]:''}}
