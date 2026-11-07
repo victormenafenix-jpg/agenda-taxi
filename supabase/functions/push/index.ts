@@ -385,6 +385,18 @@ Deno.serve(async (req) => {
         }, null);
         return json({ enviados: n });
       }
+      if (cuerpo.tipo === "revision" && cuerpo.id) {
+        // 🛑 Pedido de app detenido: solo le suena al administrador, que decide si lo libera a los taxistas
+        const { data: rv } = await admin.from("servicios").select("id,grupo_id,estado,revision,revision_motivo,origen_app,hora,fecha,expres,ubic,destino,costo,extra").eq("id", cuerpo.id).maybeSingle();
+        if (!rv || !rv.revision || rv.estado !== "disponible") return json({ enviados: 0 });
+        const { data: ads } = await admin.from("perfiles").select("id").eq("grupo_id", rv.grupo_id).eq("rol", "admin").eq("activo", true);
+        const n = await enviar(admin, rv.grupo_id, (ads || []).map((x: { id: string }) => x.id), {
+          title: "🛑 POR APROBAR · 📱 " + (rv.origen_app || "App") + " · " + (rv.expres ? "⚡ EXPRÉS" : "🕐 " + String(rv.fecha).slice(8, 10) + "/" + String(rv.fecha).slice(5, 7) + " " + h12(rv.hora)) + " · $" + (Number(rv.costo) + Number(rv.extra || 0)),
+          body: corto(rv.ubic) + " → " + corto(rv.destino) + (rv.revision_motivo ? " · " + rv.revision_motivo : "") + ". Ábrelo para liberarlo",
+          tag: "rev-" + rv.id, expres: true, url: "./",
+        }, null);
+        return json({ enviados: n });
+      }
       if (cuerpo.tipo === "registro" && cuerpo.id) {
         const { data: nu } = await admin.from("perfiles").select("id,grupo_id,nombre,cel,rol,taxi,equipo_id,activo").eq("id", cuerpo.id).maybeSingle();
         if (!nu || nu.activo) return json({ enviados: 0 });
