@@ -5,7 +5,7 @@
 <script>window.__E=[];window.addEventListener('error',function(e){__E.push((e.message||'error')+' @'+String(e.filename||'').split('/').pop()+':'+(e.lineno||''))});window.addEventListener('unhandledrejection',function(e){__E.push('promesa: '+((e.reason&&e.reason.message)||e.reason))});
 setTimeout(function(){var d=document.getElementById('app');if(d&&!d.innerHTML.trim()){d.innerHTML='<div style="padding:16px;font-family:sans-serif"><b>⏳ Está tardando en cargar.</b><br>Puede ser la señal de internet. Toca Recargar. Si sigue igual, toma captura y mándala:<pre style="white-space:pre-wrap;color:#c00;font-size:13px">'+(__E.join('\n')||'(sin error)')+'\n'+location.href+'\n'+navigator.userAgent+'</pre><button onclick="location.reload(true)" style="font-size:18px;padding:10px 16px">🔄 Recargar</button></div>'}},15000)</script>
 <script>/* 🔄 Versión: si hay una agenda nueva publicada, se recarga sola (la app de Android y los celulares no se quedan con la vieja) */
-window.APPV='155';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
+window.APPV='156';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
 const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.value)return;if(window.S&&(S.form||S.ext||S.asg))return;
 let k;try{k=sessionStorage.getItem('recargaV')}catch(e){}if(k===j.v)return;try{sessionStorage.setItem('recargaV',j.v)}catch(e){}location.reload()}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,600000);setTimeout(chk,4000)})();</script>
@@ -1484,7 +1484,7 @@ function evMarcas(){if(!EVM.map||!EVM.lib||!S.EVD)return;EVM.ov.forEach(m=>m.map
 const mk=(ll,html,ti,z)=>{const d=document.createElement('div');d.innerHTML=html;const m=new EVM.lib.AdvancedMarkerElement({map:EVM.map,position:ll,content:d,title:ti,zIndex:z||1});EVM.ov.push(m);bd.extend(ll);n++};
 const C=S.EVD.coords.filter(c=>!zf||c.zona==zf);
 C.filter(c=>c.lat).forEach(c=>{const L=evSv().filter(s=>s.coord==c.id&&s.estado!='cancelado'),es=L.filter(s=>s.estado=='disponible').length;
-mk({lat:c.lat,lng:c.lng},`<div style="background:${evCol(c)};${es?'outline:3px solid #c0392b;':''}color:#fff;border-radius:14px;padding:4px 9px;font-weight:800;font-size:13px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);white-space:nowrap">📍 ${esc(c.nombre)}${L.length?' · '+(L.length-es)+'/'+L.length:''}</div>`,c.nombre,5)});
+mk({lat:c.lat,lng:c.lng},`<div style="background:${evCol(c)};${es?'outline:3px solid #c0392b;':''}color:${evTx(evCol(c))};border-radius:14px;padding:4px 9px;font-weight:800;font-size:13px;border:2px solid ${evTx(evCol(c))=='#fff'?'#fff':'#333'};box-shadow:0 2px 6px rgba(0,0,0,.4);white-space:nowrap">📍 ${esc(c.nombre)}${L.length?' · '+(L.length-es)+'/'+L.length:''}</div>`,c.nombre,5)});
 {const V=S.EVX&&S.EVX.ev;if(V&&V.dlat)mk({lat:V.dlat,lng:V.dlng},`<div style="background:#1d1d1b;color:#f2b705;border-radius:14px;padding:5px 10px;font-weight:900;font-size:14px;border:2px solid #f2b705;white-space:nowrap">🎯 ${esc(zona(V.destino||'Destino'))}</div>`,'Destino del evento',6)}
 const ids=new Set(C.map(c=>c.id));
 evSv().filter(s=>s.lat&&s.lng&&ids.has(s.coord)&&['tomado','en_camino','llego','abordo'].includes(s.estado)).forEach(s=>{const vie=s.pos_en?Math.round((Date.now()-new Date(s.pos_en))/60000):0;
@@ -1496,6 +1496,7 @@ const evFormH=h=>{const f=$('evform');f.innerHTML=h?`<div class="c" style="margi
 /* ===== 📣 Eventos al 100: destino, presupuesto por punto, ida/regreso, autorizaciones (paso 50) ===== */
 const evX=id=>((S.EVX&&S.EVX.coords)||[]).find(x=>x.id==id)||{};
 const evXs=id=>((S.EVX&&S.EVX.servs)||[]).find(x=>x.id==id)||{};
+function evTx(c){const m=/^#?([0-9a-f]{6})$/i.exec(c||'');if(!m)return '#fff';const n=parseInt(m[1],16),l=(.299*(n>>16)+.587*((n>>8)&255)+.114*(n&255));return l>150?'#111':'#fff'}
 function evCol(C){const x=evX(C.id);if(x.color)return x.color;const i=((S.EVD&&S.EVD.coords)||[]).findIndex(c=>c.id==C.id);return CPCOL[(i<0?0:i)%CPCOL.length]}
 const evPx=p=>S.EVX?Math.round((+p||0)*(1+(+S.EVX.ev.extra_pct||20)/100)):+p;
 const evH12=h=>h?h12(String(h).slice(0,5)):'';
