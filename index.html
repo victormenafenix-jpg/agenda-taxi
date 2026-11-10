@@ -5,7 +5,7 @@
 <script>window.__E=[];window.addEventListener('error',function(e){__E.push((e.message||'error')+' @'+String(e.filename||'').split('/').pop()+':'+(e.lineno||''))});window.addEventListener('unhandledrejection',function(e){__E.push('promesa: '+((e.reason&&e.reason.message)||e.reason))});
 setTimeout(function(){var d=document.getElementById('app');if(d&&!d.innerHTML.trim()){d.innerHTML='<div style="padding:16px;font-family:sans-serif"><b>⏳ Está tardando en cargar.</b><br>Puede ser la señal de internet. Toca Recargar. Si sigue igual, toma captura y mándala:<pre style="white-space:pre-wrap;color:#c00;font-size:13px">'+(__E.join('\n')||'(sin error)')+'\n'+location.href+'\n'+navigator.userAgent+'</pre><button onclick="location.reload(true)" style="font-size:18px;padding:10px 16px">🔄 Recargar</button></div>'}},15000)</script>
 <script>/* 🔄 Versión: si hay una agenda nueva publicada, se recarga sola (la app de Android y los celulares no se quedan con la vieja) */
-window.APPV='159';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
+window.APPV='160';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
 const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.value)return;if(window.S&&(S.form||S.ext||S.asg))return;
 let k;try{k=sessionStorage.getItem('recargaV')}catch(e){}if(k===j.v)return;try{sessionStorage.setItem('recargaV',j.v)}catch(e){}location.reload()}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,600000);setTimeout(chk,4000)})();</script>
@@ -3040,7 +3040,7 @@ if(puedo(s)){gC+=`<button class="s" onclick="llego('${s.id}',1)">📨 Mandarle d
 gT+=`<button class="s" onclick="copiar(msgCorto(byId('${s.id}')))">📤 Al grupo (corto)</button><button class="s" onclick="copiar(msg(byId('${s.id}'),true))">📋 Mensaje completo</button>`;
 if(s.privado&&['disponible','tomado'].includes(s.estado))gT+=`<button class="s" onclick="pasarGrupo('${s.id}')">📢 Pasar al grupo</button>`;
 if(['disponible','tomado','en_camino','llego'].includes(s.estado))gT+=`<button class="s" onclick="asg('${s.id}')">👤 ${s.estado=='disponible'?'Asignar':'Reasignar'}</button>`;
-if(s.estado=='disponible'||(s.externo&&s.estado=='tomado'))gT+=`<button class="s" onclick="extAbrir('${s.id}')">🚕 ${s.externo?'Datos del taxi externo':'Lo cubrió otro taxi'}</button>`;
+if(s.estado=='disponible'||['tomado','en_camino','llego'].includes(s.estado))gT+=`<button class="s" onclick="extAbrir('${s.id}')">🚕 ${s.externo?'Datos del taxi externo':'Lo cubrió otro taxi'}</button>`;
 if(['tomado','en_camino'].includes(s.estado))gT+=`<button class="s" onclick="recordarT('${s.id}')">🔔 Recordarle al taxista</button>`}
 if(['admin','despachador'].includes(S.me.rol)&&s.estado=='disponible')gT+=`<button class="${S.vi==s.id?'':'s'}" onclick="viAbrir('${s.id}')">👀 Lo vieron: ${+(S.VIC||{})[s.id]||0}</button>`;
 if(mine&&['tomado','en_camino'].includes(s.estado))gT+=`<button class="s" onclick="liberar('${s.id}')">🔓 Liberar al grupo</button>`;
