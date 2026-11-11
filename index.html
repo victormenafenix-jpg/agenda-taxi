@@ -5,7 +5,7 @@
 <script>window.__E=[];window.addEventListener('error',function(e){__E.push((e.message||'error')+' @'+String(e.filename||'').split('/').pop()+':'+(e.lineno||''))});window.addEventListener('unhandledrejection',function(e){__E.push('promesa: '+((e.reason&&e.reason.message)||e.reason))});
 setTimeout(function(){var d=document.getElementById('app');if(d&&!d.innerHTML.trim()){d.innerHTML='<div style="padding:16px;font-family:sans-serif"><b>⏳ Está tardando en cargar.</b><br>Puede ser la señal de internet. Toca Recargar. Si sigue igual, toma captura y mándala:<pre style="white-space:pre-wrap;color:#c00;font-size:13px">'+(__E.join('\n')||'(sin error)')+'\n'+location.href+'\n'+navigator.userAgent+'</pre><button onclick="location.reload(true)" style="font-size:18px;padding:10px 16px">🔄 Recargar</button></div>'}},15000)</script>
 <script>/* 🔄 Versión: si hay una agenda nueva publicada, se recarga sola (la app de Android y los celulares no se quedan con la vieja) */
-window.APPV='170';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
+window.APPV='171';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
 const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.value)return;if(window.S&&(S.form||S.ext||S.asg))return;
 let k;try{k=sessionStorage.getItem('recargaV')}catch(e){}if(k===j.v)return;try{sessionStorage.setItem('recargaV',j.v)}catch(e){}location.reload()}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,600000);setTimeout(chk,4000)})();</script>
@@ -1454,6 +1454,8 @@ const EVST={disponible:'ESPERANDO TAXI',tomado:'TAXI ASIGNADO',en_camino:'EN CAM
 const EVM={map:null,lib:null,ov:[],fit:0};
 const evLiga=(t,c)=>APP+'?'+(c?'co=':'ev=')+t;
 const evWa=(cel,txt)=>'https://api.whatsapp.com/send?phone='+(cel?tel(cel):'')+'&text='+encodeURIComponent(txt);
+// La central recuerda su página en este navegador; así, al abrir la liga de un líder aquí mismo, sale el botón para regresar
+function evVolverH(d){try{if(S.EV.modo=='central'){localStorage.setItem('evcen',JSON.stringify({u:location.href,e:d.evento}));return ''}const o=JSON.parse(localStorage.getItem('evcen')||'null');if(o&&o.u&&o.e==d.evento)return `<div style="margin:6px 0"><a class="b" style="display:inline-block;padding:10px 14px;font-weight:800;text-decoration:none" href="${esc(o.u)}">⬅️ Volver a todos los líderes</a></div>`}catch(e){}return ''}
 async function evPagina(modo,tok){document.body.classList.add('cli','evp');S.EV={modo,tok};
 const st=document.createElement('style');st.textContent=`body.evp{max-width:1700px}.evg{display:grid;gap:12px}#evmap{height:55vh;border-radius:14px;background:#e8e8e8}
 @media(min-width:1000px){.evg{grid-template-columns:minmax(0,1.7fr) minmax(360px,1fr)}#evmap{height:calc(100vh - 140px);position:sticky;top:10px}}
@@ -1464,7 +1466,7 @@ async function evCargar(first){const E=S.EV;let d=null;try{const [r,x,fo]=await 
 if(!d||!d.ok){if(first)$('app').innerHTML='<div class="c" style="text-align:center;margin-top:30px">Esta liga ya no está activa.<br>Pide una nueva a Taxicel.</div>';return}
 S.EVD=d;S.g=d.g||{};
 if(first||!$('evmap')){const C=d.coords[0]||{};
-$('app').innerHTML=`<div class="logo" style="padding:10px 12px"><div class="mk" style="font-size:26px">📣 ${esc(d.evento)}</div><span>${E.modo=='central'?'🏢 Central del evento · aquí ves a todos los coordinadores y unidades':'📍 Coordinador: <b style="display:inline;font-size:inherit;letter-spacing:0;text-shadow:none">'+esc(C.nombre||'')+'</b>'+(C.zona?' · '+esc(C.zona):'')}</span></div>
+$('app').innerHTML=`<div class="logo" style="padding:10px 12px"><div class="mk" style="font-size:26px">📣 ${esc(d.evento)}</div><span>${E.modo=='central'?'🏢 Central del evento · aquí ves a todos los coordinadores y unidades':'📍 Coordinador: <b style="display:inline;font-size:inherit;letter-spacing:0;text-shadow:none">'+esc(C.nombre||'')+'</b>'+(C.zona?' · '+esc(C.zona):'')}</span></div>${evVolverH(d)}
 <div class="evg"><div><div id="evmap"></div><div class="mu" id="evmapi" style="margin-top:4px">Se actualiza solo cada 15 segundos.</div></div><div><div id="evform"></div><div id="evinfo"></div></div></div>`;evMapa()}
 evInfo();evMarcas()}
 const evSv=()=>(S.EVD&&S.EVD.servs)||[];
