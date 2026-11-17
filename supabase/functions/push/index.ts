@@ -106,7 +106,7 @@ const linea = (a: { lat: number; lng: number }, b: { lat: number; lng: number })
 };
 async function minutosCalle(o: { lat: number; lng: number }, via: unknown, d: unknown): Promise<number | null> {
   try {
-    const body: Record<string, unknown> = { origin: { location: { latLng: { latitude: o.lat, longitude: o.lng } } }, destination: d, travelMode: "DRIVE", routingPreference: "TRAFFIC_AWARE", languageCode: "es-MX", regionCode: "MX" };
+    const body: Record<string, unknown> = { origin: { location: { latLng: { latitude: o.lat, longitude: o.lng } } }, destination: d, travelMode: "DRIVE", routingPreference: "TRAFFIC_UNAWARE", languageCode: "es-MX", regionCode: "MX" };
     if (via) body.intermediates = [via];
     const r = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
       method: "POST",
