@@ -124,6 +124,9 @@ footer .row a{text-decoration:none;border:1px solid var(--line);border-radius:99
 <div class="fast"><button type="button" onclick="pon('o',FAST.aer)" data-en="✈️ Airport">✈️ Aeropuerto</button><button type="button" onclick="pon('o',FAST.tren)" data-en="🚆 Tren Maya">🚆 Tren Maya</button><button type="button" onclick="pon('o',FAST.cen)" data-en="🏛️ Downtown">🏛️ Centro</button></div></div>
 <div class="f"><label for="d" data-en="Destination">¿A dónde vas?</label><input id="d" autocomplete="off" placeholder="Hotel, colonia o lugar" data-enph="Hotel, neighborhood or place"><div class="sug" id="sd" hidden></div>
 <div class="fast"><button type="button" onclick="pon('d',FAST.aer)" data-en="✈️ Airport">✈️ Aeropuerto</button><button type="button" onclick="pon('d',FAST.tren)" data-en="🚆 Tren Maya">🚆 Tren Maya</button><button type="button" onclick="pon('d',FAST.edz)">🏛️ Edzná</button></div></div>
+<div class="pg"><div class="f"><label data-en="Passengers">Pasajeros</label><div class="cu" style="grid-template-columns:44px 1fr 44px"><button type="button" onclick="pas(-1)">−</button><button type="button" id="pasN" style="cursor:default">1</button><button type="button" onclick="pas(1)">+</button></div></div>
+<div class="f"><label data-en="Vehicle">Unidad</label><div class="cu"><button type="button" id="uS" class="on" onclick="uni(0)" data-en="🚕 Sedan">🚕 Sedán</button><button type="button" id="uV" onclick="uni(1)">🚐 Van</button></div></div></div>
+<div class="mu" id="uMsg" style="margin-top:6px;font-size:13px" data-en="Sedan up to 4 passengers. For 5 or more we use a van (quote by WhatsApp).">Sedán hasta 4 pasajeros. De 5 en adelante va en van (te cotizamos por WhatsApp).</div>
 <div class="f"><label data-en="When?">¿Cuándo?</label>
 <div class="cu"><button type="button" id="cuY" class="on" onclick="cuando(0)" data-en="⚡ Now">⚡ Ahora</button><button type="button" id="cuP" onclick="cuando(1)" data-en="📅 Schedule">📅 Programar</button></div></div>
 <div id="prog" hidden><div class="pg"><div class="f"><label for="fe" data-en="Date">Día</label><input id="fe" type="date"></div><div class="f"><label for="ho" data-en="Time">Hora</label><input id="ho" type="time"></div></div>
@@ -155,6 +158,15 @@ footer .row a{text-decoration:none;border:1px solid var(--line);border-radius:99
 <div class="opt"><b data-en="🚌 Shared shuttle · $150 per person">🚌 Colectivo · $150 por persona</b><span style="color:var(--mu);font-size:14px" data-en="Fixed route from the airport to the city.">Ruta fija del aeropuerto a la ciudad.</span></div>
 <div class="row" style="margin-top:14px"><a class="btn b1" href="#cotizar" onclick="pon('o',FAST.aer)" data-en="Book airport taxi">Reservar aeropuerto</a></div>
 </div>
+</div>
+</div></section>
+
+<section id="unidades"><div class="w">
+<h2 data-en="Our vehicles">Nuestras unidades</h2>
+<p class="lead" data-en="Licensed taxis, air-conditioned, with passenger insurance.">Taxis concesionados, con aire acondicionado y seguro de pasajero.</p>
+<div class="grid">
+<div class="card"><div class="ic">🚕</div><h3 data-en="Sedan taxi">Taxi sedán</h3><p data-en="Up to 4 passengers with luggage. City, airport, Tren Maya and out-of-town trips.">Hasta 4 pasajeros con equipaje. Ciudad, aeropuerto, Tren Maya y viajes foráneos.</p><div class="pr"><small data-en="from">desde</small> $55 <small>MXN</small></div><a href="#cotizar" onclick="uni(0)" data-en="Get price →">Cotizar →</a></div>
+<div class="card"><div class="ic">🚐</div><h3 data-en="Van up to 14">Van hasta 14 pasajeros</h3><p data-en="For families and groups with luggage. Scheduled only; we send you a quote by WhatsApp.">Para familias y grupos con equipaje. Solo programado; te mandamos la cotización por WhatsApp.</p><div class="pr" data-en="Airport · $1,500">Aeropuerto · $1,500</div><a href="#cotizar" onclick="pas(4);uni(1)" data-en="Quote →">Cotizar →</a></div>
 </div>
 </div></section>
 
@@ -246,11 +258,13 @@ tm[k]=setTimeout(async()=>{try{const r=await fetch('https://photon.komoot.io/api
 if(i.value.trim()!=q)return;b.innerHTML='';F.forEach(x=>{const bt=document.createElement('button');bt.type='button';bt.textContent='📍 '+x.t;bt.onclick=()=>pon(k,x);b.appendChild(bt)});b.hidden=!F.length}catch(e){b.hidden=true}},350)});
 i.addEventListener('blur',()=>setTimeout(()=>b.hidden=true,250))});
 function txt(k){return (SEL[k]&&SEL[k].t)||document.getElementById(k).value.trim()}
-let PROG=0;function cuando(v){PROG=v;document.getElementById('cuY').classList.toggle('on',!v);document.getElementById('cuP').classList.toggle('on',!!v);document.getElementById('prog').hidden=!v;const f=document.getElementById('fe');if(v&&!f.value){f.min=new Date().toISOString().slice(0,10);f.value=f.min}}
+let PROG=0,PAS=1,VAN=0;function pas(d){PAS=Math.max(1,Math.min(14,PAS+d));document.getElementById('pasN').textContent=PAS;if(PAS>4&&!VAN)uni(1);if(PAS<=4&&VAN&&d<0)uni(0)}
+function uni(v){if(!v&&PAS>4)v=1;VAN=v;document.getElementById('uS').classList.toggle('on',!v);document.getElementById('uV').classList.toggle('on',!!v);if(v&&!PROG)cuando(1)}
+function cuando(v){PROG=v;document.getElementById('cuY').classList.toggle('on',!v);document.getElementById('cuP').classList.toggle('on',!!v);document.getElementById('prog').hidden=!v;const f=document.getElementById('fe');if(v&&!f.value){f.min=new Date().toISOString().slice(0,10);f.value=f.min}}
 function cuTxt(){if(!PROG)return L=='en'?'Now':'Ahora';const f=document.getElementById('fe').value,h=document.getElementById('ho').value,v=document.getElementById('vu').value.trim();return [f,h].filter(Boolean).join(' ')+(v?(L=='en'?' · flight/train ':' · vuelo/tren ')+v:'')}
 function cotizar(){const o=txt('o'),d=txt('d');if(!o||!d){alertar(L=='en'?'Type pick-up and destination':'Escribe origen y destino');return}
-const P=new URLSearchParams();P.set('ori',o);P.set('des',d);P.set('lang',L);if(PROG){const f=document.getElementById('fe').value,h=document.getElementById('ho').value,v=document.getElementById('vu').value.trim();if(!f||!h){const x=document.getElementById(f?'ho':'fe');x.focus();x.style.outline='2px solid #ff6b5b';return}P.set('fe',f);P.set('ho',h);if(v)P.set('nota',(L=='en'?'Flight/train ':'Vuelo/tren ')+v)}if(SEL.o)P.set('orim','https://maps.google.com/?q='+SEL.o.lat+','+SEL.o.lng);if(SEL.d)P.set('desm','https://maps.google.com/?q='+SEL.d.lat+','+SEL.d.lng);location.href=APP+'?'+P.toString()}
-function waCot(){const o=txt('o'),d=txt('d');location.href=waUrl(L=='en'?('Hello, I would like a taxi'+(o?' from '+o:'')+(d?' to '+d:'')+'. When: '+cuTxt()):('Hola, quiero un taxi'+(o?' de '+o:'')+(d?' a '+d:'')+'. Cuándo: '+cuTxt()))}
+const P=new URLSearchParams();P.set('ori',o);P.set('des',d);P.set('lang',L);P.set('per',PAS);if(VAN)P.set('van','1');if(PROG){const f=document.getElementById('fe').value,h=document.getElementById('ho').value,v=document.getElementById('vu').value.trim();if(!f||!h){const x=document.getElementById(f?'ho':'fe');x.focus();x.style.outline='2px solid #ff6b5b';return}P.set('fe',f);P.set('ho',h);if(v)P.set('nota',(L=='en'?'Flight/train ':'Vuelo/tren ')+v)}if(SEL.o)P.set('orim','https://maps.google.com/?q='+SEL.o.lat+','+SEL.o.lng);if(SEL.d)P.set('desm','https://maps.google.com/?q='+SEL.d.lat+','+SEL.d.lng);location.href=APP+'?'+P.toString()}
+function waCot(){const o=txt('o'),d=txt('d');location.href=waUrl(L=='en'?('Hello, I would like a taxi'+(o?' from '+o:'')+(d?' to '+d:'')+'. '+PAS+' passenger(s), '+(VAN?'van':'sedan')+'. When: '+cuTxt()):('Hola, quiero un taxi'+(o?' de '+o:'')+(d?' a '+d:'')+'. '+PAS+' pasajero(s), '+(VAN?'van':'sedán')+'. Cuándo: '+cuTxt()))}
 function alertar(m){const i=document.getElementById(txt('o')?'d':'o');i.focus();i.placeholder=m}
 const ES=new Map();
 function setLang(l){L=l;document.documentElement.lang=l;document.querySelectorAll('[data-en]').forEach(e=>{if(!ES.has(e))ES.set(e,e.innerHTML);e.innerHTML=l=='en'?e.dataset.en:ES.get(e)});
