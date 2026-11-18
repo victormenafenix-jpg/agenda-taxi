@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="/taxicel-apple.png">
 <meta property="og:title" content="Taxicel · Taxi en Campeche 24 horas">
 <meta property="og:description" content="Aeropuerto, Tren Maya, Edzná y foráneos. Cotiza al instante y reserva por WhatsApp.">
-<meta property="og:image" content="https://agenda-taxi.pages.dev/taxicel-og.jpg">
+<meta property="og:image" content="https://agenda-taxi.pages.dev/sitio/img/hero.jpg">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
@@ -34,6 +34,9 @@ header nav{margin-left:auto;display:flex;gap:8px;align-items:center}
 .b2{background:#25d366;color:#062b14}
 .b3{background:transparent;color:var(--fg);border:1px solid var(--line)}
 .hero{background:radial-gradient(900px 420px at 80% 0%,rgba(166,61,240,.35),transparent 60%),radial-gradient(600px 300px at 0% 100%,rgba(166,226,46,.12),transparent 60%);padding-block:48px 36px}
+.hero{background:linear-gradient(90deg,rgba(18,8,33,.94) 0%,rgba(18,8,33,.8) 45%,rgba(18,8,33,.35) 100%),url(img/hero.jpg) right top/auto 640px no-repeat,#120821}
+.cimg{margin:-20px -20px 4px;border-radius:20px 20px 0 0;overflow:hidden;aspect-ratio:16/9;max-width:none}.cimg img{width:100%;height:100%;object-fit:cover;display:block}
+@media (max-width:760px){.hero{background:linear-gradient(180deg,rgba(18,8,33,0) 0,rgba(18,8,33,.2) 120px,#120821 260px),url(img/hero.jpg) 62% 0/auto 300px no-repeat,#120821;padding-top:190px}}
 .kick{display:inline-block;font:700 12px/1 "Space Grotesk",system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--lime);border:1px solid rgba(166,226,46,.4);border-radius:999px;padding:7px 12px;margin-bottom:16px}
 .hero h1{font-size:clamp(34px,6vw,58px)}
 .hero h1 em{font-style:normal;color:var(--lime)}
@@ -97,7 +100,7 @@ details p{color:var(--mu);margin:10px 0 0}
 footer{border-top:1px solid var(--line);padding-block:30px 90px;color:var(--mu);font-size:14px}
 footer .row a{text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:8px 14px;color:var(--fg)}
 .wa{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;background:#25d366;color:#062b14;border-radius:999px;padding:14px 18px;font-weight:800;text-decoration:none;box-shadow:0 10px 30px rgba(0,0,0,.4);display:flex;gap:8px;align-items:center}
-@media (max-width:760px){.air{grid-template-columns:1fr}.hero{padding-block:30px 24px}header img{height:32px}.btn{width:100%}.row .btn{flex:1 1 100%}}
+@media (max-width:760px){.air{grid-template-columns:1fr}.hero{padding-block:190px 24px}header img{height:32px}.btn{width:100%}.row .btn{flex:1 1 100%}}
 </style>
 </head>
 <body>
@@ -140,7 +143,7 @@ footer .row a{text-decoration:none;border:1px solid var(--line);border-radius:99
 </div></div>
 
 <section id="aeropuerto"><div class="w">
-<div class="air">
+<div class="air" style="padding-top:0;overflow:hidden"><div style="grid-column:1/-1;margin:0 -26px;aspect-ratio:21/8;max-width:none"><img src="img/aeropuerto.jpg" alt="Taxi en el Aeropuerto Internacional de Campeche" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"></div>
 <div>
 <span class="kick" data-en="Most requested">Lo más pedido</span>
 <h2 data-en="Taxi to and from Campeche Airport">Taxi al Aeropuerto de Campeche</h2>
@@ -165,7 +168,7 @@ footer .row a{text-decoration:none;border:1px solid var(--line);border-radius:99
 <h2 data-en="Our vehicles">Nuestras unidades</h2>
 <p class="lead" data-en="Licensed taxis, air-conditioned, with passenger insurance.">Taxis concesionados, con aire acondicionado y seguro de pasajero.</p>
 <div class="grid">
-<div class="card"><div class="ic">🚕</div><h3 data-en="Sedan taxi">Taxi sedán</h3><p data-en="Up to 4 passengers with luggage. City, airport, Tren Maya and out-of-town trips.">Hasta 4 pasajeros con equipaje. Ciudad, aeropuerto, Tren Maya y viajes foráneos.</p><div class="pr"><small data-en="from">desde</small> $55 <small>MXN</small></div><a href="#cotizar" onclick="uni(0)" data-en="Get price →">Cotizar →</a></div>
+<div class="card"><div class="cimg"><img src="img/sedan.jpg" alt="Taxi Taxicel" loading="lazy" width="1000" height="563"></div><h3 data-en="Sedan taxi">Taxi sedán</h3><p data-en="Up to 4 passengers with luggage. City, airport, Tren Maya and out-of-town trips.">Hasta 4 pasajeros con equipaje. Ciudad, aeropuerto, Tren Maya y viajes foráneos.</p><div class="pr"><small data-en="from">desde</small> $55 <small>MXN</small></div><a href="#cotizar" onclick="uni(0)" data-en="Get price →">Cotizar →</a></div>
 <div class="card"><div class="ic">🚐</div><h3 data-en="Van up to 14">Van hasta 14 pasajeros</h3><p data-en="For families and groups with luggage. Scheduled only; we send you a quote by WhatsApp.">Para familias y grupos con equipaje. Solo programado; te mandamos la cotización por WhatsApp.</p><div class="pr" data-en="Airport · $1,500">Aeropuerto · $1,500</div><a href="#cotizar" onclick="pas(4);uni(1)" data-en="Quote →">Cotizar →</a></div>
 </div>
 </div></section>
@@ -174,8 +177,8 @@ footer .row a{text-decoration:none;border:1px solid var(--line);border-radius:99
 <h2 data-en="Services and prices">Servicios y precios</h2>
 <p class="lead" data-en="Scheduled rides in air-conditioned sedans. Book ahead by WhatsApp or online.">Viajes programados en sedán con clima. Reserva con anticipación por WhatsApp o en línea.</p>
 <div class="grid">
-<div class="card"><div class="ic">🚆</div><h3 data-en="Tren Maya station">Estación del Tren Maya</h3><p data-en="To or from the Campeche station. We wait if the train is late.">Te llevamos o recogemos en la estación de Campeche. Te esperamos si el tren se retrasa.</p><div class="pr">$300 <small>MXN</small></div><a href="#cotizar" onclick="pon('d',FAST.tren)" data-en="Book →">Reservar →</a></div>
-<div class="card"><div class="ic">🏛️</div><h3 data-en="Edzná archaeological site">Zona Arqueológica de Edzná</h3><p data-en="Round trip from downtown or your hotel, up to 2 hours of waiting. Up to 4 passengers.">Ida y regreso desde el centro o tu hotel, con hasta 2 horas de espera. Hasta 4 personas.</p><div class="pr">$1,800 <small>MXN</small></div><a href="#" class="wal" data-msg="Hola, quiero reservar el viaje a Edzná." data-en="Book →">Reservar →</a></div>
+<div class="card"><div class="cimg"><img src="img/tren.jpg" alt="Taxi Taxicel en la estación del Tren Maya Campeche" loading="lazy" width="1000" height="563"></div><h3 data-en="Tren Maya station">Estación del Tren Maya</h3><p data-en="To or from the Campeche station. We wait if the train is late.">Te llevamos o recogemos en la estación de Campeche. Te esperamos si el tren se retrasa.</p><div class="pr">$300 <small>MXN</small></div><a href="#cotizar" onclick="pon('d',FAST.tren)" data-en="Book →">Reservar →</a></div>
+<div class="card"><div class="cimg"><img src="img/edzna.jpg" alt="Taxi Taxicel en la Zona Arqueológica de Edzná" loading="lazy" width="1000" height="563"></div><h3 data-en="Edzná archaeological site">Zona Arqueológica de Edzná</h3><p data-en="Round trip from downtown or your hotel, up to 2 hours of waiting. Up to 4 passengers.">Ida y regreso desde el centro o tu hotel, con hasta 2 horas de espera. Hasta 4 personas.</p><div class="pr">$1,800 <small>MXN</small></div><a href="#" class="wal" data-msg="Hola, quiero reservar el viaje a Edzná." data-en="Book →">Reservar →</a></div>
 <div class="card"><div class="ic">⛪</div><h3 data-en="Sanctuary of the Immaculate Heart of Mary">Santuario del Inmaculado Corazón de María</h3><p data-en="About 25 km from the city. One way $450 · round trip with up to 1 h 30 wait $700.">A 25 km de la ciudad. Sencillo $450 · ida y regreso con espera de hasta 1 h 30: $700.</p><div class="pr"><small data-en="from">desde</small> $450</div><a href="#" class="wal" data-msg="Hola, quiero reservar el viaje al Santuario." data-en="Book →">Reservar →</a></div>
 <div class="card"><div class="ic">💼</div><h3 data-en="Corporate rides">Traslados corporativos</h3><p data-en="For companies, hotels and executives. Punctual, with invoice.">Para empresas, hoteles y ejecutivos. Puntualidad y factura electrónica.</p><div class="pr"><small data-en="from">desde</small> $130</div><a href="#" class="wal" data-msg="Hola, quiero cotizar traslados para mi empresa." data-en="Quote →">Cotizar →</a></div>
 <div class="card"><div class="ic">🛣️</div><h3 data-en="Out-of-town trips">Viajes foráneos</h3><p data-en="Mérida, Ciudad del Carmen, Calakmul and anywhere by road.">Mérida, Ciudad del Carmen, Calakmul y cualquier destino por carretera.</p><div class="pr" data-en="Quote">Cotiza</div><a href="#cotizar" data-en="Get price →">Ver precio →</a></div>
