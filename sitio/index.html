@@ -228,7 +228,7 @@ if(i.value.trim()!=q)return;b.innerHTML='';F.forEach(x=>{const bt=document.creat
 i.addEventListener('blur',()=>setTimeout(()=>b.hidden=true,250))});
 function txt(k){return (SEL[k]&&SEL[k].t)||document.getElementById(k).value.trim()}
 function cotizar(){const o=txt('o'),d=txt('d');if(!o||!d){alertar(L=='en'?'Type pick-up and destination':'Escribe origen y destino');return}
-const P=new URLSearchParams();P.set('ori',o);P.set('des',d);if(SEL.o)P.set('orim','https://maps.google.com/?q='+SEL.o.lat+','+SEL.o.lng);if(SEL.d)P.set('desm','https://maps.google.com/?q='+SEL.d.lat+','+SEL.d.lng);location.href=APP+'?'+P.toString()}
+const P=new URLSearchParams();P.set('ori',o);P.set('des',d);P.set('lang',L);if(SEL.o)P.set('orim','https://maps.google.com/?q='+SEL.o.lat+','+SEL.o.lng);if(SEL.d)P.set('desm','https://maps.google.com/?q='+SEL.d.lat+','+SEL.d.lng);location.href=APP+'?'+P.toString()}
 function waCot(){const o=txt('o'),d=txt('d');location.href=waUrl(L=='en'?('Hello, I would like a taxi'+(o?' from '+o:'')+(d?' to '+d:'')+'. Date and time: '):('Hola, quiero un taxi'+(o?' de '+o:'')+(d?' a '+d:'')+'. Día y hora: '))}
 function alertar(m){const i=document.getElementById(txt('o')?'d':'o');i.focus();i.placeholder=m}
 const ES=new Map();
