@@ -5,7 +5,7 @@
 <script>window.__E=[];window.addEventListener('error',function(e){__E.push((e.message||'error')+' @'+String(e.filename||'').split('/').pop()+':'+(e.lineno||''))});window.addEventListener('unhandledrejection',function(e){__E.push('promesa: '+((e.reason&&e.reason.message)||e.reason))});
 setTimeout(function(){var d=document.getElementById('app');if(d&&!d.innerHTML.trim()){d.innerHTML='<div style="padding:16px;font-family:sans-serif"><b>⏳ Está tardando en cargar.</b><br>Puede ser la señal de internet. Toca Recargar. Si sigue igual, toma captura y mándala:<pre style="white-space:pre-wrap;color:#c00;font-size:13px">'+(__E.join('\n')||'(sin error)')+'\n'+location.href+'\n'+navigator.userAgent+'</pre><button onclick="location.reload(true)" style="font-size:18px;padding:10px 16px">🔄 Recargar</button></div>'}},15000)</script>
 <script>/* 🔄 Versión: si hay una agenda nueva publicada, se recarga sola (la app de Android y los celulares no se quedan con la vieja) */
-window.APPV='191';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
+window.APPV='192';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
 const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.value)return;if(window.S&&(S.form||S.ext||S.asg))return;
 let k;try{k=sessionStorage.getItem('recargaV')}catch(e){}if(k===j.v)return;try{sessionStorage.setItem('recargaV',j.v)}catch(e){}location.reload()}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,600000);setTimeout(chk,4000)})();</script>
@@ -3489,10 +3489,15 @@ const nrm2=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u03
 function altRows(prog,fo,bloq,fA){const A=S.alts;if(!A||A.length<2||bloq)return '';const k=+$('km').value,cur=+$('costo').value;
 return '<div class="mu" style="font-weight:700;margin-top:8px">🛣️ Dos rutas, tú escoges'+ay('Google encontró dos caminos: el más rápido y el que tiene menos kilómetros. Con menos kilómetros el precio sale más barato. Toca Usar en el que quieras cobrar.')+'</div>'+A.map((a,i)=>{const kf=fA?kmFueraPoly(a.poly):null,pr=fA&&kf!=null?aerFoP(fA,kf):fo?tarifa(a.k,false,true):tarifa(a.k,prog,false),on=Math.abs(a.k-k)<0.05;return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0;padding:10px 12px;border-radius:12px;background:#f3ecfb;border:${on?'3px':'1px'} solid var(--mo2);color:#3d1a5c"><span>${a.t=='r'?'⚡ Más rápida':'📏 Menos km'}: <b style="font-size:17px">$${pr}</b><br><small>${a.k} km · ${a.min} min${on?' ✓':''}</small></span><button class="s" onclick="altUsa(${i})">Usar</button></div>`}).join('')}
 function altUsa(i){const a=(S.alts||[])[i];if(!a)return;$('km').value=a.k;S.cotMin=a.min;S.poly=a.poly||S.poly;const c=$('costo');if(c)c.value='';sug();(MP.map?mapaPines(true):Promise.resolve()).then(mapaRefrescar)}
+/* Tarifa fija Hotel (ciudad) ↔ ADO: un punto es la terminal ADO y el otro un hotel */
+const HOTX=['aguazul'];
+function esAdo(t){return /(^|[^a-z])ado([^a-z]|$)|terminal (de )?autobuses|central (de )?autobuses/i.test(String(t||''))}
+function esHotel(t){t=String(t||'').toLowerCase();return /(^|[^a-z])(hotel|hostal|hostel|posada|suites?|inn|resort)([^a-z]|$)/.test(t)||HOTX.some(h=>t.includes(h))}
+function hotAdo(a,b){return (esAdo(a)&&esHotel(b)&&!esAdo(b))||(esAdo(b)&&esHotel(a)&&!esAdo(a))}
 function sug(){const g=S.g,k=+$('km').value;if(!k||!g){$('sug').innerHTML='';return}if(esVan())return sugVan(k);
 const parTxt=(S.PAR||[]).map(p=>p.t||'').join(' ');
 const txt=($('ubic').value+' '+parTxt+' '+$('destino').value).toLowerCase(),aer=$('aeropuerto').checked||/aeropuerto/.test(txt);
-const fo0=!!($('foraneo')&&$('foraneo').checked),fija=fo0?null:((aer?S.T.find(t=>/aeropuerto/i.test(t.nombre)):null)||(/tren maya/.test(txt)?S.T.find(t=>/tren maya/i.test(t.nombre)):null));
+const fo0=!!($('foraneo')&&$('foraneo').checked),fija=fo0?null:((aer?S.T.find(t=>/aeropuerto/i.test(t.nombre)):null)||(/tren maya/.test(txt)?S.T.find(t=>/tren maya/i.test(t.nombre)):null)||(!(S.PAR||[]).length&&hotAdo($('ubic').value,$('destino').value)?S.T.find(t=>/(^|[^a-z])ado([^a-z]|$)/i.test(t.nombre)):null));
 const hasPar=(S.PAR||[]).length>0,fijaEnPar=hasPar&&fija?fija:null;
 if(fo0&&$('tar')&&$('tar').value){$('tar').value='';$('especial').checked=false;$('comision_tipo').value='porcentaje';$('comision_valor').value=(S.g&&S.g.comision_default)||10;if(+$('costo').value===S.autoC)$('costo').value=''}
 const prog=!$('expres').checked&&!$('especial').checked&&!aer,fo=!!($('foraneo')&&$('foraneo').checked),pc=tarifa(k,prog,false),pf=tarifa(k,false,true),fA=fo&&aer&&!(S.PAR||[]).length?S.T.find(t=>/aeropuerto/i.test(t.nombre)&&+t.precio):null,kF=fA?kmFueraPoly(S.poly):null,pA=fA&&kF!=null?aerFoP(fA,kF):0,p=fo?(pA||pf):pc;
@@ -4661,7 +4666,7 @@ const rk=RL.slice().sort((a,b)=>a.distanceMeters-b.distanceMeters)[0];
 const reo=false;/* reordenamiento automático desactivado: el admin pone las paradas en el orden que quiere */
 const k=Math.round(rt.distanceMeters/100)/10,min=Math.round(parseInt(rt.duration)/60),txt=(P.ut+' '+P.dt).toLowerCase(),lejos=[P.um,P.dm].concat(P.par.map(x=>x.m)).some(m=>fueraCd(m));
 const trR=/tren maya|estaci[oó]n.*tren/,trC=(t,m)=>trR.test(String(t).toLowerCase())&&!/edzn|tenabo|hecelch|calkin|esc[aá]rcega|m[eé]rida|maxcan|champot|xpujil|calakmul|palenque|tenosique/i.test(String(t))&&kmCentro(m)<=15,trOk=!pr.length&&((trC(P.dt,P.dm)&&!fueraCd(P.um))||(trC(P.ut,P.um)&&!fueraCd(P.dm)));
-let fija=null;if(!pr.length&&!lejos&&/aeropuerto/.test(txt))fija=S.T.find(t=>/aeropuerto/i.test(t.nombre));else if(trOk)fija=S.T.find(t=>/tren maya/i.test(t.nombre));
+let fija=null;if(!pr.length&&!lejos&&/aeropuerto/.test(txt))fija=S.T.find(t=>/aeropuerto/i.test(t.nombre));else if(trOk)fija=S.T.find(t=>/tren maya/i.test(t.nombre));else if(!pr.length&&!lejos&&hotAdo(P.ut,P.dt))fija=S.T.find(t=>/(^|[^a-z])ado([^a-z]|$)/i.test(t.nombre))||null;
 const trFo=!pr.length&&lejos&&!trOk&&((trC(P.dt,P.dm)&&fueraCd(P.um))||(trC(P.ut,P.um)&&fueraCd(P.dm)));
 const aerF=!pr.length&&lejos&&/aeropuerto/.test(txt)?S.T.find(t=>/aeropuerto/i.test(t.nombre)&&+t.precio):trFo?S.T.find(t=>/tren maya/i.test(t.nombre)&&+t.precio):null;
 const pRuta=(x,kk)=>{if(aerF){const kf=kmFueraPoly(x.polyline&&x.polyline.encodedPolyline);if(kf!=null)return {cos:aerFoP(aerF,kf),kf}}return {cos:lejos?tarifa(kk,false,true):tarifa(kk,!P.ahora,false),kf:null}};
