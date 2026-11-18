@@ -35,6 +35,7 @@ header nav{margin-left:auto;display:flex;gap:8px;align-items:center}
 .b3{background:transparent;color:var(--fg);border:1px solid var(--line)}
 .hero{background:radial-gradient(900px 420px at 80% 0%,rgba(166,61,240,.35),transparent 60%),radial-gradient(600px 300px at 0% 100%,rgba(166,226,46,.12),transparent 60%);padding-block:48px 36px}
 .hero{background:linear-gradient(90deg,rgba(18,8,33,.94) 0%,rgba(18,8,33,.8) 45%,rgba(18,8,33,.35) 100%),url(img/hero.jpg) right top/auto 640px no-repeat,#120821}
+.fade{position:relative}.fade img{position:absolute;inset:0}.fade img:last-child{animation:fd 8s infinite}@keyframes fd{0%,40%{opacity:0}50%,90%{opacity:1}100%{opacity:0}}
 .cimg{margin:-20px -20px 4px;border-radius:20px 20px 0 0;overflow:hidden;aspect-ratio:16/9;max-width:none}.cimg img{width:100%;height:100%;object-fit:cover;display:block}
 @media (max-width:760px){.hero{background:linear-gradient(180deg,rgba(18,8,33,0) 0,rgba(18,8,33,.2) 120px,#120821 260px),url(img/hero.jpg) 62% 0/auto 300px no-repeat,#120821;padding-top:190px}}
 .kick{display:inline-block;font:700 12px/1 "Space Grotesk",system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--lime);border:1px solid rgba(166,226,46,.4);border-radius:999px;padding:7px 12px;margin-bottom:16px}
@@ -168,7 +169,7 @@ footer .row a{text-decoration:none;border:1px solid var(--line);border-radius:99
 <h2 data-en="Our vehicles">Nuestras unidades</h2>
 <p class="lead" data-en="Licensed taxis, air-conditioned, with passenger insurance.">Taxis concesionados, con aire acondicionado y seguro de pasajero.</p>
 <div class="grid">
-<div class="card"><div class="cimg"><img src="img/sedan.jpg" alt="Taxi Taxicel" loading="lazy" width="1000" height="563"></div><h3 data-en="Sedan taxi">Taxi sedán</h3><p data-en="Up to 4 passengers with luggage.">Hasta 4 pasajeros con equipaje.</p>
+<div class="card"><div class="cimg fade"><img src="img/tx871.jpg" alt="Taxi Taxicel Tx-871" loading="lazy" width="1000" height="563"><img src="img/tx407.jpg" alt="Taxi Taxicel Tx-407" loading="lazy" width="1000" height="563"></div><h3 data-en="Sedan taxi">Taxi sedán</h3><p data-en="Up to 4 passengers with luggage.">Hasta 4 pasajeros con equipaje.</p>
 <div style="display:grid;gap:4px;font-size:15px">
 <div style="display:flex;justify-content:space-between"><span data-en="In the city">En la ciudad</span><b data-en="from $55">desde $55</b></div>
 <div style="display:flex;justify-content:space-between"><span data-en="Hotel ↔ ADO bus station">Hotel ↔ ADO</span><b>$100</b></div>
