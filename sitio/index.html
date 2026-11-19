@@ -5,23 +5,24 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Taxi en Campeche 24 horas · Aeropuerto y Tren Maya | Taxicel</title>
 <meta name="description" content="Taxi programado en San Francisco de Campeche, 24 horas. Traslados al Aeropuerto, estación del Tren Maya, Edzná y foráneos. Cotiza al instante, paga con tarjeta y pide factura. WhatsApp 981 115 0093.">
+<link rel="canonical" href="https://taxicelcampeche.com/">
 <meta name="theme-color" content="#1a0b2e">
-<link rel="icon" href="/taxicel-192.png">
-<link rel="apple-touch-icon" href="/taxicel-apple.png">
+<link rel="icon" href="taxicel-192.png">
+<link rel="apple-touch-icon" href="taxicel-apple.png">
 <meta property="og:title" content="Taxicel · Taxi en Campeche 24 horas">
 <meta property="og:description" content="Aeropuerto, Tren Maya, Edzná y foráneos. Cotiza al instante y reserva por WhatsApp.">
-<meta property="og:image" content="https://agenda-taxi.pages.dev/sitio/img/hero.jpg">
+<meta property="og:image" content="https://taxicelcampeche.com/img/hero.jpg">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"TaxiService","name":"Taxicel Servicio Programado","description":"Taxi programado en San Francisco de Campeche: aeropuerto, Tren Maya, Edzná, corporativos y foráneos. 24 horas.","telephone":"+52 981 115 0093","areaServed":{"@type":"City","name":"San Francisco de Campeche"},"provider":{"@type":"LocalBusiness","name":"Taxicel Servicio Programado","telephone":"+52 981 115 0093","openingHours":"Mo-Su 00:00-23:59","priceRange":"$$","image":"https://agenda-taxi.pages.dev/taxicel-og.jpg","address":{"@type":"PostalAddress","addressLocality":"San Francisco de Campeche","addressRegion":"Campeche","addressCountry":"MX"},"aggregateRating":{"@type":"AggregateRating","ratingValue":"4.3","reviewCount":"172"},"sameAs":["https://www.facebook.com/TAXIPROGRAMADOS","https://www.instagram.com/taxicelservicio"]}}
+{"@context":"https://schema.org","@type":"TaxiService","name":"Taxicel Servicio Programado","description":"Taxi programado en San Francisco de Campeche: aeropuerto, Tren Maya, Edzná, corporativos y foráneos. 24 horas.","telephone":"+52 981 115 0093","areaServed":{"@type":"City","name":"San Francisco de Campeche"},"provider":{"@type":"LocalBusiness","name":"Taxicel Servicio Programado","telephone":"+52 981 115 0093","openingHours":"Mo-Su 00:00-23:59","priceRange":"$$","image":"https://taxicelcampeche.com/taxicel-og.jpg","address":{"@type":"PostalAddress","addressLocality":"San Francisco de Campeche","addressRegion":"Campeche","addressCountry":"MX"},"aggregateRating":{"@type":"AggregateRating","ratingValue":"4.3","reviewCount":"172"},"sameAs":["https://www.facebook.com/TAXIPROGRAMADOS","https://www.instagram.com/taxicelservicio"]}}
 </script>
 <link rel="stylesheet" href="estilo.css">
 </head>
 <body>
 <header><div class="w">
-<a href="#inicio" aria-label="Taxicel"><img src="/taxicel-logo.png" alt="Taxicel" width="1179" height="586"></a>
+<a href="#inicio" aria-label="Taxicel"><img src="taxicel-logo.png" alt="Taxicel" width="1179" height="586"></a>
 <nav><button class="lg" id="lg" onclick="setLang(L=='es'?'en':'es')">English</button></nav>
 </div></header>
 
@@ -171,7 +172,7 @@
 
 <script src="comun.js"></script>
 <script>
-const APP='/taxicel/';
+const APP='https://agenda-taxi.pages.dev/taxicel/';
 const FAST={aer:{t:'Aeropuerto Internacional de Campeche',lat:19.8166,lng:-90.5003},tren:{t:'Estación Tren Maya Campeche',lat:19.8257,lng:-90.4924},cen:{t:'Parque Principal, Centro, Campeche',lat:19.8466,lng:-90.5363},edz:{t:'Zona Arqueológica de Edzná',lat:19.5967,lng:-90.2297}};
 const SEL={o:null,d:null};
 function pon(k,p){SEL[k]=p;document.getElementById(k).value=p.t;document.getElementById('s'+k).hidden=true}
