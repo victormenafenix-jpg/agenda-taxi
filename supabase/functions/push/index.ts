@@ -197,13 +197,42 @@ Deno.serve(async (req) => {
     if (cronKey) {
       const { data: cfg } = await admin.from("config").select("valor").eq("clave", "cron").maybeSingle();
       if (!cfg || cfg.valor !== cronKey) return json({ error: "no autorizado" }, 401);
-      let cuerpo: { tipo?: string; id?: string; h?: number; otros?: string[]; sube?: number; red?: boolean; gid?: string; ev?: string; esp?: number; lib?: number; sug?: number; pct?: number; ids?: string[]; queda?: number } = {};
+      let cuerpo: { tipo?: string; id?: string; estado?: string; h?: number; otros?: string[]; sube?: number; red?: boolean; gid?: string; ev?: string; esp?: number; lib?: number; sug?: number; pct?: number; ids?: string[]; queda?: number } = {};
       try { cuerpo = await req.json(); } catch (_e) { cuerpo = {}; }
+      // 🔔 Al cliente: su taxi va en camino / ya llegó (avisos del navegador del cliente)
+      if (cuerpo.tipo === "cli_estado" && cuerpo.id) {
+        const { data: sv } = await admin.from("servicios").select("token,estado,tomado_taxi").eq("id", cuerpo.id).maybeSingle();
+        if (!sv || !sv.token) return json({ enviados: 0 });
+        const { data: subs } = await admin.from("cli_push").select("id,endpoint,p256dh,auth,idioma").eq("token", sv.token);
+        if (!subs || !subs.length) return json({ enviados: 0 });
+        webpush.setVapidDetails(Deno.env.get("VAPID_SUBJECT")!, Deno.env.get("VAPID_PUBLIC")!, Deno.env.get("VAPID_PRIVATE")!);
+        const T: Record<string, Record<string, [string, string]>> = {
+          es: { llego: ["🚖 ¡Tu taxi ya llegó!", "Te está esperando afuera"], en_camino: ["🚕 Tu taxi va en camino", "Abre para ver dónde viene"] },
+          en: { llego: ["🚖 Your taxi is here!", "It is waiting for you outside"], en_camino: ["🚕 Your taxi is on its way", "Open to see where it is"] },
+        };
+        let n = 0;
+        for (const s of subs) {
+          const t = (T[s.idioma || "es"] || T.en)[sv.estado] || T.es.llego;
+          const tx = sv.tomado_taxi ? " · " + sv.tomado_taxi : "";
+          try {
+            await mandarUno(s, JSON.stringify({ title: t[0], body: t[1] + tx, tag: "viaje", expres: sv.estado === "llego", url: "/?s=" + encodeURIComponent(sv.token) }));
+            n++;
+          } catch (e) {
+            const sc = (e as { statusCode?: number }).statusCode;
+            if (sc === 404 || sc === 410) await admin.from("cli_push").delete().eq("id", s.id);
+          }
+        }
+        if (sv.estado === "llego") await admin.from("cli_push").delete().eq("token", sv.token).lt("creado", new Date(Date.now() - 6 * 3600e3).toISOString());
+        return json({ enviados: n });
+      }
       if (cuerpo.tipo === "auto_elegir" && cuerpo.id) {
         const { data: sv } = await admin.from("servicios").select("id,grupo_id,estado,ubic,ubic_maps").eq("id", cuerpo.id).maybeSingle();
         if (!sv || sv.estado !== "disponible") return json({ ok: 0 });
-        const { data: R } = await admin.from("interesados").select("*").eq("servicio_id", sv.id);
-        if (!R || !R.length) return json({ ok: 0 });
+        const { data: R0 } = await admin.from("interesados").select("*").eq("servicio_id", sv.id);
+        // Quita a quien, desde que se reportó, ya tomó otro servicio a la misma hora (o quedó ocupado)
+        const R = [];
+        for (const r of (R0 || [])) { try { const { data: oc } = await admin.rpc("ocupado", { p_uid: r.usuario_id, p_sid: sv.id }); if (oc === "ok" || oc == null) R.push(r); } catch (_e) { R.push(r); } }
+        if (!R.length) return json({ ok: 0 });
         const dest = pto(sv.ubic, sv.ubic_maps), sll = llDe(sv.ubic_maps);
         const cand = await Promise.all(R.map(async (r: { usuario_id: string; lat: number | null; lng: number | null; creado: string; nombre: string; taxi: string }) => {
           if (r.lat == null || r.lng == null || !dest) return { r, min: 1e9 };
