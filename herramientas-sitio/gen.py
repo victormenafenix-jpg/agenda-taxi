@@ -354,7 +354,7 @@ page('tours','Tours desde Campeche en taxi privado · Edzná, Uxmal, Bahía de T
 
 # ---------- IRONMAN
 IMJS='''<script>
-var IM={p:1,b:1};function imS(k,d){IM[k]=Math.max(k=='p'?1:0,Math.min(14,IM[k]+d));imT()}
+var IM={p:1,b:1};function imS(k,d){IM[k]=Math.max(k=='p'?1:0,Math.min(k=='b'?5:14,IM[k]+d));imT()}
 function imT(){var seats=IM.p+IM.b*2,ok=seats<=14,t=IM.p*200+IM.b*400,en=(typeof L!='undefined'&&L=='en');
 document.getElementById('imP').textContent=IM.p;document.getElementById('imB').textContent=IM.b;
 document.getElementById('imSeats').textContent=seats+'/14';document.getElementById('imSeats').style.color=ok?'':'#ff6b5b';
@@ -379,14 +379,14 @@ page('ironman','IRONMAN 70.3 Campeche · Traslado del aeropuerto con bici | Taxi
 <tr><td data-en="Seats used">Lugares ocupados</td><td><b id="imSeats">3/14</b></td></tr>
 <tr class="t"><td>Total</td><td><span id="imTot">$600</span> <small style="font-size:14px">MXN</small></td></tr>
 </table>
-<div class="mu" style="font-size:14px" data-en="Airport → your hotel in Campeche city, or hotel → airport after the race, same price. Van for up to 14 seats.">Aeropuerto → tu hotel en la ciudad, o hotel → aeropuerto después de la carrera, al mismo precio. Van de hasta 14 lugares.</div>
+<div class="mu" style="font-size:14px" data-en="Airport → your hotel in Campeche city, or hotel → airport after the race, same price. Van for up to 14 seats and up to 5 boxed bikes.">Aeropuerto → tu hotel en la ciudad, o hotel → aeropuerto después de la carrera, al mismo precio. Van de hasta 14 lugares y hasta 5 bicis en caja.</div>
 <a class="btn b1 wal imb" href="#" data-msg="Hola, quiero el traslado IRONMAN del aeropuerto." data-msgen="Hello, I would like the IRONMAN airport shuttle." data-en="Book on WhatsApp">Reservar por WhatsApp</a>
 </div>
 <div style="display:grid;gap:14px">
 <div class="pk" style="border-color:var(--line)">
 <h2 style="font-size:24px" data-en="🚐 Private van">🚐 Van privada</h2>
 <div class="price">$1,800 <small>MXN</small></div>
-<div class="mu" style="font-size:14px" data-en="The whole van for your team or family, from the airport to your hotel.">Toda la van para tu equipo o tu familia, del aeropuerto a tu hotel.</div>
+<div class="mu" style="font-size:14px" data-en="The whole van for your team or family, from the airport to your hotel. Fits up to 5 bikes in their boxes.">Toda la van para tu equipo o tu familia, del aeropuerto a tu hotel. Caben hasta 5 bicis en su caja.</div>
 <a class="btn b3 wal" href="#" data-msg="Hola, quiero la van privada para el IRONMAN ($1,800)." data-msgen="Hello, I would like the private van for the IRONMAN ($1,800)." data-en="Book private van">Reservar van privada</a>
 </div>
 <div class="pk" style="border-color:var(--line)">
@@ -402,6 +402,7 @@ page('ironman','IRONMAN 70.3 Campeche · Traslado del aeropuerto con bici | Taxi
  [('¿Cuánto cuesta el traslado del aeropuerto para el IRONMAN?','En colectivo, $200 por persona y $400 por bicicleta. Van privada: $1,800.','How much is the airport transfer for the IRONMAN?','Shared shuttle: $200 per person and $400 per bike. Private van: $1,800.'),
   ('¿El regreso al aeropuerto cuesta igual?','Sí, del hotel al aeropuerto después de la carrera es el mismo precio.','Is the ride back to the airport the same price?','Yes, from your hotel to the airport after the race is the same price.'),
   ('¿Puedo ir en taxi normal?','Sí, $300 por taxi para hasta 4 personas. La caja de la bici solo cabe a veces; mándanos la medida por WhatsApp.','Can I take a regular taxi?','Yes, $300 per taxi for up to 4 people. A bike box fits only sometimes; send us its size on WhatsApp.'),
+  ('¿Cuántas bicis caben en la van?','Hasta 5 bicis en su caja.','How many bikes fit in the van?','Up to 5 bikes in their boxes.'),
   ('¿Por qué la bici cuesta más?','Porque la caja de la bici ocupa 2 lugares de la van.','Why does the bike cost more?','Because a bike box takes 2 seats in the van.'),
   ('¿Cuándo es el IRONMAN 70.3 Campeche?','La fecha está por confirmar. Escríbenos y te avisamos.','When is IRONMAN 70.3 Campeche?','The date is to be confirmed. Message us and we will let you know.')],
  {'name':'Traslado aeropuerto IRONMAN Campeche','price':'200','wa':'Hola, quiero el traslado IRONMAN del aeropuerto.','waen':'Hello, I would like the IRONMAN airport shuttle.'})
