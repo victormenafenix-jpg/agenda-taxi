@@ -98,3 +98,4 @@ footer .row a{text-decoration:none;border:1px solid var(--line);border-radius:99
 .more a{border:1px solid var(--line);border-radius:16px;padding:16px;text-decoration:none;font-weight:800;background:var(--card)}
 .more a span{display:block;color:var(--mu);font-weight:600;font-size:14px}
 @media (max-width:760px){.two{grid-template-columns:1fr}}
+.inc span,.card p,footer a{overflow-wrap:anywhere}
