@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
+<title>Taxi in Campeche 24/7 · Airport &amp; Tren Maya transfers | Taxicel</title>
+<meta content="Private taxi in Campeche, Mexico, 24 hours: airport and Tren Maya station transfers, Edzná and Uxmal tours. Fixed prices, card payment and invoice. WhatsApp +52 981 115 0093." name="description"/>
+<link href="https://taxicelcampeche.com/en/" rel="canonical"/>
+<meta content="#1a0b2e" name="theme-color"/>
+<link href="/taxicel-192.png" rel="icon"/>
+<link href="/taxicel-apple.png" rel="apple-touch-icon"/>
+<meta content="Taxi in Campeche 24/7 · Airport &amp; Tren Maya transfers | Taxicel" property="og:title"/>
+<meta content="Private taxi in Campeche, Mexico, 24 hours: airport and Tren Maya station transfers, Edzná and Uxmal tours. Fixed prices, card payment and invoice. WhatsApp +52 981 115 0093." property="og:description"/>
+<meta content="https://taxicelcampeche.com/img/og-logo.jpg" property="og:image"/>
+<meta content="website" property="og:type"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&amp;family=Plus+Jakarta+Sans:wght@400;600;800&amp;display=swap" rel="stylesheet"/>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TaxiService", "name": "Taxicel Servicio Programado", "description": "Private taxi in Campeche, Mexico, 24 hours: airport and Tren Maya station transfers, Edzná and Uxmal tours. Fixed prices, card payment and invoice. WhatsApp +52 981 115 0093.", "telephone": "+52 981 115 0093", "areaServed": {"@type": "City", "name": "San Francisco de Campeche"}, "provider": {"@type": "LocalBusiness", "name": "Taxicel Servicio Programado", "telephone": "+52 981 115 0093", "email": "reservas@taxicelcampeche.com", "openingHours": "Mo-Su 00:00-23:59", "priceRange": "$$", "image": "https://taxicelcampeche.com/taxicel-og.jpg", "address": {"@type": "PostalAddress", "addressLocality": "San Francisco de Campeche", "addressRegion": "Campeche", "addressCountry": "MX"}, "aggregateRating": {"@type": "AggregateRating", "ratingValue": "4.3", "reviewCount": "172"}, "sameAs": ["https://www.facebook.com/TAXIPROGRAMADOS", "https://www.instagram.com/taxicelservicio"]}}</script>
+<link href="/estilo.css" rel="stylesheet"/>
+<link href="https://taxicelcampeche.com/" hreflang="es" rel="alternate"/><link href="https://taxicelcampeche.com/en/" hreflang="en" rel="alternate"/><link href="https://taxicelcampeche.com/" hreflang="x-default" rel="alternate"/></head>
+<body>
+<header><div class="w">
+<a aria-label="Taxicel" href="#inicio"><img alt="Taxicel" height="586" src="/taxicel-logo.png" width="1179"/></a>
+<nav><a class="lg" href="/en/tours/" style="text-decoration:none">🗺️ Tours</a><a class="lg" href="/" style="text-decoration:none">Español</a></nav>
+</div></header>
+<main id="inicio">
+<div class="hero"><div class="w">
+<span class="kick">Campeche · 24 hours</span>
+<h1>Taxi in Campeche, <em>on time</em>, any hour</h1>
+<p class="sub">Scheduled taxi to the Airport, the Tren Maya station, Edzná and anywhere in the city. We arrive 10 minutes early, air-conditioned, with travel insurance and invoice.</p>
+<div class="row">
+<a class="btn b1" href="#cotizar">💰 Get a price now</a>
+<a class="btn b2 wal" href="#">💬 WhatsApp 981 115 0093</a>
+</div>
+<div class="rat"><b>4.3 ★</b><span>172 reviews on Google</span></div>
+<div class="cot" id="cotizar">
+<h2>How much is my ride?</h2>
+<div class="mu">Type where we pick you up and where you are going. You'll see the price with our official rates.</div>
+<div class="f"><label for="o">Pick-up</label><input autocomplete="off" id="o" placeholder="Hotel, neighborhood or place"/><div class="sug" hidden="" id="so"></div>
+<div class="fast"><button onclick="pon('o',FAST.aer)" type="button">✈️ Airport</button><button onclick="pon('o',FAST.tren)" type="button">🚆 Tren Maya</button><button onclick="pon('o',FAST.cen)" type="button">🏛️ Downtown</button></div></div>
+<div class="f"><label for="d">Destination</label><input autocomplete="off" id="d" placeholder="Hotel, neighborhood or place"/><div class="sug" hidden="" id="sd"></div>
+<div class="fast"><button onclick="pon('d',FAST.aer)" type="button">✈️ Airport</button><button onclick="pon('d',FAST.tren)" type="button">🚆 Tren Maya</button><button onclick="pon('d',FAST.edz)" type="button">🏛️ Edzná</button></div></div>
+<div class="pg"><div class="f"><label>Passengers</label><div class="cu" style="grid-template-columns:44px 1fr 44px"><button onclick="pas(-1)" type="button">−</button><button id="pasN" style="cursor:default" type="button">1</button><button onclick="pas(1)" type="button">+</button></div></div>
+<div class="f"><label>Vehicle</label><div class="cu"><button class="on" id="uS" onclick="uni(0)" type="button">🚕 Sedan</button><button id="uV" onclick="uni(1)" type="button">🚐 Van</button></div></div></div>
+<div class="mu" id="uMsg" style="margin-top:6px;font-size:13px">Sedan up to 4 passengers. For 5 or more we use a van (quote by WhatsApp).</div>
+<div class="f"><label>When?</label>
+<div class="cu"><button class="on" id="cuY" onclick="cuando(0)" type="button">⚡ Now</button><button id="cuP" onclick="cuando(1)" type="button">📅 Schedule</button></div></div>
+<div hidden="" id="prog"><div class="pg"><div class="f"><label for="fe">Date</label><input id="fe" type="date"/></div><div class="f"><label for="ho">Time</label><input id="ho" type="time"/></div></div>
+<div class="f"><label for="vu">Flight or train number (optional)</label><input autocomplete="off" id="vu" placeholder="AM 1234"/></div>
+<div class="mu" style="margin-top:6px">Arriving from abroad? Book now and we will be waiting for you.</div></div>
+<div class="row">
+<button class="btn b1" onclick="cotizar()">See price and book</button>
+<button class="btn b2" onclick="waCot()">Ask on WhatsApp</button>
+</div>
+</div>
+</div></div>
+<section id="aeropuerto"><div class="w">
+<div class="air" style="padding-top:0;overflow:hidden"><div style="grid-column:1/-1;margin:0 -26px;aspect-ratio:21/8;max-width:none"><div class="rot" style="width:100%;height:100%"><img alt="Taxi Taxicel en el Aeropuerto Internacional de Campeche" loading="lazy" src="/img/aer-cpe.webp" style="width:100%;height:100%;object-fit:cover;display:block"/><img alt="Taxi del aeropuerto frente a la terminal de Campeche" loading="lazy" src="/img/aeropuerto.webp" style="width:100%;height:100%;object-fit:cover;display:block"/></div></div>
+<div>
+<span class="kick">Most requested</span>
+<h2>Taxi to and from Campeche Airport</h2>
+<ul>
+<li>We wait for you even if your flight is delayed</li>
+<li>Pick-up at arrivals with your name</li>
+<li>Agreement with the official airport taxis</li>
+<li>Card payment and electronic invoice</li>
+</ul>
+</div>
+<div>
+<div class="price"><small>from</small> $300 <small>MXN</small></div>
+<div class="mu" style="color:var(--mu);font-size:14px">Sedan, up to 4 passengers. Price depends on your pick-up point.</div>
+<div class="opt"><b>🚐 Private van up to 14 people · $1,500</b><span style="color:var(--mu);font-size:14px">With luggage. Only van at the airport, with JKPE.</span></div>
+<div class="opt"><b>🚌 Shared shuttle · $150 per person</b><span style="color:var(--mu);font-size:14px">Fixed route from the airport to the city.</span></div>
+<div class="row" style="margin-top:14px"><a class="btn b1" href="#cotizar" onclick="pon('o',FAST.aer)">Book airport taxi</a><a class="btn b3" href="/en/airport/">All about the airport →</a></div>
+</div>
+</div>
+</div></section>
+<section id="unidades"><div class="w">
+<h2>Our vehicles</h2>
+<p class="lead">Licensed taxis, air-conditioned, with passenger insurance.</p>
+<div class="grid">
+<div class="card"><div class="cimg rot"><img alt="Taxi Taxicel Tx-871" height="675" loading="lazy" src="/img/tx871.webp" width="1200"/><img alt="Taxi Taxicel Tx-929" height="675" loading="lazy" src="/img/tx929.webp" width="1200"/><img alt="Taxi Taxicel Tx-407" height="675" loading="lazy" src="/img/tx407.webp" width="1200"/></div><h3>Sedan taxi</h3><p>Up to 4 passengers with luggage.</p>
+<div style="display:grid;gap:4px;font-size:15px">
+<div style="display:flex;justify-content:space-between"><span>In the city</span><b>from $55</b></div>
+<div style="display:flex;justify-content:space-between"><span>Hotel ↔ ADO bus station</span><b>$100</b></div>
+<div style="display:flex;justify-content:space-between"><span>Airport</span><b>from $300</b></div>
+<div style="display:flex;justify-content:space-between"><span>Tren Maya</span><b>$300</b></div>
+<div style="display:flex;justify-content:space-between"><span>Out of town</span><b>quote</b></div></div><a href="#cotizar" onclick="uni(0)">Get price →</a></div>
+<div class="card"><div class="cimg rot"><img alt="Van de 14 pasajeros en el Aeropuerto de Campeche" loading="lazy" src="/img/van-aer.webp" style="object-position:center 40%"/><img alt="Van de 14 pasajeros en la estación del Tren Maya" height="675" loading="lazy" src="/img/van.webp" width="1200"/></div><h3>Van up to 14</h3><p>For families and groups with luggage. Scheduled only; we send you a quote by WhatsApp.</p><div class="pr">Airport · $1,500</div><a href="#cotizar" onclick="pas(4);uni(1)">Quote →</a></div>
+</div>
+</div></section>
+<section id="servicios"><div class="w">
+<h2>Services and prices</h2>
+<div class="row" style="margin:6px 0 14px"><a class="btn b1" href="/en/tours/">🗺️ See all tours</a></div>
+<p class="lead">Scheduled rides in air-conditioned sedans. Book ahead by WhatsApp or online.</p>
+<div class="grid">
+<div class="card"><div class="cimg rot"><img alt="Taxis Taxicel en la estación del Tren Maya Campeche" height="675" loading="lazy" src="/img/tren.webp" width="1200"/><img alt="Taxi Taxicel en la estación del Tren Maya" height="675" loading="lazy" src="/img/tren857.webp" width="1200"/></div><h3>Tren Maya station</h3><p>To or from the Campeche station. We wait if the train is late.</p><div class="pr">$300 <small>MXN</small></div><a href="/en/tren-maya/">See more →</a></div>
+<div class="card"><div class="cimg"><img alt="Taxi Taxicel en la Zona Arqueológica de Edzná" height="563" loading="lazy" src="/img/edzna.webp" width="1000"/></div><h3>Edzná archaeological site</h3><p>Round trip from downtown or your hotel, up to 2 hours of waiting. Up to 4 passengers.</p><div class="pr">$1,800 <small>MXN</small></div><div class="mu" style="color:var(--lime);font-weight:700;font-size:14px">With local guide: $2,500 (save $200)</div><a href="/en/edzna/">See tour →</a></div>
+<div class="card"><div class="ic">🏛️</div><h3>Uxmal tour</h3><p>Ride there, up to 2 hours at Uxmal and ride back. Add the Chocolate Museum or lunch. Private sedan up to 4 people.</p><div class="pr"><small>from</small> $4,000 <small>MXN</small></div><a href="/en/uxmal/">See tour →</a></div>
+<div class="card"><div class="ic">🏖️</div><h3>Bahía de Tortugas</h3><p>Beach day past Champotón: ride there, up to 6 hours of waiting and ride back, tolls included. Up to 4 people.</p><div class="pr">$4,000 <small>MXN</small></div><a href="/en/bahia-de-tortugas/">See trip →</a></div>
+<div class="card"><div class="ic">🏛️🏖️</div><h3>Edzná + Bahía de Tortugas</h3><p>Edzná early in the morning and an afternoon at the beach. Tolls and water included. Up to 4 people.</p><div class="pr">$5,400 <small>MXN</small></div><a href="/en/edzna-bahia-de-tortugas/">See tour →</a></div>
+<div class="card"><div class="ic">⛪</div><h3>Sanctuary of the Immaculate Heart of Mary</h3><p>About 25 km from the city. One way $450 · round trip with up to 1 h 30 wait $700.</p><div class="pr"><small>from</small> $450</div><a class="wal" data-msg="Hola, quiero reservar el viaje al Santuario." href="#">Book →</a></div>
+<div class="card"><div class="cimg rot"><img alt="Taxi Taxicel en hotel de Campeche" height="675" loading="lazy" src="/img/terramar.webp" width="1200"/><img alt="Taxi Taxicel en hospital de Campeche" height="675" loading="lazy" src="/img/vossan.webp" width="1200"/></div><h3>Corporate rides</h3><p>For companies, hotels, hospitals and executives. Punctual, with invoice.</p><div class="pr"><small>from</small> $130</div><a class="wal" data-msg="Hola, quiero cotizar traslados para mi empresa." href="#">Quote →</a></div>
+<div class="card"><div class="cimg rot"><img alt="Taxi Taxicel en el Aeropuerto de Mérida" height="675" loading="lazy" src="/img/merida.webp" width="1200"/></div><h3>Out-of-town trips</h3><p>Mérida, Ciudad del Carmen, Calakmul and anywhere by road.</p><div class="pr">Quote</div><a href="#cotizar">Get price →</a></div>
+<div class="card"><div class="ic">🎉</div><h3>Events and groups</h3><p>Many taxis at once for events, weddings and conventions, with live coordination.</p><div class="pr">Quote</div><a class="wal" data-msg="Hola, quiero cotizar taxis para un evento." href="#">Quote →</a></div>
+</div>
+</div></section>
+<section><div class="w">
+<h2>What's included</h2>
+<div class="inc">
+<div>⏱️<b>10 minutes early</b><span>Your taxi is waiting, not you.</span></div>
+<div>❄️<b>Air conditioning</b><span>Clean, comfortable sedans.</span></div>
+<div>🛡️<b>Travel insurance</b><span>On every ride.</span></div>
+<div>💳<b>Card or cash</b><span>Debit or credit card.</span></div>
+<div>🧾<b>Electronic invoice</b><span>Ask for it when booking or write to facturacion@taxicelcampeche.com</span></div>
+<div>🕐<b>24 hours</b><span>Early flights and late trains too.</span></div>
+</div>
+</div></section>
+<section><div class="w">
+<h2>How it works</h2>
+<div class="steps">
+<div><b>1. Get a price</b><span>Type pick-up and destination and see the price.</span></div>
+<div><b>2. Book</b><span>Online or by WhatsApp, with date and time.</span></div>
+<div><b>3. Ride</b><span>You get your driver's details and we arrive early.</span></div>
+</div>
+</div></section>
+<section id="opiniones"><div class="w">
+<h2>What our clients say</h2>
+<p class="lead"><span class="stars">★★★★★</span> <b>4.3</b> <span>· 172 reviews on Google</span></p>
+<div class="rev">
+<blockquote><div class="stars">★★★★★</div><p>“Excelente servicio, siempre puntuales y responsables con las facturas.”</p><cite>Pedro C. · Google</cite></blockquote>
+<blockquote><div class="stars">★★★★★</div><p>“Muy cumplidos y puntuales aun cuando estaba lloviendo, además de que las unidades son muy cómodas con aire acondicionado.”</p><cite>Peter B. · Google</cite></blockquote>
+<blockquote><div class="stars">★★★★★</div><p>“Excelente servicio, atención y precios. Totalmente recomendado.”</p><cite>Milena U. · Google</cite></blockquote>
+</div>
+<div class="row" style="margin-top:16px"><a class="btn b3" href="https://share.google/61QOObiRs0RjkhN1u" rel="noopener" target="_blank">See all reviews</a></div>
+</div></section>
+<section id="aliados"><div class="w">
+<h2>We work with</h2>
+<p class="lead">Partner groups that help us cover more services and more hours.</p>
+<div class="grid">
+<div class="card"><div class="cimg rot"><img alt="Módulo de JKPE en el aeropuerto" height="675" loading="lazy" src="/img/jkpe-modulo.webp" style="object-position:center 70%" width="1200"/></div><h3>JKPE</h3><p>Official taxis of Campeche Airport. Private van for up to 14 people and shared shuttle.</p><a href="https://jkpe-campeche.netlify.app" rel="noopener" target="_blank">Visit →</a></div>
+<div class="card"><div class="ic">🌙</div><h3>Nocturno VIP</h3><p>Partner group.</p></div>
+</div>
+</div></section>
+<section id="preguntas"><div class="w">
+<h2>Frequently asked questions</h2>
+<details><summary>How much is a taxi from Campeche Airport?</summary><p>From $300 MXN in a sedan for up to 4 people, depending on your destination. Private van for up to 14 people: $1,500.</p></details>
+<details><summary>What if my flight or train is delayed?</summary><p>We wait for you. Send us your flight or train number when booking.</p></details>
+<details><summary>Can I pay by card and get an invoice?</summary><p>Yes, debit or credit card, and electronic invoice (CFDI).</p></details>
+<details><summary>Do you work at night?</summary><p>Yes, 24 hours, every day. For early flights we recommend booking the day before.</p></details>
+</div></section>
+</main>
+<footer><div class="w">
+<p><b style="color:var(--fg)">Taxicel Servicio Programado</b><br/><span>Scheduled taxi in San Francisco de Campeche · 24 hours</span></p>
+<div class="row">
+<a class="wal" href="#">💬 WhatsApp 981 115 0093</a>
+<a href="mailto:reservas@taxicelcampeche.com">✉️ reservas@taxicelcampeche.com</a>
+<a href="https://www.facebook.com/TAXIPROGRAMADOS" rel="noopener" target="_blank">Facebook</a>
+<a href="https://www.instagram.com/taxicelservicio" rel="noopener" target="_blank">Instagram</a>
+<a href="https://jkpe-campeche.netlify.app" rel="noopener" target="_blank">Airport van: JKPE</a>
+</div>
+</div></footer>
+<a aria-label="WhatsApp" class="wa wal" href="#">💬 WhatsApp</a>
+<script src="/comun.js"></script><script>L='en';document.documentElement.lang='en';if(window.waLinks)waLinks();</script>
+<script>
+const APP='https://agenda-taxi.pages.dev/taxicel/';
+const FAST={aer:{t:'Aeropuerto Internacional de Campeche',lat:19.8166,lng:-90.5003},tren:{t:'Estación Tren Maya Campeche',lat:19.8257,lng:-90.4924},cen:{t:'Parque Principal, Centro, Campeche',lat:19.8466,lng:-90.5363},edz:{t:'Zona Arqueológica de Edzná',lat:19.5967,lng:-90.2297}};
+const SEL={o:null,d:null};
+function pon(k,p){SEL[k]=p;document.getElementById(k).value=p.t;document.getElementById('s'+k).hidden=true}
+let tm={};
+['o','d'].forEach(k=>{const i=document.getElementById(k),b=document.getElementById('s'+k);
+i.addEventListener('input',()=>{SEL[k]=null;clearTimeout(tm[k]);const q=i.value.trim();if(q.length<3){b.hidden=true;return}
+tm[k]=setTimeout(async()=>{try{const r=await fetch('https://photon.komoot.io/api/?q='+encodeURIComponent(q)+'&lat=19.845&lon=-90.523&limit=5&bbox=-92.6,17.7,-88.9,21.7');const j=await r.json();const F=(j.features||[]).map(f=>{const p=f.properties||{};return {t:[p.name,[p.street,p.housenumber].filter(Boolean).join(' '),p.district||p.locality,p.city].filter((x,n,a)=>x&&a.indexOf(x)==n).join(', '),lat:f.geometry.coordinates[1],lng:f.geometry.coordinates[0]}});
+if(i.value.trim()!=q)return;b.innerHTML='';F.forEach(x=>{const bt=document.createElement('button');bt.type='button';bt.textContent='📍 '+x.t;bt.onclick=()=>pon(k,x);b.appendChild(bt)});b.hidden=!F.length}catch(e){b.hidden=true}},350)});
+i.addEventListener('blur',()=>setTimeout(()=>b.hidden=true,250))});
+function txt(k){return (SEL[k]&&SEL[k].t)||document.getElementById(k).value.trim()}
+let PROG=0,PAS=1,VAN=0;function pas(d){PAS=Math.max(1,Math.min(14,PAS+d));document.getElementById('pasN').textContent=PAS;if(PAS>4&&!VAN)uni(1);if(PAS<=4&&VAN&&d<0)uni(0)}
+function uni(v){if(!v&&PAS>4)v=1;VAN=v;document.getElementById('uS').classList.toggle('on',!v);document.getElementById('uV').classList.toggle('on',!!v);if(v&&!PROG)cuando(1)}
+function cuando(v){PROG=v;document.getElementById('cuY').classList.toggle('on',!v);document.getElementById('cuP').classList.toggle('on',!!v);document.getElementById('prog').hidden=!v;const f=document.getElementById('fe');if(v&&!f.value){f.min=new Date().toISOString().slice(0,10);f.value=f.min}}
+function cuTxt(){if(!PROG)return L=='en'?'Now':'Ahora';const f=document.getElementById('fe').value,h=document.getElementById('ho').value,v=document.getElementById('vu').value.trim();return [f,h].filter(Boolean).join(' ')+(v?(L=='en'?' · flight/train ':' · vuelo/tren ')+v:'')}
+function cotizar(){const o=txt('o'),d=txt('d');if(!o||!d){alertar(L=='en'?'Type pick-up and destination':'Escribe origen y destino');return}
+const P=new URLSearchParams();P.set('ori',o);P.set('des',d);P.set('lang',L);P.set('per',PAS);if(VAN)P.set('van','1');if(PROG){const f=document.getElementById('fe').value,h=document.getElementById('ho').value,v=document.getElementById('vu').value.trim();if(!f||!h){const x=document.getElementById(f?'ho':'fe');x.focus();x.style.outline='2px solid #ff6b5b';return}P.set('fe',f);P.set('ho',h);if(v)P.set('nota',(L=='en'?'Flight/train ':'Vuelo/tren ')+v)}if(SEL.o)P.set('orim','https://maps.google.com/?q='+SEL.o.lat+','+SEL.o.lng);if(SEL.d)P.set('desm','https://maps.google.com/?q='+SEL.d.lat+','+SEL.d.lng);location.href=APP+'?'+P.toString()}
+function waCot(){const o=txt('o'),d=txt('d');location.href=waUrl(L=='en'?('Hello, I would like a taxi'+(o?' from '+o:'')+(d?' to '+d:'')+'. '+PAS+' passenger(s), '+(VAN?'van':'sedan')+'. When: '+cuTxt()):('Hola, quiero un taxi'+(o?' de '+o:'')+(d?' a '+d:'')+'. '+PAS+' pasajero(s), '+(VAN?'van':'sedán')+'. Cuándo: '+cuTxt()))}
+function alertar(m){const i=document.getElementById(txt('o')?'d':'o');i.focus();i.placeholder=m}
+(function(){const q=new URLSearchParams(location.search),m={aer:FAST.aer,tren:FAST.tren,cen:FAST.cen,edz:FAST.edz};if(m[q.get('o')])pon('o',m[q.get('o')]);if(m[q.get('d')])pon('d',m[q.get('d')]);const p=+q.get('per');if(p>1)pas(p-1)})();
+</script>
+</body>
+</html>
