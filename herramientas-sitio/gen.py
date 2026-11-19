@@ -6,7 +6,7 @@ def page(slug,title,desc,hi,crumb,body,faq,service):
          "offers":{"@type":"Offer","price":service['price'],"priceCurrency":"MXN"}},
         {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":q,"acceptedAnswer":{"@type":"Answer","text":a}} for q,a,_,_ in faq]}]
     fq='\n'.join(f'<details><summary data-en="{qe}">{q}</summary><p data-en="{ae}">{a}</p></details>' for q,a,qe,ae in faq)
-    more=[('tours','🗺️ Todos los tours','All tours','Compara paquetes','Compare packages'),('aeropuerto','✈️ Aeropuerto','Airport','Taxi y van','Taxi and van'),('tren-maya','🚆 Tren Maya','Tren Maya','Estación Campeche','Campeche station'),('edzna','🏛️ Edzná','Edzná','Tour con guía','Tour with guide'),('uxmal','🏛️ Uxmal','Uxmal','Tour de día completo','Full-day tour'),('bahia-de-tortugas','🏖️ Bahía de Tortugas','Bahía de Tortugas','Playa y mariscos','Beach and seafood'),('edzna-bahia-de-tortugas','🏛️🏖️ Edzná + Bahía de Tortugas','Edzná + Bahía de Tortugas','Ruinas y playa','Ruins and beach'),('','🚕 Todos los servicios','All services','Cotiza tu viaje','Get a price')]
+    more=[('tours','🗺️ Todos los tours','All tours','Compara paquetes','Compare packages'),('ironman','🏊🚴🏃 IRONMAN','IRONMAN','Traslados con bici','Transfers with bike'),('aeropuerto','✈️ Aeropuerto','Airport','Taxi y van','Taxi and van'),('tren-maya','🚆 Tren Maya','Tren Maya','Estación Campeche','Campeche station'),('edzna','🏛️ Edzná','Edzná','Tour con guía','Tour with guide'),('uxmal','🏛️ Uxmal','Uxmal','Tour de día completo','Full-day tour'),('bahia-de-tortugas','🏖️ Bahía de Tortugas','Bahía de Tortugas','Playa y mariscos','Beach and seafood'),('edzna-bahia-de-tortugas','🏛️🏖️ Edzná + Bahía de Tortugas','Edzná + Bahía de Tortugas','Ruinas y playa','Ruins and beach'),('','🚕 Todos los servicios','All services','Cotiza tu viaje','Get a price')]
     mh=''.join(f'<a href="../{m[0]}{"/" if m[0] else ""}"><span data-en="{m[2]}" style="color:var(--fg);font-weight:800;font-size:16px">{m[1]}</span><span data-en="{m[4]}">{m[3]}</span></a>' for m in more if m[0]!=slug)
     h=f'''<!doctype html>
 <html lang="es">
@@ -351,3 +351,49 @@ page('tours','Tours desde Campeche en taxi privado · Edzná, Uxmal, Bahía de T
  [('¿Los precios son por persona?','No, son por viaje en taxi sedán privado para hasta 4 personas.','Are prices per person?','No, they are per trip in a private sedan for up to 4 people.'),
   ('¿Están incluidas las entradas y la comida?','No. Las entradas se pagan en taquilla y la comida la paga cada quien.','Are entrance fees and meals included?','No. Entrance fees are paid at the ticket office and each person pays for their own meals.')],
  {'name':'Tours en taxi desde Campeche','price':'1800','wa':'Hola, quiero información de los tours.','waen':'Hello, I would like information about the tours.'})
+
+# ---------- IRONMAN
+IMJS='''<script>
+var IM={p:1,b:1};function imS(k,d){IM[k]=Math.max(k=='p'?1:0,Math.min(14,IM[k]+d));imT()}
+function imT(){var seats=IM.p+IM.b*2,ok=seats<=14,t=IM.p*200+IM.b*400,en=(typeof L!='undefined'&&L=='en');
+document.getElementById('imP').textContent=IM.p;document.getElementById('imB').textContent=IM.b;
+document.getElementById('imSeats').textContent=seats+'/14';document.getElementById('imSeats').style.color=ok?'':'#ff6b5b';
+document.getElementById('imTot').textContent='$'+t.toLocaleString('en-US');
+var m=en?('Hello, I would like the IRONMAN airport shuttle: '+IM.p+' person(s) and '+IM.b+' bike(s) ($'+t.toLocaleString('en-US')+').'):('Hola, quiero el traslado IRONMAN del aeropuerto: '+IM.p+' persona(s) y '+IM.b+' bici(s) ($'+t.toLocaleString('en-US')+').');
+document.querySelectorAll('.imb').forEach(function(a){a.dataset.msg=m;a.dataset.msgen=m});if(window.waLinks)waLinks()}
+window.addEventListener('load',imT);
+</script>'''
+page('ironman','IRONMAN 70.3 Campeche · Traslado del aeropuerto con bici | Taxicel',
+ 'Traslados para atletas del IRONMAN 70.3 Campeche: del aeropuerto a tu hotel en la ciudad, $200 por persona y $400 por bicicleta. Van privada $1,800. Reserva por WhatsApp 981 115 0093.',
+ 'van-aer',('IRONMAN','IRONMAN'),
+ ('''<span class="kick" data-en="IRONMAN 70.3 Campeche · date to be confirmed">IRONMAN 70.3 Campeche · fecha por confirmar</span>
+<h1 data-en="Your bike and you, <em>from the airport to your hotel</em>">Tú y tu bici, <em>del aeropuerto a tu hotel</em></h1>
+<p class="sub" data-en="Transfers for athletes from Campeche International Airport to the city, with room for your bike box. Shared shuttle or private van.">Traslados para atletas del Aeropuerto Internacional de Campeche a la ciudad, con espacio para tu caja de bici. Colectivo o van privada.</p>
+<div class="row"><a class="btn b1" href="#calc" data-en="Calculate my transfer">Calcular mi traslado</a></div>''',
+ '''<section id="calc"><div class="w"><div class="two">
+<div class="pk">
+<h2 style="font-size:26px" data-en="Shared shuttle">Colectivo</h2>
+<table>
+<tr><td data-en="🧍 Athletes and companions · $200 each">🧍 Atletas y acompañantes · $200 c/u</td><td><span style="display:inline-flex;gap:8px;align-items:center"><button type="button" class="lg" onclick="imS('p',-1)">−</button><b id="imP">1</b><button type="button" class="lg" onclick="imS('p',1)">+</button></span></td></tr>
+<tr><td data-en="🚴 Bikes · $400 each (a bike takes 2 seats)">🚴 Bicis · $400 c/u (cada bici ocupa 2 lugares)</td><td><span style="display:inline-flex;gap:8px;align-items:center"><button type="button" class="lg" onclick="imS('b',-1)">−</button><b id="imB">1</b><button type="button" class="lg" onclick="imS('b',1)">+</button></span></td></tr>
+<tr><td data-en="Seats used">Lugares ocupados</td><td><b id="imSeats">3/14</b></td></tr>
+<tr class="t"><td>Total</td><td><span id="imTot">$600</span> <small style="font-size:14px">MXN</small></td></tr>
+</table>
+<div class="mu" style="font-size:14px" data-en="From the airport to your hotel in Campeche city. Van for up to 14 seats.">Del aeropuerto a tu hotel en la ciudad de Campeche. Van de hasta 14 lugares.</div>
+<a class="btn b1 wal imb" href="#" data-msg="Hola, quiero el traslado IRONMAN del aeropuerto." data-msgen="Hello, I would like the IRONMAN airport shuttle." data-en="Book on WhatsApp">Reservar por WhatsApp</a>
+</div>
+<div style="display:grid;gap:14px">
+<div class="pk" style="border-color:var(--line)">
+<h2 style="font-size:24px" data-en="🚐 Private van">🚐 Van privada</h2>
+<div class="price">$1,800 <small>MXN</small></div>
+<div class="mu" style="font-size:14px" data-en="The whole van for your team or family, from the airport to your hotel.">Toda la van para tu equipo o tu familia, del aeropuerto a tu hotel.</div>
+<a class="btn b3 wal" href="#" data-msg="Hola, quiero la van privada para el IRONMAN ($1,800)." data-msgen="Hello, I would like the private van for the IRONMAN ($1,800)." data-en="Book private van">Reservar van privada</a>
+</div>
+<div class="ph2"><img src="../img/van-aer.webp" alt="Van de 14 pasajeros en el Aeropuerto de Campeche" loading="lazy" style="object-position:center 40%"></div>
+</div>
+</div></div></section>
+'''+INC+IMJS),
+ [('¿Cuánto cuesta el traslado del aeropuerto para el IRONMAN?','En colectivo, $200 por persona y $400 por bicicleta. Van privada: $1,800.','How much is the airport transfer for the IRONMAN?','Shared shuttle: $200 per person and $400 per bike. Private van: $1,800.'),
+  ('¿Por qué la bici cuesta más?','Porque la caja de la bici ocupa 2 lugares de la van.','Why does the bike cost more?','Because a bike box takes 2 seats in the van.'),
+  ('¿Cuándo es el IRONMAN 70.3 Campeche?','La fecha está por confirmar. Escríbenos y te avisamos.','When is IRONMAN 70.3 Campeche?','The date is to be confirmed. Message us and we will let you know.')],
+ {'name':'Traslado aeropuerto IRONMAN Campeche','price':'200','wa':'Hola, quiero el traslado IRONMAN del aeropuerto.','waen':'Hello, I would like the IRONMAN airport shuttle.'})
