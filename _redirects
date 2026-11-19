@@ -1,3 +1,5 @@
+/sitio https://taxicelcampeche.com/ 301
+/sitio/* https://taxicelcampeche.com/:splat 301
 /sumpool /sumpool/ 301
 /sumpool/* /index.html 200
 /platinum /platinum/ 301
