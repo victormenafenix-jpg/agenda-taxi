@@ -99,15 +99,16 @@ function rutaDe(u: string): { t: string; lat?: number; lng?: number }[] | null {
   for (const p of P) if (p.lat == null && p.t && j < C.length) { p.lat = C[j].lat; p.lng = C[j].lng; j++; }
   return P.length >= 2 ? P : null;
 }
+const VISTOS: string[] = [];
 async function abrirMapsFull(url: string): Promise<{ c: { lat: number; lng: number } | null; url: string }> {
-  let u = String(url || "").trim();
+  let u = String(url || "").trim();VISTOS.length = 0;
   if (!/^https?:\/\//.test(u)) return { c: null, url: u };
   let c = rutaDe(u) ? null : coordsDe(u);
   for (let i = 0; i < 6; i++) {
     if (c || rutaDe(u)) break;
     let r: Response;
     try { r = await fetch(u, { redirect: "manual", headers: { "User-Agent": "Mozilla/5.0" } }); } catch { break; }
-    const loc = r.headers.get("location");
+    const loc = r.headers.get("location");VISTOS.push(r.status + " " + u.slice(0, 300));
     if (loc) { u = new URL(loc, u).toString(); if (!rutaDe(u)) c = coordsDe(u); continue; }
     const html = await r.text().catch(() => "");
     const meta = html.match(/content="0;\s*url=([^"]+)"/i) || html.match(/https:\/\/www\.google\.[a-z.]+\/maps\/[^"'\s]+/);
@@ -528,7 +529,7 @@ Deno.serve(async (req) => {
       const a = ru[0], b = ru[ru.length - 1];
       return json({ ok: a.lat != null || b.lat != null, ruta: { o: a, d: b, paradas: ru.slice(1, -1) }, ...(a.lat != null ? { lat: a.lat, lng: a.lng } : {}) });
     }
-    return json(r.c ? { ok: true, ...r.c } : { ok: false, ...(cron ? { final: r.url } : {}) });
+    return json(r.c ? { ok: true, ...r.c } : { ok: false, ...(cron ? { final: r.url, vistos: VISTOS } : {}) });
   }
   if (!(await firmaOk(req, raw))) return new Response("firma", { status: 401 });
   try {
