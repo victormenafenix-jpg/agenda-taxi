@@ -528,7 +528,7 @@ Deno.serve(async (req) => {
       const a = ru[0], b = ru[ru.length - 1];
       return json({ ok: a.lat != null || b.lat != null, ruta: { o: a, d: b, paradas: ru.slice(1, -1) }, ...(a.lat != null ? { lat: a.lat, lng: a.lng } : {}) });
     }
-    return json(r.c ? { ok: true, ...r.c } : { ok: false });
+    return json(r.c ? { ok: true, ...r.c } : { ok: false, ...(cron ? { final: r.url } : {}) });
   }
   if (!(await firmaOk(req, raw))) return new Response("firma", { status: 401 });
   try {
