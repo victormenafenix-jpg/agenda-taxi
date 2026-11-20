@@ -122,7 +122,7 @@ page('aeropuerto','Taxi Aeropuerto de Campeche · desde $300 · 24 horas | Taxic
 # ---------- TREN MAYA
 page('tren-maya','Taxi Estación Tren Maya Campeche · $300 | Taxicel',
  'Taxi a la estación del Tren Maya en Campeche o de la estación a tu hotel: $300 en sedán hasta 4 personas. Van para grupos. Te esperamos si el tren se retrasa. 24 horas. WhatsApp 981 115 0093.',
- 'tren',('Tren Maya','Tren Maya'),
+ 'tren-857',('Tren Maya','Tren Maya'),
  ('''<span class="kick" data-en="Tren Maya · Campeche station">Tren Maya · Estación Campeche</span>
 <h1 data-en="Taxi to the Tren Maya, <em>$300</em>">Taxi al Tren Maya, <em>$300</em></h1>
 <p class="sub" data-en="We take you to the Campeche station or pick you up when you get off the train and take you to your hotel. Sedan up to 4 people, van for groups. We wait if the train is late.">Te llevamos a la estación de Campeche o te recogemos al bajar del tren y te llevamos a tu hotel. Sedán hasta 4 personas, van para grupos. Te esperamos si el tren se retrasa.</p>
@@ -132,7 +132,7 @@ page('tren-maya','Taxi Estación Tren Maya Campeche · $300 | Taxicel',
 <a class="btn b2 wal" href="#" data-msg="Hola, quiero reservar un taxi para el Tren Maya." data-msgen="Hello, I would like to book a taxi for the Tren Maya." data-en="💬 WhatsApp">💬 WhatsApp</a>
 </div>''',
  '''<section><div class="w"><div class="two">
-<div class="ph2 rot"><img src="../img/tren-llega.webp" alt="Tren Maya llegando a la estación Campeche" loading="lazy" width="1200" height="744"><img src="../img/tren857.webp" alt="Taxi Taxicel en la estación del Tren Maya Campeche" loading="lazy" width="1200" height="559"><img src="../img/tren.webp" alt="Taxis Taxicel en la estación del Tren Maya" loading="lazy" width="1200" height="605"></div>
+<div class="ph2 rot"><img src="../img/tren-letrero.webp" alt="Entrada de la Estación San Francisco de Campeche del Tren Maya" loading="lazy"><img src="../img/tren-llega.webp" alt="Tren Maya llegando a la estación Campeche" loading="lazy" width="1200" height="744"><img src="../img/tren857.webp" alt="Taxi Taxicel en la estación del Tren Maya Campeche" loading="lazy" width="1200" height="559"><img src="../img/tren.webp" alt="Taxis Taxicel en la estación del Tren Maya" loading="lazy" width="1200" height="605"></div>
 <div>
 <h2 data-en="Prices">Precios</h2>
 <div class="opt"><b data-en="🚕 Sedan up to 4 people · $300 MXN">🚕 Sedán hasta 4 personas · $300 MXN</b><span style="color:var(--mu);font-size:14px" data-en="Between the station and the city, with luggage.">Entre la estación y la ciudad, con equipaje.</span></div>
