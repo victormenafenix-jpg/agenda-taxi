@@ -207,15 +207,15 @@ Deno.serve(async (req) => {
         if (!subs || !subs.length) return json({ enviados: 0 });
         webpush.setVapidDetails(Deno.env.get("VAPID_SUBJECT")!, Deno.env.get("VAPID_PUBLIC")!, Deno.env.get("VAPID_PRIVATE")!);
         const T: Record<string, Record<string, [string, string]>> = {
-          es: { llego: ["🚖 ¡Tu taxi ya llegó!", "Te está esperando afuera"], en_camino: ["🚕 Tu taxi va en camino", "Abre para ver dónde viene"] },
-          en: { llego: ["🚖 Your taxi is here!", "It is waiting for you outside"], en_camino: ["🚕 Your taxi is on its way", "Open to see where it is"] },
+          es: { llego: ["🚖 ¡Tu taxi ya llegó!", "Te está esperando afuera"], en_camino: ["🚕 Tu taxi va en camino", "Abre para ver dónde viene"], cerca: ["📍 Tu taxi está llegando", "Está a menos de 250 m. Prepárate para salir"], espera: ["⏱️ Tu taxi te está esperando", "Ya pasó la tolerancia: a partir de ahora puede cobrarse tiempo de espera"] },
+          en: { llego: ["🚖 Your taxi is here!", "It is waiting for you outside"], en_camino: ["🚕 Your taxi is on its way", "Open to see where it is"], cerca: ["📍 Your taxi is almost there", "It is less than 250 m away. Get ready"], espera: ["⏱️ Your taxi is waiting for you", "The free waiting time is over: waiting time may now be charged"] },
         };
         let n = 0;
         for (const s of subs) {
-          const t = (T[s.idioma || "es"] || T.en)[sv.estado] || T.es.llego;
+          const ev = cuerpo.estado || sv.estado, t = (T[s.idioma || "es"] || T.en)[ev] || T.es.llego;
           const tx = sv.tomado_taxi ? " · " + sv.tomado_taxi : "";
           try {
-            await mandarUno(s, JSON.stringify({ title: t[0], body: t[1] + tx, tag: "viaje", expres: sv.estado === "llego", url: "/?s=" + encodeURIComponent(sv.token) }));
+            await mandarUno(s, JSON.stringify({ title: t[0], body: t[1] + tx, tag: "viaje", expres: ev === "llego" || ev === "cerca", url: "/?s=" + encodeURIComponent(sv.token) }));
             n++;
           } catch (e) {
             const sc = (e as { statusCode?: number }).statusCode;
