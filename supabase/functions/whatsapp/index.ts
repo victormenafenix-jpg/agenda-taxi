@@ -79,15 +79,31 @@ function coordsDe(u: string): { lat: number; lng: number } | null {
   const m = s.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || s.match(/[?&](?:q|query|ll|destination)=(-?\d+\.\d+),\s*(-?\d+\.\d+)/) || s.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || s.match(/\/search\/(-?\d+\.\d+),\s*\+?(-?\d+\.\d+)/);
   return m ? { lat: +m[1], lng: +m[2] } : null;
 }
+// "geocode" de Google: protobuf en base64 con latitud (campo 2) y longitud (campo 3) x 1e6
+function geoDec(x: string): { lat: number; lng: number } | null {
+  try {
+    const b = Uint8Array.from(atob(x.replace(/-/g, "+").replace(/_/g, "/")), (ch) => ch.charCodeAt(0));
+    if (b[0] !== 0x15 || b[5] !== 0x1d) return null;
+    const dv = new DataView(b.buffer);
+    const lat = dv.getInt32(1, true) / 1e6, lng = dv.getInt32(6, true) / 1e6;
+    return Math.abs(lat) <= 90 && Math.abs(lng) <= 180 ? { lat, lng } : null;
+  } catch { return null; }
+}
 // Link de ruta (/maps/dir/A/B/...): saca los puntos en orden, con nombre y coordenadas cuando vienen
 function rutaDe(u: string): { t: string; lat?: number; lng?: number }[] | null {
   let s = u;
   try { s = decodeURIComponent(u.replace(/\+/g, " ")); } catch { /* */ }
   const m = s.match(/\/maps\/dir\/([^@?]*)/);
   if (!m) {
-    const q = s.match(/[?&]saddr=([^&]+)&(?:.*&)?daddr=([^&]+)/);
-    if (!q) return null;
-    return [q[1], q[2]].map((t) => { const c = t.match(/^(-?\d+\.\d+),\s*(-?\d+\.\d+)$/); return c ? { t: "", lat: +c[1], lng: +c[2] } : { t }; });
+    // formato ?saddr=A&daddr=B (y a veces &geocode=<punto A>;<punto B> con coordenadas codificadas)
+    let qs: URLSearchParams;
+    try { qs = new URL(u).searchParams; } catch { return null; }
+    const sa = qs.get("saddr"), da = qs.get("daddr");
+    if (!sa || !da) return null;
+    const P = [sa, da].map((t) => { const c = t.match(/^(-?\d+\.\d+),\s*(-?\d+\.\d+)$/); return c ? { t: "", lat: +c[1], lng: +c[2] } : { t } as { t: string; lat?: number; lng?: number }; });
+    const G = (qs.get("geocode") ?? "").split(";").map(geoDec);
+    P.forEach((p, i) => { if (p.lat == null && G[i]) { p.lat = G[i]!.lat; p.lng = G[i]!.lng; } });
+    return P;
   }
   const P = m[1].split("/").map((x) => x.trim()).filter(Boolean).map((t) => {
     const c = t.match(/^(-?\d+\.\d+),\s*(-?\d+\.\d+)$/);
