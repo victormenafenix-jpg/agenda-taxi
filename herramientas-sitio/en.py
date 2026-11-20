@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 os.chdir(sys.argv[1])
 D='https://taxicelcampeche.com'
-M={'':'','aeropuerto':'airport','tren-maya':'tren-maya','edzna':'edzna','uxmal':'uxmal','bahia-de-tortugas':'bahia-de-tortugas','edzna-bahia-de-tortugas':'edzna-bahia-de-tortugas','tours':'tours','ironman':'ironman'}
+M={'':'','aeropuerto':'airport','tren-maya':'tren-maya','edzna':'edzna','uxmal':'uxmal','bahia-de-tortugas':'bahia-de-tortugas','edzna-bahia-de-tortugas':'edzna-bahia-de-tortugas','tours':'tours','ironman':'ironman','santuario':'sanctuary'}
 T={'':('Taxi in Campeche 24/7 · Airport & Tren Maya transfers | Taxicel','Private taxi in Campeche, Mexico, 24 hours: airport and Tren Maya station transfers, Edzná and Uxmal tours. Fixed prices, card payment and invoice. WhatsApp +52 981 115 0093.'),
 'aeropuerto':('Campeche Airport Taxi · from $300 MXN · 24 hours | Taxicel','Taxi from Campeche International Airport to your hotel, from $300 MXN in a sedan for up to 4 people. Private van for up to 14 people $1,500. We wait if your flight is late. WhatsApp +52 981 115 0093.'),
 'tren-maya':('Tren Maya Campeche Station Taxi · $300 MXN | Taxicel','Taxi between the Tren Maya Campeche station and your hotel: $300 MXN in a sedan for up to 4 people. Van for groups. We wait if the train is late. 24 hours. WhatsApp +52 981 115 0093.'),
@@ -12,6 +12,7 @@ T={'':('Taxi in Campeche 24/7 · Airport & Tren Maya transfers | Taxicel','Priva
 'bahia-de-tortugas':('Bahía de Tortugas Beach Day from Campeche · $4,000 MXN | Taxicel','Private taxi from Campeche to Bahía de Tortugas beach club near Champotón: up to 6 hours of waiting and ride back, tolls included, $4,000 MXN for up to 4 people. WhatsApp +52 981 115 0093.'),
 'edzna-bahia-de-tortugas':('Edzná + Bahía de Tortugas Tour from Campeche · $5,400 MXN | Taxicel','Private full-day tour from Campeche: Edzná ruins in the morning and Bahía de Tortugas beach in the afternoon. $5,400 MXN up to 4 people, tolls and water included. Guide +$800. WhatsApp +52 981 115 0093.'),
 'ironman':('IRONMAN 70.3 Campeche · Airport Transfer with Bike | Taxicel','Transfers for IRONMAN 70.3 Campeche athletes from the airport to your hotel: $200 MXN per person and $400 MXN per bike. Private van $1,800 MXN. Book on WhatsApp +52 981 115 0093.'),
+'santuario':('Taxi to the Sanctuary of the Immaculate Heart of Mary, Uayamón · from $450 MXN | Taxicel','Taxi from Campeche to the Sanctuary of the Immaculate Heart of Mary in Uayamón: from downtown $450 MXN, from the Tren Maya station $600. Round trip with up to 2 h 45 min waiting $1,100. Mass times. WhatsApp +52 981 115 0093.'),
 'tours':('Private Taxi Tours from Campeche · Edzná, Uxmal, Bahía de Tortugas | Taxicel','Private taxi tours from Campeche, Mexico: Edzná, Uxmal, Bahía de Tortugas and Edzná + Bahía de Tortugas. Fixed prices for up to 4 people, hotel pick-up. WhatsApp +52 981 115 0093.')}
 def es_url(s): return '/'+(s+'/' if s else '')
 def en_url(s): return '/en/'+(M[s]+'/' if s else '')
