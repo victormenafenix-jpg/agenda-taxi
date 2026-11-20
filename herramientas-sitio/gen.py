@@ -75,6 +75,9 @@ INC='''<section><div class="w">
 <div>🕐<b data-en="24 hours">24 horas</b><span data-en="Early flights and late trains too.">También vuelos temprano y trenes de noche.</span></div>
 </div></div></section>'''
 
+
+PAGO='''<section style="padding-top:0"><div class="w"><div class="opt" style="display:block;border-color:#f2b705"><b data-en="💳 Card or transfer: pay when you board">💳 Tarjeta o transferencia: se paga al abordar</b><div class="mu" style="font-size:14px" data-en="On the road and at the sites there is often little or no phone signal, so card and transfer payments are made when you get in the taxi, before leaving. Cash can be paid at the end.">En la carretera y en las zonas que visitamos muchas veces hay poca o nada de señal, por eso el pago con tarjeta o transferencia se hace al subir al taxi, antes de salir. En efectivo puedes pagar al final.</div></div></div></section>
+'''
 # ---------- AEROPUERTO
 page('aeropuerto','Taxi Aeropuerto de Campeche · desde $300 · 24 horas | Taxicel',
  'Taxi del Aeropuerto Internacional de Campeche a tu hotel o colonia, desde $300 en sedán hasta 4 personas. Van privada hasta 14 personas $1,500. Te esperamos si tu vuelo se retrasa. WhatsApp 981 115 0093.',
@@ -207,7 +210,7 @@ page('edzna','Tour a Edzná desde Campeche con guía · $2,500 hasta 4 personas 
 <div><b data-en="3. Visit Edzná">3. Conoces Edzná</b><span data-en="With your guide if you chose the package. We wait up to 2 hours.">Con tu guía si elegiste el paquete. Te esperamos hasta 2 horas.</span></div>
 <div><b data-en="4. Back to Campeche">4. De regreso</b><span data-en="We take you back to your hotel.">Te regresamos a tu hotel.</span></div>
 </div></div></section>
-'''+INC),
+'''+PAGO+INC),
  [('¿Cuánto cuesta ir a Edzná desde Campeche?','Solo taxi: $1,800 MXN ida y regreso con hasta 2 horas de espera, hasta 4 personas. Con guía: $2,500 MXN en total.','How much is a trip to Edzná from Campeche?','Taxi only: $1,800 MXN round trip with up to 2 hours of waiting, up to 4 people. With guide: $2,500 MXN in total.'),
   ('¿Qué incluye el paquete con guía?','El taxi de ida, la espera de hasta 2 horas, el regreso y un guía de Campeche para hasta 4 personas.','What does the package with guide include?','The taxi there, up to 2 hours of waiting, the ride back and a Campeche guide for up to 4 people.'),
   ('¿Están incluidas las entradas?','No. Las entradas a la zona arqueológica se pagan en taquilla.','Are entrance fees included?','No. Entrance fees to the archaeological site are paid at the ticket office.'),
@@ -264,7 +267,7 @@ page('uxmal','Tour a Uxmal desde Campeche en taxi · desde $4,000 hasta 4 person
 <div class="ph2" style="aspect-ratio:3/4"><img src="../img/ux-artesano2.webp" alt="Visitantes conociendo las tallas de Don Carlos Cancino" loading="lazy" style="object-position:60% center"></div>
 <div class="ph2" style="aspect-ratio:3/4"><img src="../img/ux-huipiles.webp" alt="Huipiles bordados a mano en Uxmal" loading="lazy"></div>
 </div></div></section>
-'''+INC+UXJS),
+'''+PAGO+INC+UXJS),
  [('¿Cuánto cuesta ir a Uxmal desde Campeche en taxi?','$4,000 MXN en taxi sedán privado para hasta 4 personas: ida, hasta 2 horas de espera en Uxmal y regreso. Museo del Chocolate +$400 y parada para comer +$400.','How much is a taxi tour to Uxmal from Campeche?','$4,000 MXN in a private sedan for up to 4 people: ride there, up to 2 hours of waiting at Uxmal and ride back. Chocolate Museum +$400 and lunch stop +$400.'),
   ('¿Cuánto dura el tour?','Unas 6 horas solo Uxmal. Cada opción extra agrega hasta 1 hora 20 minutos.','How long is the tour?','About 6 hours for Uxmal only. Each extra option adds up to 1 hour 20 minutes.'),
   ('¿Están incluidas las entradas y la comida?','No. Las entradas se pagan en taquilla y la comida la paga cada quien.','Are entrance fees and lunch included?','No. Entrance fees are paid at the ticket office and each person pays for their own meal.'),
@@ -303,7 +306,7 @@ page('bahia-de-tortugas','Bahía de Tortugas desde Campeche en taxi · $4,000 ha
 <div><b data-en="Back to Campeche · about 1 h 30">Regreso a Campeche · 1 h 30 aprox.</b><span data-en="We drop you at your hotel.">Te dejamos en tu hotel.</span></div>
 </div></div>
 </div></div></section>
-'''+INC),
+'''+PAGO+INC),
  [('¿Cuánto cuesta ir a Bahía de Tortugas desde Campeche en taxi?','$4,000 MXN en taxi sedán privado para hasta 4 personas: ida, hasta 6 horas de espera y regreso, con casetas incluidas.','How much is a taxi to Bahía de Tortugas from Campeche?','$4,000 MXN in a private sedan for up to 4 people: ride there, up to 6 hours of waiting and ride back, tolls included.'),
   ('¿Por qué incluye la espera?','Porque desde el club de playa no hay transporte de regreso a Campeche. Te esperamos y te regresamos.','Why is waiting included?','Because there is no transport back to Campeche from the beach club. We wait for you and bring you back.'),
   ('¿Y si queremos quedarnos más tiempo?','Cada 15 minutos adicionales después de las 6 horas cuestan $100.','What if we want to stay longer?','Each additional 15 minutes after the 6 hours costs $100.'),
@@ -348,7 +351,7 @@ page('edzna-bahia-de-tortugas','Tour Edzná y Bahía de Tortugas desde Campeche 
 <div><b data-en="4:00 pm · Back to Campeche">4:00 pm · Regreso a Campeche</b><span data-en="Arrival at your hotel around 5:30 pm.">Llegada a tu hotel alrededor de las 5:30 pm.</span></div>
 </div></div>
 </div></div></section>
-'''+INC+EBJS),
+'''+PAGO+INC+EBJS),
  [('¿Cuánto cuesta el tour a Edzná y Bahía de Tortugas desde Campeche?','$5,400 MXN en taxi sedán privado para hasta 4 personas, con casetas y agua incluidas. Con guía en Edzná: $6,200.','How much is the Edzná and Bahía de Tortugas tour from Campeche?','$5,400 MXN in a private sedan for up to 4 people, tolls and water included. With a guide at Edzná: $6,200.'),
   ('¿A qué hora salimos?','A las 7:00 am, para llegar a Edzná cuando abre y evitar el calor. Regresamos a Campeche alrededor de las 5:30 pm.','What time do we leave?','At 7:00 am, to reach Edzná when it opens and avoid the heat. We are back in Campeche around 5:30 pm.'),
   ('¿Están incluidas las entradas y la comida?','No. La entrada a Edzná se paga en taquilla; Bahía de Tortugas no cobra entrada y cada quien paga lo que consume.','Are entrance fees and meals included?','No. Edzná entrance is paid at the ticket office; Bahía de Tortugas has no entrance fee and you pay for what you eat.'),
