@@ -2,10 +2,11 @@
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#5b2c83">
-<script>window.__E=[];window.addEventListener('error',function(e){__E.push((e.message||'error')+' @'+String(e.filename||'').split('/').pop()+':'+(e.lineno||''))});window.addEventListener('unhandledrejection',function(e){__E.push('promesa: '+((e.reason&&e.reason.message)||e.reason))});
+<script>
+const AERX=/aeropuerto|airport|acu[ñn]a\s*ongay/i;window.__E=[];window.addEventListener('error',function(e){__E.push((e.message||'error')+' @'+String(e.filename||'').split('/').pop()+':'+(e.lineno||''))});window.addEventListener('unhandledrejection',function(e){__E.push('promesa: '+((e.reason&&e.reason.message)||e.reason))});
 setTimeout(function(){var d=document.getElementById('app');if(d&&!d.innerHTML.trim()){d.innerHTML='<div style="padding:16px;font-family:sans-serif"><b>⏳ Está tardando en cargar.</b><br>Puede ser la señal de internet. Toca Recargar. Si sigue igual, toma captura y mándala:<pre style="white-space:pre-wrap;color:#c00;font-size:13px">'+(__E.join('\n')||'(sin error)')+'\n'+location.href+'\n'+navigator.userAgent+'</pre><button onclick="location.reload(true)" style="font-size:18px;padding:10px 16px">🔄 Recargar</button></div>'}},15000)</script>
 <script>/* 🔄 Versión: si hay una agenda nueva publicada, se recarga sola (la app de Android y los celulares no se quedan con la vieja) */
-window.APPV='200';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
+window.APPV='201';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
 const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.value)return;if(window.S&&(S.form||S.ext||S.asg))return;
 let k;try{k=sessionStorage.getItem('recargaV')}catch(e){}if(k===j.v)return;try{sessionStorage.setItem('recargaV',j.v)}catch(e){}location.reload()}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,600000);setTimeout(chk,4000)})();</script>
@@ -1007,7 +1008,7 @@ const fijaKm=(t,k)=>t&&+t.km_incluye>0&&+k>+t.km_incluye?Math.ceil(+k-+t.km_incl
 function usarFija(id){const t=S.T.find(x=>x.id==id);$('tar').value=id;aplT();if(t)$('costo').value=fijaP(t,+$('km').value||0);rsm();sug()}
 /* precio de un tramo extra: tarifa fija (aeropuerto, Tren Maya), foráneo o ciudad */
 function precioTramo(txt,maps,k){const t=String(txt||'').toLowerCase(),T=S.T||[];let f=null;
-if(/aeropuerto/.test(t))f=T.find(x=>/aeropuerto/i.test(x.nombre));else if(/tren maya|estaci[oó]n.*tren/.test(t))f=T.find(x=>/tren maya/i.test(x.nombre));
+if(AERX.test(t))f=T.find(x=>/aeropuerto/i.test(x.nombre));else if(/tren maya|estaci[oó]n.*tren/.test(t))f=T.find(x=>/tren maya/i.test(x.nombre));
 if(f&&+f.precio)return {p:fijaP(f,k),l:'tarifa fija '+f.nombre+fijaL(f,k)};
 if(fueraCd(maps))return {p:tarifa(k,false,true),l:'🛣️ foráneo $'+(+((S.g||{}).foraneo_km)||16)+' por km'};
 return {p:tarifa(k,false,false),l:''}}
@@ -3141,7 +3142,7 @@ set('ubic',[d.origen,d.origen_ref].filter(Boolean).join(' · '));set('ubic_maps'
 if(d.personas)set('personas',d.personas);if(d.maletas)set('maletas',d.maletas);
 if(d.factura&&$('factura')){$('factura').checked=true;if($('fx'))$('fx').hidden=false}
 if(d.pago&&$('pago')){const m={Efectivo:'Efectivo',Tarjeta:'Tarjeta débito',Transferencia:'Transferencia'}[d.pago];if(m){$('pago').value=m;if(typeof pagoCh=='function')pagoCh()}}
-if(d.aeropuerto&&$('aeropuerto')&&/aeropuerto/i.test(d.origen||''))$('aeropuerto').checked=true;if((d.aeropuerto||d.tren_maya)&&$('especial'))$('especial').checked=true;
+if(d.aeropuerto&&$('aeropuerto')&&AERX.test(d.origen||''))$('aeropuerto').checked=true;if((d.aeropuerto||d.tren_maya)&&$('especial'))$('especial').checked=true;
 if(d.ahora)setTipo(1,1);else if(d.fecha||d.hora){setTipo(0,1);if(d.fecha)set('fecha',d.fecha);if(d.hora){const [h,m]=d.hora.split(':');hPon('h_t',+h,+m)}}
 if(d.origen&&!d.origen_maps&&typeof acBuscar=='function')acBuscar('ubic');if(d.destino&&!d.destino_maps&&typeof acBuscar=='function')acBuscar('destino');
 (async()=>{const o=await waUbicar('ubic',d.origen_maps,d.origen_ref),de=await waUbicar('destino',d.destino_maps,null);
@@ -3315,7 +3316,7 @@ if(T.length)h+=`<details class="c" style="margin-top:10px"><summary style="curso
 return h}
 function cerrarBq(){S.bq='';S.BR=null;cargar()}
 // ⚠️ Varios servicios a la misma hora y al mismo lugar (aeropuerto, Tren Maya, ADO…)
-function lugarK(t){t=String(t||'').toLowerCase();return /aeropuerto|airport/.test(t)?'✈️ Aeropuerto':/tren maya|estaci[oó]n.*tren/.test(t)?'🚆 Tren Maya':/(^|[^a-z])ado([^a-z]|$)/.test(t)?'🚌 ADO':''}
+function lugarK(t){t=String(t||'').toLowerCase();return AERX.test(t)?'✈️ Aeropuerto':/tren maya|estaci[oó]n.*tren/.test(t)?'🚆 Tren Maya':/(^|[^a-z])ado([^a-z]|$)/.test(t)?'🚌 ADO':''}
 function choques(A){const P=A.filter(x=>!x.expres&&x.hora),G={};P.forEach(x=>{const k=lugarK(x.destino)||lugarK(x.ubic);if(k)(G[k]=G[k]||[]).push(x)});const out=[];
 Object.entries(G).forEach(([k,L])=>{L.sort((a,b)=>mn(a.hora)-mn(b.hora));for(let i=0;i<L.length;i++){const g=L.filter(y=>mn(y.hora)>=mn(L[i].hora)&&mn(y.hora)-mn(L[i].hora)<=30);if(g.length>=2){out.push(`<div class="c" style="border:2px solid #c0392b;margin:6px 0"><b>⚠️ ${g.length} servicios ${k} entre ${h12(hm(g[0].hora))} y ${h12(hm(g[g.length-1].hora))}</b><div class="mu">${g.map(y=>'T-'+String(y.folio||0).padStart(4,'0')+(y.tomado_taxi?' · 🚕 '+esc(y.tomado_taxi):' · 🟡 sin taxi')).join(' · ')}. Un mismo taxi no alcanza a cubrirlos todos: busca ${g.length-1} taxi(s) más.</div></div>`);i+=g.length-1}}});return out.join('')}
 // 📍 Exprés disponibles: el más cercano al taxista hasta arriba (los programados siguen por hora)
@@ -3442,7 +3443,7 @@ const cur=S.form.ntaxM?nTaxis():n;b.innerHTML=`<div class="c" style="margin:6px 
 <div class="r" style="margin-top:6px;align-items:center"><span>Caben</span><select style="width:auto" onchange="S.form.cap=+this.value;S.form.ntaxM=0;taxisBox();sug()">${[[4,'4 (taxi)'],[6,'6'],[7,'7 (camioneta)'],[14,'14 (van)']].map(x=>`<option value="${x[0]}"${x[0]==cp?' selected':''}>${x[1]}</option>`).join('')}</select><span>por unidad</span></div>
 <div class="r" style="margin-top:6px;align-items:center;flex-wrap:nowrap"><span>Subir</span><input id="ntax" type="number" min="1" max="60" inputmode="numeric" value="${cur}" style="width:80px" oninput="S.form.ntaxM=1"><span>servicio(s) ligados, uno por unidad</span></div>
 ${cur>20?'<div class="mu" style="color:var(--rd);margin-top:4px">Son muchas unidades. Si te piden camión o autobús, mejor cotízalo aparte.</div>':''}${cur!=n?`<div class="mu" style="margin-top:4px">💡 Con ${cur} unidad(es) caben ${cur*cp} personas.</div>`:''}</div>`}
-function arrTipo(){const t=(($('ubic')||{}).value||'').toLowerCase();return /aeropuerto/.test(t)?'avion':(/tren maya|estaci[oó]n.*tren|tren.*estaci[oó]n/.test(t)?'tren':'')}
+function arrTipo(){const t=(($('ubic')||{}).value||'').toLowerCase();return AERX.test(t)?'avion':(/tren maya|estaci[oó]n.*tren|tren.*estaci[oó]n/.test(t)?'tren':'')}
 function arrSync(){const b=$('arr_box');if(!b)return;const t=arrTipo();b.hidden=!t;$('arr_av').hidden=t!='avion';$('arr_tr').hidden=t!='tren'}
 function arrHora(){const h=$('arr_h').value;if(!h)return;const t=arrTipo(),mg=t=='avion'?20:10,[a,b]=h.split(':').map(Number),d=new Date(2000,0,1,a,b+mg);
 if($('expres').checked)setTipo(0,1);const H=d.getHours();hPon('h_t',H,d.getMinutes());
@@ -3489,7 +3490,7 @@ if($('personas'))$('personas').value=p;if($('costo'))$('costo').value=tot;S.auto
 if($('nota'))$('nota').value='🚴 Van Colectiva IRONMAN · '+p+' pers + '+b+' bici = '+esp+' esp · $'+pxEsp+'/esp';
 if($('aeropuerto')){$('aeropuerto').checked=true;S.aerAuto=true}
 tarVis();rsm();toast('🚴 IRONMAN pre-llenado · $'+tot.toLocaleString('es-MX')+' · llena el destino y los datos del cliente')}
-function aerSync(){const a=$('aeropuerto');if(!a||!$('ubic')||!$('destino'))return;const m=/aeropuerto/i.test($('ubic').value);if(m){if(!a.checked)S.aerAuto=true;a.checked=true}else if(S.aerAuto){a.checked=false;S.aerAuto=false}}
+function aerSync(){const a=$('aeropuerto');if(!a||!$('ubic')||!$('destino'))return;const m=AERX.test($('ubic').value);if(m){if(!a.checked)S.aerAuto=true;a.checked=true}else if(S.aerAuto){a.checked=false;S.aerAuto=false}}
 function ironForm(){const ir=(S.TSC&&S.TSC.ironman)||{};const aer=(S.g&&S.g.aer_ubic)||'Aeropuerto Internacional de Campeche, Campeche';const aerM=(S.g&&S.g.aer_maps)||'';const pxEsp=+(ir.precio_esp||150);
 // Abrir modal para capturar personas y bicicletas
 const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
@@ -3512,7 +3513,7 @@ if($('personas'))$('personas').value=p;if($('costo'))$('costo').value=tot;S.auto
 if($('nota'))$('nota').value='🚴 Van Colectiva IRONMAN · '+p+' pers + '+b+' bici = '+esp+' esp · $'+pxEsp+'/esp';
 $('aeropuerto')&&($('aeropuerto').checked=true,S.aerAuto=true);
 tarVis();rsm();toast('🚴 Ironman pre-llenado · $'+tot.toLocaleString('es-MX')+' · llena destino y datos del cliente');}
-function tarVis(){const w=$('tar_wrap');if(!w)return;const x=(($('ubic')||{}).value||'')+' '+(($('destino')||{}).value||'');w.hidden=!(/aeropuerto|tren maya/i.test(x)||($('tar')&&$('tar').value))}
+function tarVis(){const w=$('tar_wrap');if(!w)return;const x=(($('ubic')||{}).value||'')+' '+(($('destino')||{}).value||'');w.hidden=!((AERX.test(x)||/tren maya/i.test(x))||($('tar')&&$('tar').value))}
 function aplT(){const t=S.T.find(x=>x.id==$('tar').value);if(!t)return;
 $('destino').value=t.nombre;$('costo').value=$('factura').checked&&t.precio_factura?t.precio_factura:t.precio;
 $('comision_tipo').value=t.comision_tipo;$('comision_valor').value=t.comision_valor;$('especial').checked=t.especial}
@@ -3562,13 +3563,13 @@ function esHotel(t){t=String(t||'').toLowerCase();return /(^|[^a-z])(hotel|hosta
 function hotAdo(a,b){return (esAdo(a)&&esHotel(b)&&!esAdo(b))||(esAdo(b)&&esHotel(a)&&!esAdo(a))}
 function sug(){const g=S.g,k=+$('km').value;if(!k||!g){$('sug').innerHTML='';return}if(esVan())return sugVan(k);
 const parTxt=(S.PAR||[]).map(p=>p.t||'').join(' ');
-const txt=($('ubic').value+' '+parTxt+' '+$('destino').value).toLowerCase(),aer=$('aeropuerto').checked||/aeropuerto/.test(txt);
+const txt=($('ubic').value+' '+parTxt+' '+$('destino').value).toLowerCase(),aer=$('aeropuerto').checked||AERX.test(txt);
 const fo0=!!($('foraneo')&&$('foraneo').checked),fija=fo0?null:((aer?S.T.find(t=>/aeropuerto/i.test(t.nombre)):null)||(/tren maya/.test(txt)?S.T.find(t=>/tren maya/i.test(t.nombre)):null)||(!(S.PAR||[]).length&&(hotAdo($('ubic').value,$('destino').value)||esAdo($('ubic').value)&&!esAdo($('destino').value))?S.T.find(t=>/(^|[^a-z])ado([^a-z]|$)/i.test(t.nombre)):null));
 const hasPar=(S.PAR||[]).length>0,fijaEnPar=hasPar&&fija?fija:null;
 if(fo0&&$('tar')&&$('tar').value){$('tar').value='';$('especial').checked=false;$('comision_tipo').value='porcentaje';$('comision_valor').value=(S.g&&S.g.comision_default)||10;if(+$('costo').value===S.autoC)$('costo').value=''}
 const prog=!$('expres').checked&&!$('especial').checked&&!aer,fo=!!($('foraneo')&&$('foraneo').checked),pc=tarifa(k,prog,false),pf=tarifa(k,false,true),fA=fo&&aer&&!(S.PAR||[]).length?S.T.find(t=>/aeropuerto/i.test(t.nombre)&&+t.precio):null,kF=fA?kmFueraPoly(S.poly):null,pA=fA&&kF!=null?aerFoP(fA,kF):0,p=fo?(pA||pf):pc;
 const fp=fija?fijaP(fija,k):0;// Si hay paradas y tarifa fija en alguna parada/destino: cobrar tramo cotizado + tarifa fija
-const fijaIdx=fijaEnPar?(S.PAR||[]).findIndex(p=>/aeropuerto/i.test(p.t||'')||/tren maya/i.test(p.t||'')):- 1;
+const fijaIdx=fijaEnPar?(S.PAR||[]).findIndex(p=>AERX.test(p.t||'')||/tren maya/i.test(p.t||'')):- 1;
 const kPar=fijaIdx>=0&&(S.cotLegs||[]).length>fijaIdx?(S.cotLegs||[]).slice(0,fijaIdx+1).reduce((a,b)=>a+b,0):k;
 const pcPar=fijaEnPar?tarifa(kPar,prog,false):0,ppf=fijaEnPar?pcPar+fp:0;S.sugP=fijaEnPar?ppf:(fija?fp:p);const cpf=cliPF();if(cpf){const c=$('costo');if(c&&(c.value===''||+c.value===S.autoC)){c.value=cpf.p;S.autoC=cpf.p}S.sugP=cpf.p}{const c=$('costo'),pv=fijaEnPar?ppf:(fija?fp:p);if(c&&(c.value===''||+c.value===S.autoC)){c.value=pv;S.autoC=pv;if(fija&&!fijaEnPar&&$('tar')){$('tar').value=fija.id;aplT();if(!fijaKm(fija,k))c.value=$('costo').value;else c.value=fp;S.autoC=+c.value}}}
 const vj=(S.SEL&&S.SEL.viajes||[]).slice(0,3).map(x=>esc((x.de||'')+(x.via&&x.via.length?' → '+x.via.join(' → '):'')+' → '+(x.a||''))+': $'+x.costo).join(' · ');
@@ -3737,7 +3738,7 @@ const N=F.length*R.length;
 if(R.some(r=>!(+r.c>0))&&!confirm('Hay viajes con costo en $0. ¿Crear así?'))return;
 if(!confirm('Se van a crear '+N+' servicios. ¿Continuar?'))return;
 const g=S.g||{},priv=!!V.priv,tomo=priv||(V.yo&&S.me.taxi),ahora=new Date().toISOString();
-const arr=[];F.forEach(f=>R.forEach(r=>{const o={grupo_id:S.me.grupo_id,creado_por:S.me.id,fecha:f,hora:vrHora(r),min_antes:V.ma,ubic:r.o,ubic_maps:r.om||null,destino:r.d,destino_maps:r.dm||null,costo:+r.c||0,nota:'',pago:V.pago,factura:V.factura,expres:false,especial:false,aeropuerto:/aeropuerto/i.test(r.o+' '+r.d),comision_tipo:'porcentaje',comision_valor:+g.comision_default||10,comision_iva:0};
+const arr=[];F.forEach(f=>R.forEach(r=>{const o={grupo_id:S.me.grupo_id,creado_por:S.me.id,fecha:f,hora:vrHora(r),min_antes:V.ma,ubic:r.o,ubic_maps:r.om||null,destino:r.d,destino_maps:r.dm||null,costo:+r.c||0,nota:'',pago:V.pago,factura:V.factura,expres:false,especial:false,aeropuerto:AERX.test(r.o+' '+r.d),comision_tipo:'porcentaje',comision_valor:+g.comision_default||10,comision_iva:0};
 if(tomo)Object.assign(o,{estado:'tomado',tomado_por:S.me.id,tomado_nombre:S.me.nombre,tomado_taxi:S.me.taxi||null,tomado_en:ahora});if(priv)o.privado=true;arr.push(o)}));
 {const ex=await sb.from('servicios').select('id,fecha,hora').in('fecha',F).neq('estado','cancelado').limit(1000);const E=ex.data||[],k=nrm(V.cel);let ids=new Set();
 if(k.length>=10&&E.length){const {data:C}=await sb.from('servicio_cliente').select('servicio_id,celular').in('servicio_id',E.map(x=>x.id));ids=new Set((C||[]).filter(c=>nrm(c.celular)==k).map(c=>c.servicio_id))}
@@ -4011,7 +4012,7 @@ const P=[['Parque Principal, Centro, Campeche','https://maps.google.com/?q=19.84
 ['Mercado Principal, Campeche','https://maps.google.com/?q=19.8433,-90.5307','Hospital General de Especialidades, Campeche','https://maps.google.com/?q=19.8222,-90.5381',false,40,1],
 ['Aeropuerto Internacional de Campeche','https://maps.google.com/?q=19.8166,-90.5003','Hotel Plaza Campeche','https://maps.google.com/?q=19.8455,-90.5358',false,90,1],
 ['Malecón, frente a Torres de Cristal, Campeche','https://maps.google.com/?q=19.8515,-90.5320','Estación Tren Maya Campeche','https://maps.google.com/?q=19.8257,-90.4924',false,150,5]];
-const rows=P.map((x,i)=>{const aer=/aeropuerto/i.test(x[0]),tf=aer?(S.T||[]).find(t=>/aeropuerto/i.test(t.nombre)):(/tren maya/i.test(x[2])?(S.T||[]).find(t=>/tren maya/i.test(t.nombre)):null);
+const rows=P.map((x,i)=>{const aer=AERX.test(x[0]),tf=aer?(S.T||[]).find(t=>/aeropuerto/i.test(t.nombre)):(/tren maya/i.test(x[2])?(S.T||[]).find(t=>/tren maya/i.test(t.nombre)):null);
 return {grupo_id:S.me.grupo_id,creado_por:S.me.id,fecha:hoy,hora:x[4]?hm2(0):hm2(x[5]),min_antes:x[4]?0:10,ubic:x[0],ubic_maps:x[1],destino:x[2],destino_maps:x[3],costo:tf?+tf.precio:tarifa(4,!x[4],false),nota:'🎓 Servicio de práctica',pago:'Efectivo',expres:x[4],aeropuerto:aer,especial:!!tf,practica:true,personas:x[6],comision_tipo:'porcentaje',comision_valor:+g.comision_default||10,comision_iva:0}});
 const r=await sb.from('servicios').insert(rows).select('id');if(r.error)return toast('Error: '+r.error.message);
 await sb.from('servicio_cliente').upsert(r.data.map(x=>({servicio_id:x.id,grupo_id:S.me.grupo_id,nombre:'Cliente de práctica',celular:''})));pushNuevo(r.data.map(x=>x.id));toast('🎓 Listo: 4 servicios de práctica');S.fecha=hoy;tab('serv')}
@@ -4749,9 +4750,9 @@ const rk=RL.slice().sort((a,b)=>a.distanceMeters-b.distanceMeters)[0];
 const reo=false;/* reordenamiento automático desactivado: el admin pone las paradas en el orden que quiere */
 const k=Math.round(rt.distanceMeters/100)/10,min=Math.round(parseInt(rt.duration)/60),txt=(P.ut+' '+P.dt).toLowerCase(),lejos=[P.um,P.dm].concat(P.par.map(x=>x.m)).some(m=>fueraCd(m));
 const trR=/tren maya|estaci[oó]n.*tren/,trC=(t,m)=>trR.test(String(t).toLowerCase())&&!/edzn|tenabo|hecelch|calkin|esc[aá]rcega|m[eé]rida|maxcan|champot|xpujil|calakmul|palenque|tenosique/i.test(String(t))&&kmCentro(m)<=15,trOk=!pr.length&&((trC(P.dt,P.dm)&&!fueraCd(P.um))||(trC(P.ut,P.um)&&!fueraCd(P.dm)));
-let fija=null;if(!pr.length&&!lejos&&/aeropuerto/.test(txt))fija=S.T.find(t=>/aeropuerto/i.test(t.nombre));else if(trOk)fija=S.T.find(t=>/tren maya/i.test(t.nombre));else if(!pr.length&&!lejos&&(hotAdo(P.ut,P.dt)||esAdo(P.ut)&&!esAdo(P.dt)||P.hosp&&esAdo(P.ut)!=esAdo(P.dt)))fija=S.T.find(t=>/(^|[^a-z])ado([^a-z]|$)/i.test(t.nombre))||null;
+let fija=null;if(!pr.length&&!lejos&&AERX.test(txt))fija=S.T.find(t=>/aeropuerto/i.test(t.nombre));else if(trOk)fija=S.T.find(t=>/tren maya/i.test(t.nombre));else if(!pr.length&&!lejos&&(hotAdo(P.ut,P.dt)||esAdo(P.ut)&&!esAdo(P.dt)||P.hosp&&esAdo(P.ut)!=esAdo(P.dt)))fija=S.T.find(t=>/(^|[^a-z])ado([^a-z]|$)/i.test(t.nombre))||null;
 const trFo=!pr.length&&lejos&&!trOk&&((trC(P.dt,P.dm)&&fueraCd(P.um))||(trC(P.ut,P.um)&&fueraCd(P.dm)));
-const aerF=!pr.length&&lejos&&/aeropuerto/.test(txt)?S.T.find(t=>/aeropuerto/i.test(t.nombre)&&+t.precio):trFo?S.T.find(t=>/tren maya/i.test(t.nombre)&&+t.precio):null;
+const aerF=!pr.length&&lejos&&AERX.test(txt)?S.T.find(t=>/aeropuerto/i.test(t.nombre)&&+t.precio):trFo?S.T.find(t=>/tren maya/i.test(t.nombre)&&+t.precio):null;
 const pRuta=(x,kk)=>{if(aerF){const kf=kmFueraPoly(x.polyline&&x.polyline.encodedPolyline);if(kf!=null)return {cos:aerFoP(aerF,kf),kf}}return {cos:lejos?tarifa(kk,false,true):tarifa(kk,!P.ahora,false),kf:null}};
 const r1=pRuta(rt,k),cos=fija&&+fija.precio?fijaP(fija,k):r1.cos;
 P.q={k,min,cos:Math.round(cos),fija:fija&&+fija.precio?fija:null,fo:lejos&&!(fija&&+fija.precio),reo,aer:r1.kf!=null?aerF:null,kf:r1.kf};
