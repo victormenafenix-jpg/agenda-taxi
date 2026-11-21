@@ -178,7 +178,7 @@ page('tren-maya','Taxi Estación Tren Maya Campeche · $300 | Taxicel',
 # ---------- EDZNA
 COMER='''<section style="padding-top:0"><div class="w"><div class="opt" style="display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center">
 <img src="../img/lupita-jaime.webp" alt="Lupita y Jaime en su tienda y comedor cerca de Edzná, con el taxi Tx857" loading="lazy" style="width:120px;height:120px;object-fit:cover;object-position:62% 50%;border-radius:14px">
-<div style="min-width:0"><b data-en="🍽️ Where to eat near Edzná">🍽️ Dónde comer cerca de Edzná</b><span style="color:var(--mu);font-size:14px;display:block;margin:4px 0" data-en="Lupita and Jaime's store and diner, 1 km from Edzná on the road to Cayal. Breakfast and traditional Campeche food, 7 am to 6 pm. Visitors from all over the world have been signing their guestbook since 2004.">Tienda y comedor de Lupita y Jaime, a 1 km de Edzná rumbo a Cayal. Desayunos y comida típica campechana, de 7 am a 6 pm. Desde 2004 turistas de todo el mundo firman su libreta.</span>
+<div style="min-width:0"><b data-en="🍽️ Where to eat near Edzná">🍽️ Dónde comer cerca de Edzná</b><span style="color:var(--mu);font-size:14px;display:block;margin:4px 0" data-en="Lupita and Jaime's store and diner, 1 km from Edzná on the road to Cayal. Breakfast and traditional Campeche food, every day 7 am to 6 pm. Visitors from all over the world have been signing their guestbook since 2004.">Tienda y comedor de Lupita y Jaime, a 1 km de Edzná rumbo a Cayal. Desayunos y comida típica campechana, todos los días de 7 am a 6 pm. Desde 2004 turistas de todo el mundo firman su libreta.</span>
 <a href="../lupita-y-jaime/" style="color:var(--lime);font-weight:800;text-decoration:none" data-en="See menu and location →">Ver menú y ubicación →</a></div>
 </div></div></section>'''
 
@@ -477,7 +477,7 @@ page('santuario','Taxi al Santuario del Inmaculado Corazón de María, Uayamón 
 
 # ---------- LUPITA Y JAIME (comida cerca de Edzná)
 page('lupita-y-jaime','Dónde comer cerca de Edzná · Tienda y comedor Lupita y Jaime | Taxicel',
- 'Desayunos y comida típica campechana a 1 km de la Zona Arqueológica de Edzná, rumbo a Cayal: puerco frito, bistec de res, salpicón, pechuga de pollo. De 7 am a 6 pm. Tel. 981 104 8109.',
+ 'Desayunos y comida típica campechana a 1 km de la Zona Arqueológica de Edzná, rumbo a Cayal: puerco frito, bistec de res, salpicón, pechuga de pollo. Todos los días de 7 am a 6 pm. WhatsApp 981 104 8109.',
  'lupita-jaime',('Lupita y Jaime','Lupita and Jaime'),
  ('''<span class="kick" data-en="Where to eat near Edzná">Dónde comer cerca de Edzná</span>
 <h1 data-en="Lupita and Jaime, <em>home cooking 1 km from Edzná</em>">Lupita y Jaime, <em>comida casera a 1 km de Edzná</em></h1>
@@ -486,8 +486,9 @@ page('lupita-y-jaime','Dónde comer cerca de Edzná · Tienda y comedor Lupita y
 <a class="btn b1" href="https://wa.me/529811048109?text=Hola%2C%20vi%20su%20p%C3%A1gina%20en%20Taxicel.%20Quiero%20pedir%20comida." target="_blank" rel="noopener" data-en="💬 WhatsApp Lupita and Jaime">💬 WhatsApp a Lupita y Jaime</a>
 <a class="btn b3" href="tel:+529811048109" data-en="📞 Call 981 104 8109">📞 Llamar 981 104 8109</a>
 <a class="btn b3" href="https://www.google.com/maps/search/?api=1&amp;query=19.61281,-90.21742" target="_blank" rel="noopener" data-en="📍 How to get there">📍 Cómo llegar</a>
-</div>''',
- '''<script type="application/ld+json">{"@context":"https://schema.org","@type":"Restaurant","name":"Tienda y comedor Lupita y Jaime","telephone":"+52 981 104 8109","servesCuisine":"Comida típica campechana","address":{"@type":"PostalAddress","addressLocality":"Uzahzil-Edzná","addressRegion":"Campeche","postalCode":"24536","addressCountry":"MX"},"geo":{"@type":"GeoCoordinates","latitude":19.61281,"longitude":-90.21742},"image":"https://taxicelcampeche.com/img/lupita-jaime.jpg"}</script>
+</div>
+<div class="opt" style="display:block;border-color:#f2b705;margin-top:16px"><b data-en="📵 There is almost no phone signal there">📵 Allá casi no hay señal de celular</b><span style="color:var(--mu);font-size:14px" data-en="Message them on WhatsApp before you leave Campeche so your food is ready. Once there, you can use their wifi.">Escríbeles por WhatsApp antes de salir de Campeche para que tengan lista tu comida. Ya en el lugar puedes usar su wifi.</span></div>''',
+ '''<script type="application/ld+json">{"@context":"https://schema.org","@type":"Restaurant","name":"Tienda y comedor Lupita y Jaime","telephone":"+52 981 104 8109","openingHours":"Mo-Su 07:00-18:00","servesCuisine":"Comida típica campechana","address":{"@type":"PostalAddress","addressLocality":"Uzahzil-Edzná","addressRegion":"Campeche","postalCode":"24536","addressCountry":"MX"},"geo":{"@type":"GeoCoordinates","latitude":19.61281,"longitude":-90.21742},"image":"https://taxicelcampeche.com/img/lupita-jaime.jpg"}</script>
 <section><div class="w"><div class="two">
 <div class="pk">
 <h2 style="font-size:26px" data-en="Always on the menu">Siempre hay</h2>
@@ -499,7 +500,7 @@ page('lupita-y-jaime','Dónde comer cerca de Edzná · Tienda y comedor Lupita y
 <tr><td data-en="🍳 Breakfast">🍳 Desayunos</td><td></td></tr>
 </table>
 <div class="mu" style="font-size:14px" data-en="Every dish comes with beans, rice and salsa. They also have a store with cold drinks.">Todas las comidas llevan frijol, arroz y salsa. También tienen tienda.</div>
-<div class="mu" style="font-size:15px" data-en="🕖 Open 7 am to 6 pm">🕖 Abren de 7 am a 6 pm</div>
+<div class="mu" style="font-size:15px" data-en="🕖 Open every day, 7 am to 6 pm">🕖 Abren todos los días, de 7 am a 6 pm</div>
 </div>
 <div style="display:grid;gap:14px">
 <div class="ph2"><img src="../img/lupita-jaime.webp" alt="Lupita y Jaime frente a su tienda y comedor, con el taxi Tx857 de Taxicel" loading="lazy" width="1280" height="720"></div>
@@ -519,7 +520,7 @@ page('lupita-y-jaime','Dónde comer cerca de Edzná · Tienda y comedor Lupita y
 <a class="btn b1 wal" href="#" data-msg="Hola, quiero ir a Edzná y comer con Lupita y Jaime." data-msgen="Hello, I would like to go to Edzná and eat at Lupita and Jaime's." data-en="Book the Edzná trip">Reservar viaje a Edzná</a>
 <a href="../edzna/" style="color:var(--lime);font-weight:800;text-decoration:none;margin-left:10px" data-en="See Edzná tour →">Ver tour a Edzná →</a>
 </div></div></section>'''),
- [('¿Dónde comer cerca de Edzná?','Con Lupita y Jaime, a 1 km de la zona arqueológica rumbo a Cayal, en Uzahzil-Edzná. Desayunos y comida típica de 7 am a 6 pm.','Where can I eat near Edzná?','At Lupita and Jaime\'s, 1 km from the archaeological site on the road to Cayal, in Uzahzil-Edzná. Breakfast and traditional food from 7 am to 6 pm.'),
-  ('¿Puedo encargar comida?','Sí. Llama o escribe al 981 104 8109 con tiempo y te preparan platillos por encargo como puchero vaquero o escabeche de pollo.','Can I order food ahead?','Yes. Call or message +52 981 104 8109 in advance and they will cook dishes to order, like puchero vaquero or chicken escabeche.'),
+ [('¿Dónde comer cerca de Edzná?','Con Lupita y Jaime, a 1 km de la zona arqueológica rumbo a Cayal, en Uzahzil-Edzná. Desayunos y comida típica todos los días de 7 am a 6 pm.','Where can I eat near Edzná?','At Lupita and Jaime\'s, 1 km from the archaeological site on the road to Cayal, in Uzahzil-Edzná. Breakfast and traditional food every day from 7 am to 6 pm.'),
+  ('¿Puedo encargar comida?','Sí. Escribe por WhatsApp al 981 104 8109 antes de salir (allá casi no hay señal) y te preparan platillos por encargo como puchero vaquero o escabeche de pollo.','Can I order food ahead?','Yes. Message +52 981 104 8109 on WhatsApp before you leave (there is almost no signal there) and they will cook dishes to order, like puchero vaquero or chicken escabeche.'),
   ('¿Cómo llego desde Campeche?','En taxi Taxicel: el viaje a Edzná con espera cuesta $1,800 y podemos parar a comer aquí.','How do I get there from Campeche?','By Taxicel taxi: the Edzná trip with waiting is $1,800 MXN and we can stop here to eat.')],
  {'name':'Taxi a Edzná con parada a comer','price':'1800','wa':'Hola, quiero ir a Edzná y comer con Lupita y Jaime.','waen':'Hello, I would like to go to Edzná and eat at Lupita and Jaime\'s.'})
