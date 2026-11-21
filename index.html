@@ -6,7 +6,7 @@
 const AERX=/aeropuerto|airport|acu[ñn]a\s*ongay/i;window.__E=[];window.addEventListener('error',function(e){__E.push((e.message||'error')+' @'+String(e.filename||'').split('/').pop()+':'+(e.lineno||''))});window.addEventListener('unhandledrejection',function(e){__E.push('promesa: '+((e.reason&&e.reason.message)||e.reason))});
 setTimeout(function(){var d=document.getElementById('app');if(d&&!d.innerHTML.trim()){d.innerHTML='<div style="padding:16px;font-family:sans-serif"><b>⏳ Está tardando en cargar.</b><br>Puede ser la señal de internet. Toca Recargar. Si sigue igual, toma captura y mándala:<pre style="white-space:pre-wrap;color:#c00;font-size:13px">'+(__E.join('\n')||'(sin error)')+'\n'+location.href+'\n'+navigator.userAgent+'</pre><button onclick="location.reload(true)" style="font-size:18px;padding:10px 16px">🔄 Recargar</button></div>'}},15000)</script>
 <script>/* 🔄 Versión: si hay una agenda nueva publicada, se recarga sola (la app de Android y los celulares no se quedan con la vieja) */
-window.APPV='201';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
+window.APPV='202';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
 const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.value)return;if(window.S&&(S.form||S.ext||S.asg))return;
 let k;try{k=sessionStorage.getItem('recargaV')}catch(e){}if(k===j.v)return;try{sessionStorage.setItem('recargaV',j.v)}catch(e){}location.reload()}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,600000);setTimeout(chk,4000)})();</script>
@@ -614,6 +614,10 @@ function vozTog(){try{localStorage.setItem('voz',vozOn()?'0':'1')}catch(e){}if(v
 async function wl(){try{if(vozOn()&&!document.hidden&&navigator.wakeLock&&!S.wl){S.wl=await navigator.wakeLock.request('screen');S.wl.addEventListener('release',()=>{S.wl=null})}}catch(e){}}
 async function vozCheck(){if(!S.me||!S.me.activo||document.hidden||!vozOn())return;try{const {data,error}=await sb.from('servicios').select('*').eq('estado','disponible').eq('revision',false).gte('fecha',hoyIso()).limit(80);if(!error)vozNuevos(data||[])}catch(e){}}
 setInterval(vozCheck,15000);
+// 🔆 Con un servicio en curso, la pantalla no se apaga sola: así el celular sigue mandando la ubicación (llegó / abordó / destino)
+async function wlServ(){try{const en=S.me&&(S.L||[]).concat(S.MYC||[]).some(x=>x&&x.tomado_por==S.me.id&&['en_camino','llego','abordo'].includes(x.estado));
+if(en&&!document.hidden&&navigator.wakeLock&&!S.wlS){S.wlS=await navigator.wakeLock.request('screen');S.wlS.addEventListener('release',()=>{S.wlS=null})}else if(!en&&S.wlS){S.wlS.release();S.wlS=null}}catch(e){}}
+setInterval(wlServ,10000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(wlServ,500)});
 document.addEventListener('pointerdown',()=>{if(vozOn()&&!S.vozU&&window.speechSynthesis){S.vozU=1;try{const u=new SpeechSynthesisUtterance('.');u.volume=0;u.lang='es-MX';speechSynthesis.speak(u)}catch(e){}}wl()},true);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){wl();vozCheck();limpiarAvisos()}});function limpiarAvisos(){try{navigator.clearAppBadge&&navigator.clearAppBadge().catch(()=>{})}catch(e){}try{if('serviceWorker' in navigator)navigator.serviceWorker.ready.then(r=>r.getNotifications()).then(L=>L.forEach(n=>{if(n.tag!='curso')n.close()})).catch(()=>{})}catch(e){}}setTimeout(limpiarAvisos,3000);
 function decir(t){try{const T=window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()&&Capacitor.Plugins&&Capacitor.Plugins.TextToSpeech;if(T&&T.speak){Promise.resolve(T.speak({text:String(t),lang:'es-MX',rate:1,pitch:1,volume:1,category:'playback'})).catch(()=>{});return}if(!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(t);u.lang='es-MX';u.rate=1;speechSynthesis.speak(u)}catch(e){}}
@@ -3523,7 +3527,11 @@ const m=maps.match(/[?&](?:q|query|destination)=(-?\d+\.\d+),(-?\d+\.\d+)/)||map
 if(m)return {location:{latLng:{latitude:+m[1],longitude:+m[2]}}};
 if(txt)return {address:/campeche/i.test(txt)?txt:txt+', Campeche, México'};
 return null}
-async function cotizar(){parSync();if((S.PAR||[]).length){clearTimeout(S.ordT);S.ordT=setTimeout(()=>ordenes(1),900)}const o=ptoRuta($('ubic').value,$('ubic_maps').value),d=ptoRuta($('destino').value,$('destino_maps').value),inter=(S.PAR||[]).map(p=>ptoRuta(p.t,p.m)).filter(Boolean);
+
+// 📍 Lugares con tarifa fija reconocidos por su ubicación en el mapa (no importa cómo se escriba el nombre)
+function fijoTxt(m){try{const x=String(m||'').match(/(-?\d{1,2}\.\d+),\s*(-?\d{2,3}\.\d+)/);if(!x)return '';const c={lat:+x[1],lng:+x[2]};if(kmE(c,{lat:19.8160,lng:-90.5010})<=0.9)return 'aeropuerto';if(kmE(c,{lat:19.8228,lng:-90.4770})<=0.5)return 'tren maya';return ''}catch(e){return ''}}
+function fijaNorm(){[['ubic','ubic_maps'],['destino','destino_maps']].forEach(([t,m])=>{const a=$(t),b=$(m);if(!a||!b)return;const f=fijoTxt(b.value),v=a.value;if(f=='aeropuerto'&&!AERX.test(v))a.value='Aeropuerto · '+v;else if(f=='tren maya'&&!/tren maya/i.test(v))a.value='Tren Maya · '+v})}
+async function cotizar(){fijaNorm();if(typeof aerSync=='function')aerSync();parSync();if((S.PAR||[]).length){clearTimeout(S.ordT);S.ordT=setTimeout(()=>ordenes(1),900)}const o=ptoRuta($('ubic').value,$('ubic_maps').value),d=ptoRuta($('destino').value,$('destino_maps').value),inter=(S.PAR||[]).map(p=>ptoRuta(p.t,p.m)).filter(Boolean);
 if(!o||!d)return toast('Primero pon la ubicación y el destino');
 S.alts=null;$('sug').innerHTML='Calculando la ruta…';
 try{const r=await fetch('https://routes.googleapis.com/directions/v2:computeRoutes',{method:'POST',headers:{'Content-Type':'application/json','X-Goog-Api-Key':GKEY,'X-Goog-FieldMask':'routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline,routes.legs.distanceMeters'},body:JSON.stringify({origin:o,destination:d,...(inter.length?{intermediates:inter}:{computeAlternativeRoutes:true}),travelMode:'DRIVE',routingPreference:'TRAFFIC_UNAWARE',languageCode:'es-MX',regionCode:'MX'})});
@@ -3828,7 +3836,7 @@ const pr=$('fbPrecio'),c=$('costo');if(pr)pr.textContent=c&&+c.value>0?'$'+r2(+c
 function quienT(k){const i=$(k);if(!i)return;i.checked=!i.checked;i.dispatchEvent(new Event('change'));$('qchips').dataset.sig='';quienPinta();if(k=='ext_chk'&&i.checked){const e=$('ext_box');if(e){e.scrollIntoView({behavior:'smooth',block:'center'});const f=e.querySelector('input');if(f)setTimeout(()=>f.focus(),300)}}}
 setInterval(()=>{if($('qchips'))quienPinta()},800);
 async function guardarS(){const b0=$('[onclick="guardarS()"]'),t0=b0&&b0.textContent;try{return await guardarS0()}finally{const b=$('[onclick="guardarS()"]');if(b&&b.disabled&&document.body.contains(b)&&b.textContent=='⏳ Subiendo…'){b.disabled=false;b.textContent=t0}}}
-async function guardarS0(){
+async function guardarS0(){try{fijaNorm()}catch(e){}
 const btn=$('[onclick="guardarS()"]');if(btn){if(btn.disabled)return;btn.disabled=true;btn.textContent='⏳ Subiendo…'}
 const v=i=>$(i).value.trim(),n=i=>+$(i).value||0;
 let hora=hh(),ma=n('min_antes');
@@ -4748,8 +4756,8 @@ const r=await fetch('https://routes.googleapis.com/directions/v2:computeRoutes',
 const j=await r.json(),RL=(j.routes||[]).filter(x=>x.distanceMeters),rt=RL.slice().sort((a,b)=>parseInt(a.duration)-parseInt(b.duration))[0];if(!r.ok||!rt||!rt.distanceMeters)throw new Error('sin ruta');
 const rk=RL.slice().sort((a,b)=>a.distanceMeters-b.distanceMeters)[0];
 const reo=false;/* reordenamiento automático desactivado: el admin pone las paradas en el orden que quiere */
-const k=Math.round(rt.distanceMeters/100)/10,min=Math.round(parseInt(rt.duration)/60),txt=(P.ut+' '+P.dt).toLowerCase(),lejos=[P.um,P.dm].concat(P.par.map(x=>x.m)).some(m=>fueraCd(m));
-const trR=/tren maya|estaci[oó]n.*tren/,trC=(t,m)=>trR.test(String(t).toLowerCase())&&!/edzn|tenabo|hecelch|calkin|esc[aá]rcega|m[eé]rida|maxcan|champot|xpujil|calakmul|palenque|tenosique/i.test(String(t))&&kmCentro(m)<=15,trOk=!pr.length&&((trC(P.dt,P.dm)&&!fueraCd(P.um))||(trC(P.ut,P.um)&&!fueraCd(P.dm)));
+const k=Math.round(rt.distanceMeters/100)/10,min=Math.round(parseInt(rt.duration)/60),txt=(P.ut+' '+fijoTxt(P.um)+' '+P.dt+' '+fijoTxt(P.dm)).toLowerCase(),lejos=[P.um,P.dm].concat(P.par.map(x=>x.m)).some(m=>fueraCd(m));
+const trR=/tren maya|estaci[oó]n.*tren/,trC=(t,m)=>trR.test(String(t).toLowerCase())&&!/edzn|tenabo|hecelch|calkin|esc[aá]rcega|m[eé]rida|maxcan|champot|xpujil|calakmul|palenque|tenosique/i.test(String(t))&&kmCentro(m)<=15,trOk=!pr.length&&((trC(P.dt+' '+fijoTxt(P.dm),P.dm)&&!fueraCd(P.um))||(trC(P.ut+' '+fijoTxt(P.um),P.um)&&!fueraCd(P.dm)));
 let fija=null;if(!pr.length&&!lejos&&AERX.test(txt))fija=S.T.find(t=>/aeropuerto/i.test(t.nombre));else if(trOk)fija=S.T.find(t=>/tren maya/i.test(t.nombre));else if(!pr.length&&!lejos&&(hotAdo(P.ut,P.dt)||esAdo(P.ut)&&!esAdo(P.dt)||P.hosp&&esAdo(P.ut)!=esAdo(P.dt)))fija=S.T.find(t=>/(^|[^a-z])ado([^a-z]|$)/i.test(t.nombre))||null;
 const trFo=!pr.length&&lejos&&!trOk&&((trC(P.dt,P.dm)&&fueraCd(P.um))||(trC(P.ut,P.um)&&fueraCd(P.dm)));
 const aerF=!pr.length&&lejos&&AERX.test(txt)?S.T.find(t=>/aeropuerto/i.test(t.nombre)&&+t.precio):trFo?S.T.find(t=>/tren maya/i.test(t.nombre)&&+t.precio):null;
