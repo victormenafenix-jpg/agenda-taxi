@@ -1,0 +1,10 @@
+{
+  "appId": "mx.taxicel.taxicentral.nativa",
+  "appName": "TaxiCentral",
+  "webDir": "www",
+  "server": {
+    "url": "https://agenda-taxi.pages.dev",
+    "allowNavigation": ["agenda-taxi.pages.dev", "taxicelcampeche.com", "*.supabase.co", "maps.google.com", "www.google.com", "wa.me", "api.whatsapp.com"]
+  },
+  "android": { "allowMixedContent": false }
+}

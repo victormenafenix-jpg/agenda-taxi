@@ -1,0 +1,12 @@
+{
+  "name": "taxicentral-nativa",
+  "private": true,
+  "version": "1.0.0",
+  "description": "App nativa de Android (Capacitor) que abre la agenda y agrega ubicación en segundo plano",
+  "dependencies": {
+    "@capacitor/android": "6.2.1",
+    "@capacitor/cli": "6.2.1",
+    "@capacitor/core": "6.2.1",
+    "@capacitor-community/background-geolocation": "1.2.26"
+  }
+}
