@@ -176,6 +176,12 @@ page('tren-maya','Taxi Estación Tren Maya Campeche · $300 | Taxicel',
  {'name':'Taxi Estación Tren Maya Campeche','price':'300','wa':'Hola, quiero reservar un taxi para el Tren Maya.','waen':'Hello, I would like to book a taxi for the Tren Maya.'})
 
 # ---------- EDZNA
+COMER='''<section style="padding-top:0"><div class="w"><div class="opt" style="display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center">
+<img src="../img/lupita-jaime.webp" alt="Lupita y Jaime en su tienda y comedor cerca de Edzná, con el taxi Tx857" loading="lazy" style="width:120px;height:120px;object-fit:cover;object-position:62% 50%;border-radius:14px">
+<div style="min-width:0"><b data-en="🍽️ Where to eat near Edzná">🍽️ Dónde comer cerca de Edzná</b><span style="color:var(--mu);font-size:14px;display:block;margin:4px 0" data-en="Lupita and Jaime's store and diner, 1 km from Edzná on the road to Cayal. Breakfast and traditional Campeche food, 7 am to 6 pm. Visitors from all over the world have been signing their guestbook since 2004.">Tienda y comedor de Lupita y Jaime, a 1 km de Edzná rumbo a Cayal. Desayunos y comida típica campechana, de 7 am a 6 pm. Desde 2004 turistas de todo el mundo firman su libreta.</span>
+<a href="../lupita-y-jaime/" style="color:var(--lime);font-weight:800;text-decoration:none" data-en="See menu and location →">Ver menú y ubicación →</a></div>
+</div></div></section>'''
+
 page('edzna','Tour a Edzná desde Campeche con guía · $2,500 hasta 4 personas | Taxicel',
  'Viaje a la Zona Arqueológica de Edzná desde Campeche: ida, espera de hasta 2 horas y regreso. Solo taxi $1,800 o paquete con guía $2,500 hasta 4 personas (ahorras $200). Reserva por WhatsApp 981 115 0093.',
  'edzna',('Edzná','Edzná'),
@@ -210,7 +216,7 @@ page('edzna','Tour a Edzná desde Campeche con guía · $2,500 hasta 4 personas 
 <div><b data-en="3. Visit Edzná">3. Conoces Edzná</b><span data-en="With your guide if you chose the package. We wait up to 2 hours.">Con tu guía si elegiste el paquete. Te esperamos hasta 2 horas.</span></div>
 <div><b data-en="4. Back to Campeche">4. De regreso</b><span data-en="We take you back to your hotel.">Te regresamos a tu hotel.</span></div>
 </div></div></section>
-'''+PAGO+INC),
+'''+COMER+PAGO+INC),
  [('¿Cuánto cuesta ir a Edzná desde Campeche?','Solo taxi: $1,800 MXN ida y regreso con hasta 2 horas de espera, hasta 4 personas. Con guía: $2,500 MXN en total.','How much is a trip to Edzná from Campeche?','Taxi only: $1,800 MXN round trip with up to 2 hours of waiting, up to 4 people. With guide: $2,500 MXN in total.'),
   ('¿Qué incluye el paquete con guía?','El taxi de ida, la espera de hasta 2 horas, el regreso y un guía de Campeche para hasta 4 personas.','What does the package with guide include?','The taxi there, up to 2 hours of waiting, the ride back and a Campeche guide for up to 4 people.'),
   ('¿Están incluidas las entradas?','No. Las entradas a la zona arqueológica se pagan en taquilla.','Are entrance fees included?','No. Entrance fees to the archaeological site are paid at the ticket office.'),
@@ -351,7 +357,7 @@ page('edzna-bahia-de-tortugas','Tour Edzná y Bahía de Tortugas desde Campeche 
 <div><b data-en="4:00 pm · Back to Campeche">4:00 pm · Regreso a Campeche</b><span data-en="Arrival at your hotel around 5:30 pm.">Llegada a tu hotel alrededor de las 5:30 pm.</span></div>
 </div></div>
 </div></div></section>
-'''+PAGO+INC+EBJS),
+'''+COMER+PAGO+INC+EBJS),
  [('¿Cuánto cuesta el tour a Edzná y Bahía de Tortugas desde Campeche?','$5,400 MXN en taxi sedán privado para hasta 4 personas, con casetas y agua incluidas. Con guía en Edzná: $6,200.','How much is the Edzná and Bahía de Tortugas tour from Campeche?','$5,400 MXN in a private sedan for up to 4 people, tolls and water included. With a guide at Edzná: $6,200.'),
   ('¿A qué hora salimos?','A las 7:00 am, para llegar a Edzná cuando abre y evitar el calor. Regresamos a Campeche alrededor de las 5:30 pm.','What time do we leave?','At 7:00 am, to reach Edzná when it opens and avoid the heat. We are back in Campeche around 5:30 pm.'),
   ('¿Están incluidas las entradas y la comida?','No. La entrada a Edzná se paga en taquilla; Bahía de Tortugas no cobra entrada y cada quien paga lo que consume.','Are entrance fees and meals included?','No. Edzná entrance is paid at the ticket office; Bahía de Tortugas has no entrance fee and you pay for what you eat.'),
@@ -467,3 +473,53 @@ page('santuario','Taxi al Santuario del Inmaculado Corazón de María, Uayamón 
   ('¿Puedo pagar con tarjeta y pedir factura?','Sí, con tarjeta o transferencia, pero se paga al abordar porque en el santuario casi no hay señal. También damos factura.','Can I pay by card and get an invoice?','Yes, by card or transfer, but it is paid when you board because there is almost no signal at the sanctuary. We also give invoices.'),
   ('¿Por qué desde el Tren Maya cuesta más?','Porque incluye la espera: si tu tren se retrasa hasta 20 minutos, no cobramos tiempo de espera.','Why is it more from the Tren Maya?','Because it includes waiting: if your train is up to 20 minutes late, we do not charge waiting time.')],
  {'name':'Taxi al Santuario de Uayamón','price':'450','wa':'Hola, quiero un taxi al Santuario.','waen':'Hello, I would like a taxi to the Sanctuary.'})
+
+
+# ---------- LUPITA Y JAIME (comida cerca de Edzná)
+page('lupita-y-jaime','Dónde comer cerca de Edzná · Tienda y comedor Lupita y Jaime | Taxicel',
+ 'Desayunos y comida típica campechana a 1 km de la Zona Arqueológica de Edzná, rumbo a Cayal: puerco frito, bistec de res, salpicón, pechuga de pollo. De 7 am a 6 pm. Tel. 981 104 8109.',
+ 'lupita-jaime',('Lupita y Jaime','Lupita and Jaime'),
+ ('''<span class="kick" data-en="Where to eat near Edzná">Dónde comer cerca de Edzná</span>
+<h1 data-en="Lupita and Jaime, <em>home cooking 1 km from Edzná</em>">Lupita y Jaime, <em>comida casera a 1 km de Edzná</em></h1>
+<p class="sub" data-en="Store and diner in Uzahzil-Edzná, on the road to Cayal. Breakfast and traditional Campeche food, every dish with beans, rice and salsa.">Tienda y comedor en Uzahzil-Edzná, rumbo a Cayal. Desayunos y comida típica campechana; todas las comidas llevan frijol, arroz y salsa.</p>
+<div class="row">
+<a class="btn b1" href="https://wa.me/529811048109?text=Hola%2C%20vi%20su%20p%C3%A1gina%20en%20Taxicel.%20Quiero%20pedir%20comida." target="_blank" rel="noopener" data-en="💬 WhatsApp Lupita and Jaime">💬 WhatsApp a Lupita y Jaime</a>
+<a class="btn b3" href="tel:+529811048109" data-en="📞 Call 981 104 8109">📞 Llamar 981 104 8109</a>
+<a class="btn b3" href="https://www.google.com/maps/search/?api=1&amp;query=19.61281,-90.21742" target="_blank" rel="noopener" data-en="📍 How to get there">📍 Cómo llegar</a>
+</div>''',
+ '''<script type="application/ld+json">{"@context":"https://schema.org","@type":"Restaurant","name":"Tienda y comedor Lupita y Jaime","telephone":"+52 981 104 8109","servesCuisine":"Comida típica campechana","address":{"@type":"PostalAddress","addressLocality":"Uzahzil-Edzná","addressRegion":"Campeche","postalCode":"24536","addressCountry":"MX"},"geo":{"@type":"GeoCoordinates","latitude":19.61281,"longitude":-90.21742},"image":"https://taxicelcampeche.com/img/lupita-jaime.jpg"}</script>
+<section><div class="w"><div class="two">
+<div class="pk">
+<h2 style="font-size:26px" data-en="Always on the menu">Siempre hay</h2>
+<table>
+<tr><td data-en="🥩 Fried pork">🥩 Puerco frito</td><td></td></tr>
+<tr><td data-en="🥩 Beef steak">🥩 Bistec de res</td><td></td></tr>
+<tr><td data-en="🥗 Salpicón">🥗 Salpicón</td><td></td></tr>
+<tr><td data-en="🍗 Chicken breast, breaded (milanesa) or grilled">🍗 Pechuga de pollo, milanesa o a la plancha</td><td></td></tr>
+<tr><td data-en="🍳 Breakfast">🍳 Desayunos</td><td></td></tr>
+</table>
+<div class="mu" style="font-size:14px" data-en="Every dish comes with beans, rice and salsa. They also have a store with cold drinks.">Todas las comidas llevan frijol, arroz y salsa. También tienen tienda.</div>
+<div class="mu" style="font-size:15px" data-en="🕖 Open 7 am to 6 pm">🕖 Abren de 7 am a 6 pm</div>
+</div>
+<div style="display:grid;gap:14px">
+<div class="ph2"><img src="../img/lupita-jaime.webp" alt="Lupita y Jaime frente a su tienda y comedor, con el taxi Tx857 de Taxicel" loading="lazy" width="1280" height="720"></div>
+<div class="opt"><b data-en="📅 Order ahead">📅 Por encargo</b><span style="color:var(--mu);font-size:14px;display:block;margin-top:4px" data-en="Book a day ahead and they cook it for your day: pork in tomato sauce, pork in guajillo chili sauce, adobo chicken with potatoes, chicken escabeche, and puchero vaquero (with chaya, pork ribs and rice).">Si apartas con tiempo te lo preparan para ese día: puerco entomatado, puerco en salsa de chile guajillo, pollo adobado con papa, escabeche de pollo y puchero vaquero (lleva chaya, costilla de puerco y arroz).</span>
+<a href="https://wa.me/529811048109?text=Hola%2C%20vi%20su%20p%C3%A1gina%20en%20Taxicel.%20Quiero%20pedir%20comida." target="_blank" rel="noopener" style="color:var(--lime);font-weight:800;text-decoration:none;display:inline-block;margin-top:6px" data-en="Order on WhatsApp →">Encargar por WhatsApp →</a></div>
+</div>
+</div></div></section>
+<section style="padding-top:0"><div class="w">
+<h2 data-en="Their guestbook since 2004">Su libreta de visitas desde 2004</h2>
+<p class="mu" style="max-width:65ch" data-en="For more than 20 years, visitors from Mexico, Germany, Austria, the Netherlands, Italy, Switzerland, Japan, Brazil, the United States and more have left their greetings in Lupita and Jaime's guestbook.">Por más de 20 años, visitantes de México, Alemania, Austria, Holanda, Italia, Suiza, Japón, Brasil, Estados Unidos y más han dejado sus saludos en la libreta de Lupita y Jaime.</p>
+<div class="two" style="margin-top:14px">
+<img src="../img/libreta-1.webp" alt="Página de la libreta de visitas, octubre de 2004" loading="lazy" width="760" height="1350" style="width:100%;height:auto;border-radius:16px">
+<img src="../img/libreta-2.webp" alt="Página de la libreta de visitas con mensajes en alemán, inglés y portugués, 2004 y 2005" loading="lazy" width="760" height="1350" style="width:100%;height:auto;border-radius:16px">
+</div></div></section>
+<section style="padding-top:0"><div class="w"><div class="opt" style="display:block">
+<b data-en="🚕 Going to Edzná?">🚕 ¿Vas a Edzná?</b><span style="color:var(--mu);font-size:14px;display:block;margin:4px 0" data-en="On our Edzná tour we can stop here to eat on the way back. Tell us when you book.">En nuestro tour a Edzná podemos parar aquí a comer de regreso. Dínoslo al reservar.</span>
+<a class="btn b1 wal" href="#" data-msg="Hola, quiero ir a Edzná y comer con Lupita y Jaime." data-msgen="Hello, I would like to go to Edzná and eat at Lupita and Jaime's." data-en="Book the Edzná trip">Reservar viaje a Edzná</a>
+<a href="../edzna/" style="color:var(--lime);font-weight:800;text-decoration:none;margin-left:10px" data-en="See Edzná tour →">Ver tour a Edzná →</a>
+</div></div></section>'''),
+ [('¿Dónde comer cerca de Edzná?','Con Lupita y Jaime, a 1 km de la zona arqueológica rumbo a Cayal, en Uzahzil-Edzná. Desayunos y comida típica de 7 am a 6 pm.','Where can I eat near Edzná?','At Lupita and Jaime\'s, 1 km from the archaeological site on the road to Cayal, in Uzahzil-Edzná. Breakfast and traditional food from 7 am to 6 pm.'),
+  ('¿Puedo encargar comida?','Sí. Llama o escribe al 981 104 8109 con tiempo y te preparan platillos por encargo como puchero vaquero o escabeche de pollo.','Can I order food ahead?','Yes. Call or message +52 981 104 8109 in advance and they will cook dishes to order, like puchero vaquero or chicken escabeche.'),
+  ('¿Cómo llego desde Campeche?','En taxi Taxicel: el viaje a Edzná con espera cuesta $1,800 y podemos parar a comer aquí.','How do I get there from Campeche?','By Taxicel taxi: the Edzná trip with waiting is $1,800 MXN and we can stop here to eat.')],
+ {'name':'Taxi a Edzná con parada a comer','price':'1800','wa':'Hola, quiero ir a Edzná y comer con Lupita y Jaime.','waen':'Hello, I would like to go to Edzná and eat at Lupita and Jaime\'s.'})
