@@ -75,7 +75,8 @@ const idBoton = (m: any) => m.type === "interactive" ? (m.interactive?.button_re
 
 // ---------------------------------------------------------------- Google Maps: links cortos y rutas
 function coordsDe(u: string): { lat: number; lng: number } | null {
-  const s = decodeURIComponent(u || "");
+  let s = String(u || "");
+  try { s = decodeURIComponent(s); } catch { /* texto con % sueltos: se busca tal cual */ }
   const m = s.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || s.match(/[?&](?:q|query|ll|destination)=(-?\d+\.\d+),\s*(-?\d+\.\d+)/) || s.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || s.match(/\/search\/(-?\d+\.\d+),\s*\+?(-?\d+\.\d+)/);
   if (m) return { lat: +m[1], lng: +m[2] };
   const a = s.match(/APP_INITIALIZATION_STATE=\[\[\[-?[\d.]+,(-?\d+\.\d+),(-?\d+\.\d+)\]/);
