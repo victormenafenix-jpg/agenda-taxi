@@ -77,7 +77,18 @@ const idBoton = (m: any) => m.type === "interactive" ? (m.interactive?.button_re
 function coordsDe(u: string): { lat: number; lng: number } | null {
   const s = decodeURIComponent(u || "");
   const m = s.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || s.match(/[?&](?:q|query|ll|destination)=(-?\d+\.\d+),\s*(-?\d+\.\d+)/) || s.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || s.match(/\/search\/(-?\d+\.\d+),\s*\+?(-?\d+\.\d+)/);
-  return m ? { lat: +m[1], lng: +m[2] } : null;
+  if (m) return { lat: +m[1], lng: +m[2] };
+  const a = s.match(/APP_INITIALIZATION_STATE=\[\[\[-?[\d.]+,(-?\d+\.\d+),(-?\d+\.\d+)\]/);
+  return a ? { lat: +a[2], lng: +a[1] } : null;
+}
+// nombre del lugar cuando el link no trae coordenadas (/maps/place/NOMBRE o ?q=NOMBRE)
+function nombreDe(u: string): string {
+  let s = u;
+  try { s = decodeURIComponent(u.replace(/\+/g, " ")); } catch { /* */ }
+  const p = s.match(/\/maps\/place\/([^/@?]+)/);
+  if (p) return p[1].trim();
+  try { const q = new URL(u).searchParams.get("q") ?? new URL(u).searchParams.get("query") ?? ""; if (q && !/^-?\d+\.\d+,\s*-?\d+\.\d+$/.test(q)) return q.trim(); } catch { /* */ }
+  return "";
 }
 // "geocode" de Google: protobuf en base64 con latitud (campo 2) y longitud (campo 3) x 1e6
 function geoDec(x: string): { lat: number; lng: number } | null {
@@ -128,8 +139,8 @@ async function abrirMapsFull(url: string): Promise<{ c: { lat: number; lng: numb
     if (loc) { u = new URL(loc, u).toString(); if (!rutaDe(u)) c = coordsDe(u); continue; }
     const html = await r.text().catch(() => "");
     const meta = html.match(/content="0;\s*url=([^"]+)"/i) || html.match(/https:\/\/www\.google\.[a-z.]+\/maps\/[^"'\s]+/);
-    if (meta) { u = (meta[1] ?? meta[0]).replace(/&amp;/g, "&"); if (!rutaDe(u)) c = coordsDe(u); }
-    else c = coordsDe(html.slice(0, 200000));
+    if (meta) { u = (meta[1] ?? meta[0]).replace(/&amp;/g, "&"); if (!rutaDe(u)) c = coordsDe(u); if (!c && !rutaDe(u)) c = coordsDe(html.slice(0, 400000)); if (c) break; continue; }
+    c = coordsDe(html.slice(0, 400000));
     break;
   }
   return { c, url: u };
@@ -545,7 +556,9 @@ Deno.serve(async (req) => {
       const a = ru[0], b = ru[ru.length - 1];
       return json({ ok: a.lat != null || b.lat != null, ruta: { o: a, d: b, paradas: ru.slice(1, -1) }, ...(a.lat != null ? { lat: a.lat, lng: a.lng } : {}) });
     }
-    return json(r.c ? { ok: true, ...r.c } : { ok: false, ...(cron ? { final: r.url, vistos: VISTOS } : {}) });
+    const t = nombreDe(r.url) || nombreDe(String(body.url ?? ""));
+    if (!r.c) { try { await SB.from("maps_fallos").insert({ url: String(body.url ?? "").slice(0, 500), final: String(r.url ?? "").slice(0, 800) }); } catch { /* */ } }
+    return json(r.c ? { ok: true, ...r.c, ...(t ? { t } : {}) } : { ok: false, ...(t ? { t } : {}), ...(cron ? { final: r.url, vistos: VISTOS } : {}) });
   }
   if (!(await firmaOk(req, raw))) return new Response("firma", { status: 401 });
   try {

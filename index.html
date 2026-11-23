@@ -6,7 +6,7 @@
 const AERX=/aeropuerto|airport|acu[ñn]a\s*ongay/i;window.__E=[];window.addEventListener('error',function(e){__E.push((e.message||'error')+' @'+String(e.filename||'').split('/').pop()+':'+(e.lineno||''))});window.addEventListener('unhandledrejection',function(e){__E.push('promesa: '+((e.reason&&e.reason.message)||e.reason))});
 setTimeout(function(){var d=document.getElementById('app');if(d&&!d.innerHTML.trim()){d.innerHTML='<div style="padding:16px;font-family:sans-serif"><b>⏳ Está tardando en cargar.</b><br>Puede ser la señal de internet. Toca Recargar. Si sigue igual, toma captura y mándala:<pre style="white-space:pre-wrap;color:#c00;font-size:13px">'+(__E.join('\n')||'(sin error)')+'\n'+location.href+'\n'+navigator.userAgent+'</pre><button onclick="location.reload(true)" style="font-size:18px;padding:10px 16px">🔄 Recargar</button></div>'}},15000)</script>
 <script>/* 🔄 Versión: si hay una agenda nueva publicada, se recarga sola (la app de Android y los celulares no se quedan con la vieja) */
-window.APPV='205';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
+window.APPV='206';(function(){if(location.protocol=='file:')return;async function chk(){try{const r=await fetch('/ver.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(!j.v||j.v===window.APPV)return;
 const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.value)return;if(window.S&&(S.form||S.ext||S.asg))return;
 let k;try{k=sessionStorage.getItem('recargaV')}catch(e){}if(k===j.v)return;try{sessionStorage.setItem('recargaV',j.v)}catch(e){}location.reload()}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,600000);setTimeout(chk,4000)})();</script>
@@ -3818,18 +3818,19 @@ function pegaEv(id,ev){const raw=(ev.clipboardData||window.clipboardData).getDat
 async function pegaUb(id,raw){
 const inp=$(id+'_maps'),tx=$(id);if(!inp||!tx)return;
 const um=String(raw).match(/https?:\/\/\S+/);if(!um)return;
-const url=um[0];let llR=null;
+const url=um[0];let llR=null;S.lkT=null;
 // 🧭 link de RUTA (de A a B): llena origen y destino de una vez
 if(/goo\.gl|maps\.app|\/maps\/dir\/|[?&]saddr=|[?&]daddr=/.test(url)){toast('📍 Abriendo el link de Maps…');const j=await waExpandJ(url);
 if(j&&j.ruta&&j.ruta.o&&j.ruta.d&&(j.ruta.o.lat!=null||j.ruta.d.lat!=null)){const pone=(k,p)=>{if(!$(k))return;if(p.lat!=null)$(k+'_maps').value='https://maps.google.com/?q='+(+p.lat).toFixed(6)+','+(+p.lng).toFixed(6);if(p.t)$(k).value=String(p.t).replace(/,\s*(MX|México)\s*$/i,'').trim()};
 pone('ubic',j.ruta.o);pone('destino',j.ruta.d);if(j.ruta.o.lat!=null&&!j.ruta.o.t)revGeo({lat:+j.ruta.o.lat,lng:+j.ruta.o.lng}).then(a=>{if(a&&!$('ubic').value.trim())$('ubic').value=a});if(j.ruta.d.lat!=null&&!j.ruta.d.t)revGeo({lat:+j.ruta.d.lat,lng:+j.ruta.d.lng}).then(a=>{if(a&&!$('destino').value.trim())$('destino').value=a});
 forSync();aerSync();tarVis();toast('✅ Ruta pegada: origen y destino listos');if(MP.map)mapaPines(false);if($('km'))$('km').value='';cotizar();return}
-if(j&&j.ok&&j.lat!=null)llR={lat:+j.lat,lng:+j.lng}}
+if(j&&j.ok&&j.lat!=null)llR={lat:+j.lat,lng:+j.lng};if(j&&j.t)S.lkT=String(j.t).replace(/,\s*(MX|México)\s*$/i,'').trim()}
 let ll=llDe(url)||llR;
 const rest=String(raw).replace(url,' ').split(/\r?\n/).map(x=>x.replace(/^[^\p{L}\p{N}]+/u,'').replace(/,\s*(MX|México)\s*$/i,'').trim()).filter(Boolean);
 inp.value=ll?'https://maps.google.com/?q='+ll.lat.toFixed(6)+','+ll.lng.toFixed(6):url;
 const cur=tx.value.trim().toLowerCase();
 if(rest.length){const nuevo=rest.join(', ');if(!cur||nuevo.toLowerCase().includes(cur)||cur.includes(rest[0].toLowerCase()))tx.value=nuevo}
+else if(!ll&&S.lkT){if(!cur)tx.value=S.lkT;S.lkT=null;inp.value=url;forSync();aerSync();tarVis();MP.act=id;tx.focus();try{acBuscar(id)}catch(e){}return toast('Este link no trae el punto exacto. Elige el lugar de la lista para cotizar.')}
 else if(ll&&!cur){toast('Buscando la dirección…');const a=await revGeo(ll);if(!tx.value.trim())tx.value=a||('📍 Punto en el mapa ('+ll.lat.toFixed(5)+', '+ll.lng.toFixed(5)+')')}
 forSync();toast(ll?'✅ Ubicación pegada':'Este link no trae coordenadas exactas. Usa el mapa 🗺️ para poner el pin.');
 aerSync();tarVis();MP.act=id;
