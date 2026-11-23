@@ -78,9 +78,12 @@ function coordsDe(u: string): { lat: number; lng: number } | null {
   let s = String(u || "");
   try { s = decodeURIComponent(s); } catch { /* texto con % sueltos: se busca tal cual */ }
   const m = s.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || s.match(/[?&](?:q|query|ll|destination)=(-?\d+\.\d+),\s*(-?\d+\.\d+)/) || s.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || s.match(/\/search\/(-?\d+\.\d+),\s*\+?(-?\d+\.\d+)/);
-  if (m) return { lat: +m[1], lng: +m[2] };
-  const a = s.match(/APP_INITIALIZATION_STATE=\[\[\[-?[\d.]+,(-?\d+\.\d+),(-?\d+\.\d+)\]/);
-  return a ? { lat: +a[2], lng: +a[1] } : null;
+  return m ? { lat: +m[1], lng: +m[2] } : null;
+}
+// coordenadas sacadas del HTML de la página: solo se aceptan si caen en el sureste de México
+function coordsHtml(h: string) {
+  const c = coordsDe(h);
+  return c && c.lat > 14 && c.lat < 23 && c.lng > -95 && c.lng < -86 ? c : null;
 }
 // nombre del lugar cuando el link no trae coordenadas (/maps/place/NOMBRE o ?q=NOMBRE)
 function nombreDe(u: string): string {
@@ -140,8 +143,8 @@ async function abrirMapsFull(url: string): Promise<{ c: { lat: number; lng: numb
     if (loc) { u = new URL(loc, u).toString(); if (!rutaDe(u)) c = coordsDe(u); continue; }
     const html = await r.text().catch(() => "");
     const meta = html.match(/content="0;\s*url=([^"]+)"/i) || html.match(/https:\/\/www\.google\.[a-z.]+\/maps\/[^"'\s]+/);
-    if (meta) { u = (meta[1] ?? meta[0]).replace(/&amp;/g, "&"); if (!rutaDe(u)) c = coordsDe(u); if (!c && !rutaDe(u)) c = coordsDe(html.slice(0, 400000)); if (c) break; continue; }
-    c = coordsDe(html.slice(0, 400000));
+    if (meta) { u = (meta[1] ?? meta[0]).replace(/&amp;/g, "&"); if (!rutaDe(u)) c = coordsDe(u); if (!c && !rutaDe(u)) c = coordsHtml(html.slice(0, 400000)); if (c) break; continue; }
+    c = coordsHtml(html.slice(0, 400000));
     break;
   }
   return { c, url: u };
