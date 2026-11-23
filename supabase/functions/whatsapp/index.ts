@@ -142,7 +142,7 @@ async function abrirMapsFull(url: string): Promise<{ c: { lat: number; lng: numb
     const loc = r.headers.get("location");VISTOS.push(r.status + " " + u.slice(0, 300));
     if (loc) { u = new URL(loc, u).toString(); if (!rutaDe(u)) c = coordsDe(u); continue; }
     const html = await r.text().catch(() => "");
-    const meta = html.match(/content="0;\s*url=([^"]+)"/i) || html.match(/https:\/\/www\.google\.[a-z.]+\/maps\/[^"'\s]+/);
+    const meta = html.match(/content="0;\s*url=([^"]+)"/i) || html.match(/https:\/\/www\.google\.[a-z.]+\/maps\/(?:place|dir|search)\/[^"'\s\\]+/);
     if (meta) { u = (meta[1] ?? meta[0]).replace(/&amp;/g, "&"); if (!rutaDe(u)) c = coordsDe(u); if (!c && !rutaDe(u)) c = coordsHtml(html.slice(0, 400000)); if (c) break; continue; }
     c = coordsHtml(html.slice(0, 400000));
     break;
